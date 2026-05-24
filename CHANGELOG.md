@@ -6,4 +6,17 @@ Versioning: [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-05-24
+
+### Documentation
+
+- tune badge group styling
+
+### Other
+
+- gate matrix on env; add FUNDING.yml; fix issue-template SECURITY link
+- migrate to github from self-hosted git
+
+
 [Unreleased]: https://github.com/kalix127/secret-stripper/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/kalix127/secret-stripper/releases/tag/v1.0.0
