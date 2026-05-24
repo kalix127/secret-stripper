@@ -14,7 +14,7 @@ body:
         same structure (right length, prefix, checksum shape) but is made up.
         Generated/example keys from vendor docs are ideal.
 
-        **Security issue? Do NOT report it here.** See [SECURITY.md](../../SECURITY.md) for private reporting.
+        **Security issue? Do NOT report it here.** See [SECURITY.md](https://github.com/kalix127/secret-stripper/blob/main/SECURITY.md) for private reporting.
   - type: textarea
     id: secret-type
     attributes:

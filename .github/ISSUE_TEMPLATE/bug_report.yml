@@ -9,7 +9,7 @@ body:
       value: |
         Thanks for taking the time to file a bug report.
 
-        **Security issue? Do NOT report it here.** See [SECURITY.md](../../SECURITY.md) for private reporting.
+        **Security issue? Do NOT report it here.** See [SECURITY.md](https://github.com/kalix127/secret-stripper/blob/main/SECURITY.md) for private reporting.
 
         Never paste real secrets. If a redaction failed, describe the value by
         its format (e.g. "an AWS access key"), not the value itself.
