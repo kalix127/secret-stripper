@@ -31,6 +31,17 @@ path = "src/lib.rs"
 name = "secret-stripper"
 path = "src/main.rs"
 
+# Maintainer tool: regenerates DETECTION_COVERAGE.md from the live pattern
+# catalog. Gated behind a feature so `cargo install secret-stripper` does NOT
+# install it on end-user machines. Run locally with `make patterns-doc`.
+[[bin]]
+name = "patterns_doc"
+path = "src/bin/patterns_doc.rs"
+required-features = ["patterns-doc"]
+
+[features]
+patterns-doc = []
+
 [dependencies]
 arboard = { version = "3.6.1", features = ["wayland-data-control"] }
 regex = "1.12.3"

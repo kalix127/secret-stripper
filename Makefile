@@ -48,7 +48,7 @@ release:
 	@bash scripts/release.sh
 
 patterns-doc:
-	$(CARGO) run --quiet --bin patterns_doc > DETECTION_COVERAGE.md
+	$(CARGO) run --quiet --features patterns-doc --bin patterns_doc > DETECTION_COVERAGE.md
 
 clean:
 	$(CARGO) clean
