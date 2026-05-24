@@ -1,0 +1,72 @@
+# vcs_ci corpus. Synthetic invalid placeholders only.
+
+# === GitHub ===
+# expect: GitHub Fine-grained PAT
+github_pat_AAAAAAAAAAAAAAAAAAAAAA_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+# === GitLab ===
+# expect: GitLab Pipeline Trigger Token
+glptt-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+# expect: GitLab Runner Authentication Token
+glrt-AAAAAAAAAAAAAAAAAAAA
+# expect: GitLab Runner Registration Token
+GR1348941AAAAAAAAAAAAAAAAAAAA
+# expect: GitLab Deploy Token
+gldt-AAAAAAAAAAAAAAAAAAAA
+# expect: GitLab CI/CD Job Token
+glcbt-AAAAAAAAAAAAAAAAAAAA
+# expect: GitLab Feed Token
+glft-AAAAAAAAAAAAAAAAAAAA
+# expect: GitLab Feature Flag Client Token
+glffct-AAAAAAAAAAAAAAAAAAAA
+# expect: GitLab Incoming Mail Token
+glimt-AAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: GitLab Kubernetes Agent Token
+glagent-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: GitLab OAuth Application Secret
+gloas-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: GitLab SCIM Token
+glsoat-AAAAAAAAAAAAAAAAAAAA
+# expect: GitLab Session Cookie
+_gitlab_session=AAAAAAAAAAAAAAAAAAAAAAAA
+
+# === Bitbucket / Atlassian ===
+# expect: Bitbucket App Password
+ATBBAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: Atlassian API Token (modern)
+ATATT3xFfGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=BBBBBBBB
+ATCTT3xFfGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=CCCCCCCC
+
+# === Sourcegraph ===
+# expect: Sourcegraph Access Token
+sgp_aaaaaaaaaaaaaaaa_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+# === CircleCI ===
+# expect: CircleCI Personal API Token
+CCIPAT_AAA_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+# === Buildkite ===
+# expect: Buildkite Agent Token
+bkua_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+# expect: Buildkite API Access Token
+bkaa_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+# === Octopus / Harness ===
+# expect: Octopus Deploy API Key
+API-ABC123XYZABC123XYZABC123XY
+# expect: Harness Personal Access Token
+pat.AAAAAAAA.BBBBBBBB.CCCCCCCC
+# expect: Harness Service Account Token
+sat.AAAAAAAA.BBBBBBBB.CCCCCCCC
+
+# === Travis ===
+# expect: TravisCI Repo Encrypt Key
+secure: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+
+# === GitHub PAT (classic, new long ghs_ format) ===
+# expect: GitHub Personal Access Token
+ghs_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+# === GitLab PAT (routable) ===
+# expect: GitLab Personal Access Token (routable)
+glpat-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.a1bcdefgh

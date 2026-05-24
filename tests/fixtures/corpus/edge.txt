@@ -1,0 +1,41 @@
+# edge corpus. Synthetic invalid placeholders only.
+
+# === Cloudflare / Fastly / Akamai ===
+# expect: Cloudflare Origin CA Key
+# expect: Fastly API Token
+# expect: Akamai EdgeGrid Client Token
+v1.0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Fastly-Key: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+akab-aaaaaaaaaaaaaaaaaaaaaaaa
+
+# === Bunny / Netlify / Deno / NS1 ===
+# expect: Bunny.net API Key
+# expect: Netlify Personal Access Token
+# expect: Deno Deploy Token
+# expect: NS1 API Key
+AccessKey: 0123abcd-4567-89ab-cdef-0123456789ab
+nfp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+ddp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+X-NSONE-Key: aaaaaaaaaaaaaaaaaaaa
+
+# === Shopify ===
+# expect: Shopify Access Token
+# expect: Shopify Custom App Access Token
+# expect: Shopify Private App Token
+# expect: Shopify Shared Secret
+shpat_0123456789abcdef0123456789abcdef
+shpca_0123456789abcdef0123456789abcdef
+shppa_0123456789abcdef0123456789abcdef
+shpss_0123456789abcdef0123456789abcdef
+
+# === Deno Deploy ddw_ variant (Block 3b) ===
+# expect: Deno Deploy Token
+ddw_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+# === Apple ASC / Cloudinary / RevenueCat (Block 3c) ===
+# expect: Apple App Store Connect Key File
+# expect: Cloudinary URL
+# expect: RevenueCat Secret Key
+AuthKey_ABCDE12345.p8
+cloudinary://123456789012345:AAAAAAAAAAAAAAAAAAAAAAAAA@mycloud
+sk_appl_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

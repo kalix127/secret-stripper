@@ -1,0 +1,127 @@
+# networking corpus. Synthetic invalid placeholders only.
+
+# === Cisco IOS ===
+# expect: Cisco Type 0 Cleartext Password
+enable password 0 mySecret123
+
+# expect: Cisco Type 7 Password
+password 7 070C285F4D06
+
+# expect: Cisco Type 5 Secret
+enable secret 5 $1$gBk3$sBeTOYNqovqiccFjqQoV01
+
+# expect: Cisco Type 8 Secret
+enable secret 8 $8$dsYGNam3K1SIJO$7nv35Mqr6tdzOUUgwjPlCBNuJOWrhC8Cq8oRT9Zabcd
+
+# expect: Cisco Type 9 Secret
+enable secret 9 $9$nhEmQVczB7dqsO$XHsgL6x1il0RxkOSSvyQYwucySCt7qFm4v7pqCxkKMx
+
+# expect: Cisco ASA Encrypted Password
+passwd 2KFQnbNIdI.2KYOU encrypted
+
+# === Juniper ===
+# expect: Juniper Junos $9$ Secret
+set system root-authentication encrypted-password $9$01X1EyM87s2alK2aZUmO1R
+
+# expect: Juniper Junos $8$ Secret
+$8$aes256-gcm$hmac-sha2-256$100$AbCdEfGhIjKlMnOpQrStUv
+
+# === Fortinet ===
+# expect: FortiGate Encrypted Password
+set passwd ENC uCn8uiVJqzzEm8iba4onCc98AJDiYggVSDlYIphgjN3abcdEFGH1234
+
+# expect: FortiManager Access Token
+access_token=97f3cnrxht4nrkf1mnutb320000000
+
+# === Palo Alto ===
+# expect: Palo Alto PAN-OS API Key
+LUFRPT1ZQXFhM2tabUljdjBucXpoeWZJUUZ5T0E9MDAwMDAwMDAwMDAwMDAwMDAwMDA=
+
+# === AAA / SNMP ===
+# expect: Cisco RADIUS/TACACS Key Type 7
+radius-server key 7 19283103834782
+
+# expect: Cisco RADIUS/TACACS Key Cleartext
+tacacs-server key 0 supersecret
+
+# expect: SNMP Community String
+snmp-server community s3cretc0mm RO
+
+# expect: SNMPv3 USM Credentials
+snmp-server user u1 g1 v3 auth sha P@ssw0rd priv aes 128 P@ssw0rd2
+
+# expect: FreeRADIUS Shared Secret
+secret = "4AwR0c1lrh5jMQTl"
+
+# expect: BIND rndc.key HMAC Secret
+secret "c3RyaW5nLXNlY3JldGtleWFiY2Q=";
+
+# === DNS / Cloudflare ===
+# expect: NS1 API Key
+X-NSONE-Key: qACMD09OJXBxT7XOuRs8
+
+# expect: Cloudflare User API Token
+cfut_abcdefghij1234567890klmnopqrstuvwx9876543210ABcd
+
+# expect: Cloudflare Account API Token
+cfat_abcdefghij1234567890klmnopqrstuvwx9876543210ABcd
+
+# === Proxies ===
+# expect: HAProxy Stats Auth
+stats auth admin:s3cret
+
+# expect: HAProxy Insecure Password
+user admin insecure-password mySecret
+
+# === IPsec / WireGuard ===
+# expect: strongSwan IPsec PSK
+192.168.0.1 %any : PSK "vNkxY9LLZvwj4qCC2ogGrWDF2d21jL"
+
+# expect: WireGuard Private Key
+PrivateKey = 6AcgEPgBsH7y6IrbvQnZTGKmvIjAvqQR8nSfEyuGAWx=
+
+# expect: WireGuard Preshared Key
+PresharedKey = wPjMBdvjKF2uABCDEFGHIJKLMNOPQRSTUVWXYZ0a987=
+
+# expect: WireGuard Public Key
+PublicKey = HIgo9xNzJMWLKASShiTqIybxZ0U3wGLiUeJ1PKf8ykw=
+
+# expect: OpenVPN Static Key
+-----BEGIN OpenVPN Static key V1-----
+6acdef0123456789abcdef0123456789
+-----END OpenVPN Static key V1-----
+
+# === VPN tokens ===
+# expect: Tailscale Auth Key
+tskey-auth-kxPLAcGenK11CNTRL-AbCdEfGhIjKlMnOpQrStUv
+
+# expect: Tailscale API Key
+tskey-api-kxPLAcGenK11CNTRL-AbCdEfGhIjKlMnOpQrStUv
+
+# expect: Tailscale OAuth Client Secret
+tskey-client-kxPLAcGenK11CNTRL-AbCdEfGhIjKlMnOpQrStUv
+
+# === SIEM / observability ===
+# expect: Splunk HEC Token
+Authorization: Splunk b5a79aad-d822-46cc-80d1-819f80d7bfb0
+
+# expect: Sumo Logic Access ID
+accessId: suEJ0L8vyc4S0h
+
+# === OpenStack ===
+# expect: OpenStack Keystone Fernet Token
+gAAAAABcExampleExampleExampleExampleExampleExampleExampleExampleExampleExampleExampleExampleExampleExampleExample
+
+# === Cloudflare cfk / NetBox / NetBird / Defined-Net / Porkbun / CF Access (Block 3c) ===
+# expect: Cloudflare API Token (cfk_)
+# expect: NetBox v2 API Token
+# expect: NetBird Access Token
+# expect: Defined Networking API Key
+# expect: Porkbun API Credential
+# expect: Cloudflare Access Service Token ID
+cfk_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+nbt_AAAAAAAAAAAAAAAAAAAAAAAA.BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+nbp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+dnkey-aaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+pk1_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.access

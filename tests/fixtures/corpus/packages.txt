@@ -1,0 +1,41 @@
+# packages corpus. Synthetic invalid placeholders only.
+
+# === PyPI macaroon tokens ===
+# expect: PyPI Upload Token
+Token pypi-AgEIcHlwaS5vcmcAbCd1234AbCd1234AbCd1234AbCd1234AbCd1234AbCd1234AbCd here.
+
+# expect: TestPyPI Upload Token
+Token pypi-AgENdGVzdC5weXBpLm9yZAbCd1234AbCd1234AbCd1234AbCd1234AbCd1234AbCd1234AbCd here.
+
+# === Ruby / Cargo / NuGet ===
+# expect: RubyGems API Key
+Key rubygems_a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4 here.
+
+# expect: crates.io API Token
+Token cioAb3xYz90Ab3xYz90Ab3xYz90Ab3xYz90 here.
+
+# expect: NuGet API Key
+Key oy2abc012abc012abc012abc012abc012abc012abc012a here.
+
+# === JFrog Artifactory ===
+# expect: JFrog Artifactory API Key
+Key AKCpAbCd1234AbCd1234AbCd1234AbCd1234AbCd1234AbCd1234AbCd1234AbCd1234AbCdEF here.
+
+# expect: Artifactory Reference Token
+Token cmVmdGtuAbCd1234AbCd1234AbCd1234AbCd1234AbCd1234AbCd1234AbCd here.
+
+# === Clojars ===
+# expect: Clojars Deploy Token
+Token CLOJARS_a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4abcd here.
+
+# === Packagist ===
+# expect: Packagist API Token
+Token packagist_uat_a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4 here.
+
+# === Endor / Socket / Duffel (Block 3b) ===
+# expect: Endor Labs Token
+# expect: Socket.dev Token
+# expect: Duffel Access Token
+endr+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+sktsec_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+duffel_live_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

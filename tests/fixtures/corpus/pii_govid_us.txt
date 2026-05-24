@@ -1,0 +1,40 @@
+# pii_govid_us corpus. Synthetic invalid placeholders only.
+
+# === United States ===
+# SSN is structurally gated (Block 6f): area not 000/666/900-999,
+# group not 00, serial not 0000.
+# expect: Social Security Number
+123-45-6789
+# expect: US ITIN
+912-78-1234
+# expect: US EIN (labeled)
+EIN: 12-3456789
+# expect: US PTIN
+P12345678
+# expect: US Medicare MBI
+1EG4TE5MK73
+# expect: US DEA Number
+AB1234563
+
+# === Canada ===
+# expect: Canada SIN (labeled)
+SIN: 046-454-286
+# expect: Canada Quebec RAMQ
+DOEJ12345678
+# expect: Canada Ontario OHIP
+1234-567-890-AB
+# expect: Canadian Passport
+AB123456
+
+# === Mexico ===
+# expect: Mexico CURP
+HEGG560427MVZRRL04
+# expect: Mexico RFC
+ABCD800101XYZ
+
+# === US Driver's License distinctive formats (Block 4b) ===
+# expect: US Driver's License (distinctive state format)
+F123456789012
+A12345678901234
+12ABC34567
+ABC123456

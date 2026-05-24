@@ -1,0 +1,16 @@
+Source: secret-stripper
+Section: utils
+Priority: optional
+Maintainer: Gianluca Iavicoli <info@gianlucaiavicoli.dev>
+Build-Depends: debhelper-compat (= 13), cargo, rustc
+Standards-Version: 4.6.2
+Homepage: https://github.com/kalix127/secret-stripper
+
+Package: secret-stripper
+Architecture: amd64 arm64
+Depends: libx11-6, libxcb1, libxkbcommon0, libgtk-3-0, ${shlibs:Depends}, ${misc:Depends}
+Description: On-demand clipboard PII/secret redactor
+ Secret Stripper is a one-shot CLI that strips secrets and PII from the
+ clipboard on demand. A global hotkey runs the redactor; it reads the
+ selection or clipboard, redacts API keys / tokens / private keys / PII,
+ writes the redacted text back, and exits.

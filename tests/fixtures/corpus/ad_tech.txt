@@ -1,0 +1,57 @@
+# ad_tech corpus. Synthetic invalid placeholders only.
+
+# === Social Ads / Meta and TikTok ===
+# expect: Meta Legacy Access Token
+123456789012345|0a1b2c3d4e5f6g7h8i9j0kxxxxyyyyzz
+# expect: Meta Ad Account ID
+account act_123456789012 here
+# expect: TikTok User Access Token
+act.example12345Example12345Example
+# expect: TikTok Client Access Token
+clt.example12345Example12345Example
+
+# === Social Ads / Twitter and LinkedIn ===
+# expect: Twitter/X Bearer Token
+Authorization: Bearer AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%2BexampleZ
+# expect: Twitter/X OAuth 1 Access Token
+1234567890123456789-AbCdEfGhIjKlMnOpQrStUvWxYz1234567890
+# expect: LinkedIn URN
+urn:li:person:-f_Ut43FoQ
+
+# === Social Ads / Snapchat and Pinterest ===
+# expect: Snapchat OAuth Access Token
+0.MGQCxyz123ExampleAccessToken456abc
+# expect: Pinterest API Access Token
+pina_AEAQ_VNEXAMPLEACCESSTOKEN1234
+
+# === Social Ads / Google Ads ===
+# expect: Google Ads Developer Token
+developer_token=ABcdeFGH93KL-NOPQ_STUv
+# expect: Google Ads OAuth Refresh Token
+1//0gExampleGoogleAdsRefreshTokenAbCdEfGhIjKlMnOp
+
+# === Social Ads / labeled app secrets ===
+# expect: TikTok App Secret (labeled)
+tiktok_client_secret=1a2b3c4d5e6f0a8b9c0d1e2f3a4b5c6d7e8f9a0b
+# expect: Meta App Secret (labeled)
+facebook_app_secret=7c2f5b9d8a3e0f4c6b1d2e8a9f7c3b6d
+
+# === DSP / SSP ===
+# expect: The Trade Desk Auth Token
+TTD-Auth: c1f2e3d4b5a6978869fexampleTTDtoken
+# expect: Beeswax Instance Host
+acmeads.api.beeswax.com
+# expect: AppLovin MAX SDK Key (labeled)
+applovin_sdk_key=g4VsHkVXX0EpmzlxYjCJU3kJG3a_oGcExampleAppLovinMaxSdkKey1234567890aBcDeFgHiJkLmnOpQrStU
+
+# === Identity / CDP ===
+# expect: LiveRamp RampID (maintained individual)
+XY1234ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFG
+# expect: LiveRamp RampID (maintained household)
+HY1234ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFG
+# expect: UID2 Operator API Key
+UID2-O-L-12345-abcdef1234567890ExampleKey
+# expect: UID2 Advertising-Token Header
+Advertising-Token: AgAAAANzv5fOExampleUid2Token9876543210
+# expect: Treasure Data API Key
+12345/abcdef0123456789abcdef0123456789abcdef01

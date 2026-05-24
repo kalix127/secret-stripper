@@ -1,0 +1,75 @@
+name: Cross-Platform CI
+
+# Triggered explicitly by the owner: either by submitting an approving PR
+# review (the natural "I looked at this, run the heavy matrix" signal), by
+# the post-merge push to main, or by manual dispatch.
+#
+# The Linux-only quality + corpus jobs in ci.yml stay automatic on every PR;
+# this workflow exists so the expensive 3-OS matrix doesn't run on every
+# routine PR (especially Renovate's), only when the maintainer signs off.
+on:
+  pull_request_review:
+    types: [submitted]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: xp-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  cross_platform:
+    name: Cross-Platform Build & Functional Tests (${{ matrix.os }})
+    # On pull_request_review, only an `approved` review opens the gate.
+    # `commented` / `changes_requested` / `dismissed` are no-ops.
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request_review'
+       && github.event.review.state == 'approved')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-2025-vs2026]
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # pull_request_review's default checkout is the base branch; pin to
+          # the PR's HEAD so we test what the reviewer actually approved.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxcb1-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev \
+            libxkbcommon-dev \
+            libdbus-1-dev
+
+      - name: Install make on Windows
+        if: runner.os == 'Windows'
+        run: choco install make --no-progress -y
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and target dir
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build (smoke)
+        run: make build
+
+      - name: Functional integration tests (filesystem seam)
+        env:
+          SECRET_STRIPPER_NO_OS_SIDE_EFFECTS: "1"
+        run: make test-fs

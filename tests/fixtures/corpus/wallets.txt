@@ -1,0 +1,99 @@
+# wallets corpus. Synthetic invalid placeholders only.
+
+# === Bitcoin extended keys ===
+# expect: Bitcoin BIP32 Extended Private Key (xprv)
+xprv123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopq here.
+
+# expect: Bitcoin BIP49 Extended Private Key (yprv)
+yprv123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqr here.
+
+# expect: Bitcoin BIP84 Extended Private Key (zprv)
+zprv123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqr here.
+
+# expect: Bitcoin BIP32 Extended Public Key (xpub)
+xpub123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopq here.
+
+# expect: Bitcoin BIP49/84 Extended Public Key (ypub/zpub)
+ypub123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqr here.
+
+# === Bitcoin keys and addresses ===
+# expect: Bitcoin WIF Private Key
+wif 5123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqr here.
+
+# expect: Bitcoin P2PKH Address
+addr 1123456789ABCDEFGHJKLMNPQRSTUVWXYZ here.
+
+# expect: Bitcoin P2SH Address
+addr 3123456789ABCDEFGHJKLMNPQRSTUVWXYZ here.
+
+# expect: Bitcoin Bech32 Address
+addr bc1q023456789acdefghjklmnpqrstuvwxyz023456 here.
+
+# expect: Bitcoin Taproot Address (P2TR)
+addr bc1p023456789acdefghjklmnpqrstuvwxyz023456789acdefghjklmnpqrst here.
+
+# === Litecoin ===
+# expect: Litecoin Address
+addr ltc1q023456789acdefghjklmnpqrstuvwxyz023456 here.
+
+# === EVM ===
+# expect: EVM Private Key (labeled)
+private_key = 0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef here.
+
+# expect: EVM Address
+addr 0x0123456789abcdef0123456789abcdef01234567 here.
+
+# === Solana ===
+# expect: Solana Keypair Byte Array
+key [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64] here.
+
+# expect: Solana Address
+addr 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghij here.
+
+# === Cardano ===
+# expect: Cardano Shelley Address
+addr addr1023456789acdefghjklmnpqrstuvwxyz023456789acdefghjk here.
+
+# expect: Cardano Stake Address
+addr stake1023456789acdefghjklmnpqrstuvwxyz023456789acdefghjk here.
+
+# === Cosmos ecosystem ===
+# expect: Cosmos Ecosystem Address
+addr cosmos1023456789acdefghjklmnpqrstuvwxyz023456 here.
+addr regen1023456789acdefghjklmnpqrstuvwxyz023456 here.
+
+# === Tezos ===
+# expect: Tezos Address
+addr tz1123456789ABCDEFGHJKLMNPQRSTUVWXYZ here.
+
+# expect: Tezos edsk Private Key
+key edsk123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuv here.
+
+# === XRP / Stellar / Tron / Monero ===
+# expect: XRP Ledger Address
+addr r123456789ABCDEFGHJKLMNPQRSTUVW here.
+
+# expect: Stellar Public Key
+addr GABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRSTUVW here.
+
+# expect: Stellar Secret Seed
+seed SABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRSTUVW here.
+
+# expect: Tron Address
+addr T123456789ABCDEFGHJKLMNPQRSTUVWXYZ here.
+
+# expect: Monero Address
+addr 4A123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789ABCDEFGHJKLMNPQRSTUVWXYZab here.
+
+# === Keystore JSON ===
+# expect: Ethereum v3 Keystore JSON
+{"version":3,"crypto":{"cipher":"aes-128-ctr","ciphertext":"abcdef0123456789"}}
+
+# expect: MetaMask Vault
+{"data":"YWJjZGVmMDEyMw==","iv":"aXZiYXNlNjQ=","salt":"c2FsdGJhc2U2NA=="}
+
+# === Sui / Aptos private keys (Block 3b) ===
+# expect: Sui Private Key
+# expect: Aptos Private Key (AIP-80)
+suiprivkey1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+ed25519-priv-0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

@@ -1,0 +1,72 @@
+# rpc_chain corpus. Synthetic invalid placeholders only.
+
+# === Blockchain RPC / NFT / storage providers ===
+
+# expect: Infura Endpoint URL with Project ID
+https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161
+
+# expect: Infura Endpoint URL with Project Secret
+https://:9aa3d95b3bc440fa88ea12eaa4456161@mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161
+
+# expect: Alchemy Endpoint URL with API Key
+https://eth-mainnet.g.alchemy.com/v2/abcDEF123_GHIjkLMN456-pqRSTuvWXY
+
+# expect: Alchemy Webhook Signing Key
+key whsec_EcQnhWcncVkYyda2UgL15kiL here.
+
+# expect: QuickNode Endpoint URL with Key
+https://blue-frosty-snowflake-123.quiknode.pro/abcdef0123456789abcdef0123456789abcdef01
+
+# expect: Ankr Multichain Endpoint URL with Token
+https://rpc.ankr.com/multichain/abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
+
+# expect: Helius Endpoint URL with API Key
+https://mainnet.helius-rpc.com/?api-key=abc12345-6789-0abc-def1-23456789abcd
+
+# expect: Chainstack Endpoint URL with Key
+https://nd-1234.p2pify.com/abcdef0123456789abcdef0123456789
+
+# expect: Etherscan Family API Key
+etherscan_api_key = "VZFDUWB3YGQ1YCDKTCU1D6DDSSABCDEFGH"
+
+# expect: The Graph Gateway API Key
+https://gateway.thegraph.com/api/abcdef0123456789abcdef0123456789
+
+# expect: Covalent / GoldRush API Key
+key cqt_rQyXdK1JtV7WQFqjfDCMDxFwGV3J here.
+
+# expect: Bitquery OAuth Token
+token ory_at_abcDEF123456789_-.qrsTUVwxyz0123 here.
+
+# expect: dRPC Endpoint URL with Key
+https://eth.drpc.org/?dkey=abcd1234ABCDefgh5678ijkl
+
+# expect: WalletConnect / Reown Project ID
+walletconnect_project_id: c4f79cc821944d9680842e34466bfbda
+
+# expect: Pinata API Key
+pinata_api_key = "AbCdEf0123456789AbCdEf0123456789ABCD"
+
+# expect: Web3.Storage DID Key
+did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK
+
+# expect: Pimlico Endpoint URL with API Key
+https://api.pimlico.io/v2/sepolia/rpc?apikey=ABCDEF123456789abcdef0123
+
+# expect: ZeroDev Endpoint URL with Project ID
+https://rpc.zerodev.app/api/v2/abc12345-6789-0abc-def1-23456789abcd
+
+# expect: Biconomy Paymaster URL with API Key
+https://paymaster.biconomy.io/api/v1/80001/AbCdEf0123456789AbCdEf0123456789
+
+# expect: Stackup Paymaster URL with API Key
+https://api.stackup.sh/v1/node/abcdef0123456789abcdef0123456789
+
+# expect: 1inch API Key
+https://api.1inch.dev/swap/v6.0/1/quote?apiKey=AbCdEf0123456789GhIjKl
+
+# expect: 0x API Key Header
+0x-api-key: AbCdEf0123456789AbCdEf0123456789
+
+# expect: Etherspot Bundler URL with API Key
+https://testnet.etherspot.io/api/v1?apikey=AbCdEf0123456789GhIjKlMnOp

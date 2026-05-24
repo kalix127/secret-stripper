@@ -1,0 +1,51 @@
+# cloud_azure corpus. Synthetic invalid placeholders only.
+
+# === Azure / Storage ===
+# expect: Azure Storage Connection String
+# expect: Azure Storage SAS Token
+DefaultEndpointsProtocol=https;AccountName=demostorage;AccountKey=AbCdEfGhIjKlMnOpQrStUvWxYz0123456789AbCdEfGhIjKlMnOpQrStUvWxYz0123456789AbCdEfGhIjKlMn==
+?sv=2022-11-02&ss=b&srt=co&sp=rwdlac&se=2025-01-01&sig=AbCdEf0123ZzZz%2FExampleSig
+
+# === Azure / Service Bus ===
+# expect: Azure Service Bus Connection String
+Endpoint=sb://demo-ns.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=AbCdEf0123456789ExampleKeyValue=
+
+# === Azure / Cosmos DB ===
+# expect: Azure Cosmos DB Connection String
+# expect: Azure Cosmos DB Account Endpoint
+AccountEndpoint=https://demo-acct.documents.azure.com:443/;AccountKey=AbCdEfGhIjKlMnOpQrStUvWxYz0123456789AbCdEfGhIjKlMnOpQrStUvWxYz0123456789AbCdEfGhIjKlMn==
+https://demo-acct.documents.azure.com:443/
+
+# === Azure / Key Vault ===
+# expect: Azure Key Vault Secret URI
+https://my-vault.vault.azure.net/secrets/dbpassword/0123456789abcdef0123456789abcdef
+
+# === Azure / App Configuration ===
+# expect: Azure App Configuration Connection String
+Endpoint=https://demo-config.azconfig.io;Id=abc-l9-s0:ExampleId;Secret=AbCdEf0123456789ExampleSecretValue=
+
+# === Azure / Functions ===
+# expect: Azure Functions URL with Code
+https://demo-app.azurewebsites.net/api/myfunc?code=AbCdEf0123456789ExampleFunctionCode==
+
+# === Azure / SQL ===
+# expect: Azure SQL Connection String
+Server=tcp:demo-srv.database.windows.net,1433;Database=mydb;UserID=admin;Password=Example_P4ss;
+
+# === Azure / App Service ===
+# expect: Azure App Service Publish Profile Password
+<publishProfile profileName="demo" userName="$demo" userPWD="AbCdEf0123456789Example">
+
+# === Azure / Application Insights ===
+# expect: Azure Application Insights Connection String
+# expect: Azure Application Insights Instrumentation Key
+InstrumentationKey=12345678-1234-1234-1234-123456789012;IngestionEndpoint=https://eastus.in.applicationinsights.azure.com/
+InstrumentationKey=abcdef01-2345-6789-abcd-ef0123456789
+
+# === Azure / Entra ID ===
+# expect: Azure Entra App Client Secret
+# expect: Azure Tenant via login.microsoftonline.com
+# expect: Azure Managed Identity Issuer
+secret Ab18Q~CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC here
+https://login.microsoftonline.com/22223333-cccc-4444-dddd-5555eeee6666
+https://sts.windows.net/aaaa0a0a-bb1b-cc2c-dd3d-eeeeee4e4e4e

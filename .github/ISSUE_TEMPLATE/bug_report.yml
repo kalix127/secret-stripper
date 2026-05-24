@@ -1,0 +1,88 @@
+name: 🐞 Bug report
+description: Report a problem with Secret Stripper
+title: "fix: "
+labels: ["bug"]
+assignees: ["kalix127"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report.
+
+        **Security issue? Do NOT report it here.** See [SECURITY.md](../../SECURITY.md) for private reporting.
+
+        Never paste real secrets. If a redaction failed, describe the value by
+        its format (e.g. "an AWS access key"), not the value itself.
+  - type: markdown
+    attributes:
+      value: |
+        ## Environment
+
+        Expand the block for your OS, run it, and paste the output in the
+        Environment field below. It prints only versions, OS, arch, and
+        desktop/session - no usernames, hostnames, or paths.
+
+        <details><summary>Linux</summary>
+
+        ```bash
+        { secret-stripper --version
+          uname -srmo
+          ( . /etc/os-release 2>/dev/null && echo "distro: $NAME $VERSION_ID" )
+          echo "session: ${XDG_SESSION_TYPE:-unknown}  desktop: ${XDG_CURRENT_DESKTOP:-unknown}"
+          command -v wl-copy >/dev/null && wl-copy --version
+          command -v xclip  >/dev/null && { xclip -version 2>&1 | head -n1; }
+          command -v cargo  >/dev/null && cargo --version
+        } 2>&1
+        ```
+
+        </details>
+
+        <details><summary>macOS</summary>
+
+        ```bash
+        { secret-stripper --version
+          echo "macOS $(sw_vers -productVersion)  arch: $(uname -m)"
+          command -v cargo >/dev/null && cargo --version
+        } 2>&1
+        ```
+
+        </details>
+
+        <details><summary>Windows (PowerShell)</summary>
+
+        ```powershell
+        secret-stripper --version
+        [System.Environment]::OSVersion.VersionString
+        $env:PROCESSOR_ARCHITECTURE
+        if (Get-Command cargo -ErrorAction SilentlyContinue) { cargo --version }
+        ```
+
+        </details>
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Paste the output of the block for your OS (no secrets, no personal info).
+      placeholder: Environment
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is. If you intend to submit a PR for this issue, tell us in the description.
+      placeholder: Bug description
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps that reliably trigger the bug.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true

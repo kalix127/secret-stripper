@@ -1,0 +1,9 @@
+node_modules/
+.wrangler/
+.env
+.dev.vars
+dist/
+*.gen.js
+/target
+*.log
+scorecard.png

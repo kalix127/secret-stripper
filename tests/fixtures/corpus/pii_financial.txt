@@ -1,0 +1,107 @@
+# pii_financial corpus. Synthetic invalid placeholders only.
+# Card PANs are standard Luhn-valid network test numbers (the brand
+# patterns are now Mod-10 gated, so a non-Luhn placeholder would not fire).
+
+# === Visa ===
+# expect: Visa Card
+Card 4111111111111111 on file.
+
+# === Mastercard ===
+# expect: Mastercard Card
+Card 5555555555554444 on file.
+
+# === Mastercard 2-series ===
+# expect: Mastercard Card
+Card 2223003122003222 on file.
+
+# === Discover ===
+# expect: Discover Card
+Card 6011111111111117 on file.
+
+# === American Express ===
+# expect: American Express Card
+Card 378282246310005 on file.
+
+# === Diners Club ===
+# expect: Diners Club Card
+Card 30569309025904 on file.
+
+# === JCB ===
+# expect: JCB Card
+Card 3530111333300000 on file.
+
+# === UnionPay ===
+# expect: UnionPay Card
+Card 6212345678901234 on file.
+
+# === Maestro ===
+# expect: Maestro Card
+Card 6759649826438453 on file.
+
+# === Dankort ===
+# expect: Dankort Card
+Card 5019717010103742 on file.
+
+# === Mir ===
+# expect: Mir Card
+Card 2200123456789019 on file.
+
+# === UATP ===
+# expect: UATP Card (labeled)
+UATP: 100000000000008 on file.
+
+# === IBAN generic ===
+# expect: IBAN
+Beneficiary NL91ABNA0417164300 please.
+
+# === IBAN Germany ===
+# expect: IBAN (Germany)
+# expect: IBAN
+Beneficiary DE89370400440532013000 please.
+
+# === IBAN United Kingdom ===
+# expect: IBAN (United Kingdom)
+# expect: IBAN
+Beneficiary GB29NWBK60161331926819 please.
+
+# === IBAN France ===
+# expect: IBAN (France)
+# expect: IBAN
+Beneficiary FR1420041010050500013M02606 please.
+
+# === IBAN Italy ===
+# expect: IBAN (Italy)
+# expect: IBAN
+Beneficiary IT60X0542811101000000123456 please.
+
+# === IBAN Spain ===
+# expect: IBAN (Spain)
+# expect: IBAN
+Beneficiary ES9121000418450200051332 please.
+
+# === BIC / SWIFT ===
+# expect: BIC / SWIFT (labeled)
+BIC: DEUTDEFF500 for the transfer.
+
+# === US Routing ===
+# expect: US Bank Routing Number (labeled)
+routing number: 021000021 here.
+
+# === US Account ===
+# expect: US Bank Account Number (labeled)
+account number: 12345678 here.
+
+# === UK Sort Code ===
+# expect: UK Sort Code (labeled)
+sort code: 40-47-84 here.
+
+# === SEPA Creditor Identifier ===
+# expect: SEPA Creditor Identifier (labeled)
+# A SEPA Creditor ID is NOT a valid IBAN: the iban_mod97 gate (Block 5)
+# correctly stops the old loose "IBAN" pattern from over-matching it.
+creditor id: DE98ZZZ09999999999 here.
+
+# === Card PAN co-located with expiry/CVV (Block 4c, Luhn-gated) ===
+# expect: Card PAN with Expiry/CVV
+pay 4111 1111 1111 1111 exp 12/25
+card 4111111111111111 cvv 123

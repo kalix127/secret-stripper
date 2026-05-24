@@ -1,0 +1,24 @@
+# healthcare corpus. Synthetic invalid placeholders only.
+
+# === Provider identifiers ===
+# NPI/DEA/NHS are checksum-gated (Block 6h); values are synthetic but
+# Luhn/mod-11 valid.
+# expect: US NPI (labeled)
+NPI: 1234567893
+
+# expect: US NPI Card Number
+808401234567893
+
+# expect: US DEA Number
+BG1234563
+
+# === Patient identifiers ===
+# expect: UK NHS Number (labeled)
+NHS: 943 476 5919
+
+# expect: FHIR Patient Resource ID
+GET /fhir/Patient/eXJZk-9bx2
+
+# === Vendor tokens ===
+# expect: Doximity API Token
+dx_live_abcd1234efgh5678ijkl9012

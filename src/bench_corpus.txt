@@ -1,0 +1,67 @@
+## Daily standup notes - sprint 42
+
+Onboarding for the new starter, alex.chen@example.com (phone: +44 20 7946 0958).
+Will need access to the staging API; rotating the team token before EOD.
+Reminder: the merchant statement reference is GB29 NWBK 6016 1331 9268 19,
+and the test card we use for refund flows is 4111 1111 1111 1111 (Visa, exp
+12/26). Do NOT paste real card numbers; the redactor below should grab the
+synthetic one anyway.
+
+## Infra / ops dump
+
+aws_access_key_id=AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key=wJalrXUtnnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+GITHUB_TOKEN=ghp_111111111111111111111111111111111111
+OPENAI_API_KEY=sk-AAAAAAAAAAAAAAAAAAAAT3BlbkFJAAAAAAAAAAAAAAAA
+SLACK_BOT_TOKEN=xoxb-1234567890-abcdefghijklmnopqrstuvwx
+STRIPE_SECRET=sk_live_4eC39HqLyjWDarjtT1zdp7dc
+DATABASE_URL=postgres://app:s3cret@db.internal:5432/prod
+
+## Inline JWT and PEM smoke
+
+token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+ssh known_hosts excerpt: ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHash...
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAxyz123abc456def789==
+ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop
+qrstuvwxyz0123456789==
+-----END RSA PRIVATE KEY-----
+
+## Misc body text
+
+The new feature flag rollout went smoothly across all three regions.
+We agreed in the retro to move flaky tests behind a per-suite quarantine
+tag instead of disabling them outright; CI cost is still trending down
+month-over-month but we want a clearer signal on which ones to fix first.
+
+Customer success reports two enterprise tickets blocked on the SSO migration
+work; the implementation team is targeting end-of-quarter for the cutover.
+Marketing is preparing a Q3 launch with three new pricing tiers - the comms
+plan is in the shared deck linked from the weekly digest.
+
+Engineering blog drafts due Friday: postmortem on the Aug 18 incident, a
+piece on our caching layer's design constraints, and the long-form on how
+we approached test selection for the monorepo. Tech debt prioritization is
+still open; sync to follow after the planning meeting on Tuesday.
+
+Sales escalations from last week have all been closed out. Two of them
+needed engineering involvement; the other six were billing follow-ups that
+ops handled directly. Net new ARR for the month is on track.
+
+Recruiting pipeline: 3 second-rounds, 1 onsite, 2 offers extended. We are
+still bottlenecked on senior platform candidates - referrals welcome.
+
+Performance review window opens next Monday. Calibration sessions are on the
+calendar; managers have the new rubric. HR will send a reminder email
+mid-week. No major changes from last cycle - same five competency axes plus
+the new collaboration signal added during the spring retro.
+
+Random non-secret tokens to challenge the prefilter without being secrets:
+abc123def456 short_token github-actions[bot] hello-world deployment-pipeline.
+Identifier strings used in URLs and slugs: kalix127, secret-stripper,
+launch-prep, cross-platform-ci, renovate-bot. None of these should match.
+
+Final line of prose to keep the corpus near the planned ~4 KB size; the
+bench is meant to exercise both the prefilter and the redact path under
+each preset, so a realistic mix of secret material plus innocuous content
+is what we want here.

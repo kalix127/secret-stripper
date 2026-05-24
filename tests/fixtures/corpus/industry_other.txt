@@ -1,0 +1,71 @@
+# industry_other corpus. Synthetic invalid placeholders only.
+
+# === Industry / automotive ===
+# expect: Vehicle Identification Number (VIN)
+# expect: Tesla Owner API Legacy Token
+VIN: 1HGCM82633A004352
+https://owner-api.teslamotors.com/oauth/token aaaaaaaa1111bbbb2222cccc3333dddd4444eeee5555ffff6666aaaa7777bbbb
+
+# === Industry / retail e-commerce ===
+# expect: WooCommerce Consumer Key
+# expect: WooCommerce Consumer Secret
+# expect: BigCommerce X-Auth-Token
+# expect: Klaviyo Private API Key
+# expect: Algolia Admin API Key
+ck_8d8b5e0ee1d65081f1270736db585dc62d3a3e88
+cs_c483bc1b79a0e81c15763cc990bdf8f2cb7f0020
+X-Auth-Token: abcdefghijklmnopqrstuvwxyz0123456
+pk_abc123def456ghi789jkl0mno123pqrst4
+X-Algolia-API-Key: 0123456789abcdef0123456789abcdef
+
+# === Industry / travel and GDS ===
+# expect: Sabre OAuth2 Access Token
+# expect: Travelport Universal API Credential
+# expect: Airline PNR Record Locator
+# expect: ICAO 24-bit Aircraft Address
+T1RKLAAaJxQTKLqJYKabcdef0123456789
+Universal API/uAPI1234567-12345
+PNR: XYZ7AB
+ICAO24: A12B3C
+
+# === Industry / aerospace and logistics identifiers ===
+# expect: ISO 6346 Container Number
+# EasyPost moved to the payments bucket (deduped); names follow payments.
+# expect: EasyPost API Token
+# expect: EasyPost Test API Token
+# expect: Shippo Live API Token
+# expect: Shippo Test API Token
+# expect: USPS Web Tools UserID
+CSQU3054383
+EZAKabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQR
+EZTKabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQR
+shippo_live_0123456789abcdef0123456789abcdef01234567
+shippo_test_0123456789abcdef0123456789abcdef01234567
+123ABCDE4567
+
+# === Industry / shipping carrier API keys ===
+# expect: FedEx OAuth Client ID
+# expect: DHL MyDHL REST API Key
+https://apis.fedex.com/oauth l7e6abcd1234ef567890123456789012
+https://api-eu.dhl.com/track aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789abcd
+
+# === Industry / energy and education ===
+# expect: Octopus Energy API Key
+# expect: Enphase Enlighten API Key
+# expect: Canvas LMS Access Token
+sk_live_aBcDeFgHiJkLmNoPqRsTuVwXyZ012345
+https://api.enphaseenergy.com/api/v4/systems?key=aBcDeFgHiJkLmNoPqRsTuVwXyZ012345
+1234~aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789abcdef
+
+# === Industry / vehicle, maritime, mail (Block 8a, checksum-gated) ===
+# All synthetic but check-digit valid.
+# expect: Vehicle Identification Number (NA check digit)
+1M8GDM9AXKP042788
+# expect: IMO Ship Number
+IMO 9074729
+# expect: USPS S10 Tracking
+RB123456785US
+# expect: UPS Tracking Number
+1Z999AA10123456784
+# expect: Amazon Order ID
+123-1234567-1234567

@@ -1,0 +1,37 @@
+# pii_contact corpus. Synthetic invalid placeholders only.
+
+# === Phone (international) ===
+# E.164 is CC-allow-list gated (Block 7a) and tolerates space/hyphen
+# group separators between the country code and the number.
+# expect: International Phone (E.164)
++15555550123
+# expect: International Phone (E.164)
++61 412 345 678
+
+# expect: Phone Number (UK)
++44 2079460958
+
+# expect: Phone Number (Italy)
++39 3331234567
+
+# expect: Phone Number (France)
++33 1 23 45 67 89
+
+# expect: Phone Number (Germany)
++49 301234567
+
+# expect: Phone Number (Spain)
++34 612345678
+
+# expect: Phone Number (Brazil)
++55 11 91234-5678
+
+# expect: Phone Number (India)
++91 9123456789
+
+# expect: Phone Number (US)
++1 415 555 0123
+
+# === Date of birth ===
+# expect: Date of Birth (labeled)
+dob: 1985-04-12

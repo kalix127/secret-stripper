@@ -1,0 +1,62 @@
+name: 🔍 Missing pattern
+description: Report a secret or PII format that Secret Stripper fails to redact
+title: "pattern: "
+labels: ["pattern-request"]
+assignees: ["kalix127"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this to report a secret/PII format that should be redacted but
+        isn't.
+
+        **Never paste a real secret.** Use a synthetic value that keeps the
+        same structure (right length, prefix, checksum shape) but is made up.
+        Generated/example keys from vendor docs are ideal.
+
+        **Security issue? Do NOT report it here.** See [SECURITY.md](../../SECURITY.md) for private reporting.
+  - type: textarea
+    id: secret-type
+    attributes:
+      label: Secret / PII type
+      description: What is it? e.g. "Stripe restricted key", "IBAN", "UK National Insurance number".
+      placeholder: Secret / PII type
+    validations:
+      required: true
+  - type: textarea
+    id: example-value
+    attributes:
+      label: Example value
+      description: A synthetic sample that should match but currently doesn't. Do not use a real secret.
+      placeholder: e.g. rk_test_0123456789abcdefABCDEF0123
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: why-match
+    attributes:
+      label: Why it should match
+      description: The format / issuer / spec, plus the region or locale if it is country-specific.
+      placeholder: Format, issuer, spec, region/locale
+    validations:
+      required: true
+  - type: input
+    id: reference
+    attributes:
+      label: Reference
+      description: Link to a vendor or format spec, if you have one.
+      placeholder: https://...
+    validations:
+      required: false
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Suggested category / severity
+      description: Critical = live credential, High = token, Medium = PII, Low = hint.
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: false

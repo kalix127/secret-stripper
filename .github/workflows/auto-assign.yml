@@ -1,0 +1,42 @@
+name: Auto-assign
+
+on:
+  pull_request:
+    types: [opened]
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const number = pr?.number ?? context.payload.issue?.number;
+            if (!number) return;
+            const { owner, repo } = context.repo;
+            await github.rest.issues.addAssignees({
+              owner,
+              repo,
+              issue_number: number,
+              assignees: ['kalix127'],
+            });
+            if (pr) {
+              try {
+                await github.rest.pulls.requestReviewers({
+                  owner,
+                  repo,
+                  pull_number: number,
+                  reviewers: ['kalix127'],
+                });
+              } catch (e) {
+                // GitHub rejects requesting review from the PR author.
+                core.info(`Skipping reviewer request: ${e.message}`);
+              }
+            }

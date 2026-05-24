@@ -1,0 +1,103 @@
+# pii_govid_intl corpus. Synthetic invalid placeholders only.
+
+# === India ===
+# expect: India PAN
+AAAPZ1234C
+
+# expect: India GSTIN
+22AAAAA0000A1Z5
+
+# expect: India IFSC
+HDFC0001234
+
+# expect: India Aadhaar (labeled)
+Aadhaar: 2234 5678 9012
+
+# === South America ===
+# expect: Brazil CPF
+123.456.789-09
+
+# expect: Brazil CNPJ
+00.623.904/0001-73
+12ABC34DE5FG26
+
+# expect: Chile RUT
+12.345.678-K
+
+# expect: Argentina CUIL/CUIT
+20-10563145-8
+
+# === Greater China ===
+# China Resident ID is checksum-gated (Block 6e); value is synthetic but
+# ISO 7064 MOD 11-2 valid.
+# expect: China Resident ID
+110101199003071233
+
+# expect: China Passport
+E12345678
+
+# expect: Taiwan National ID
+A123456789
+
+# === Korea ===
+# expect: Korea RRN
+991231-1234567
+
+# === South & Southeast Asia ===
+# expect: Pakistan CNIC
+35202-1234567-1
+
+# expect: Sri Lanka NIC (old)
+871234567V
+
+# expect: Singapore NRIC/FIN
+S0000001I
+
+# expect: Malaysia MyKad
+630916-01-1234
+
+# expect: Indonesia NPWP
+12.345.678.9-012.345
+
+# expect: Indonesia NIK (labeled)
+NIK: 3201011506800001
+
+# === Middle East ===
+# expect: UAE Emirates ID
+784-1990-1234567-1
+
+# === Africa ===
+# expect: Egypt National ID
+29001011234567
+
+# expect: Ghana Card PIN
+GHA-123456789-1
+
+# expect: South Africa ID (labeled)
+South Africa ID: 8001015009087
+
+# === Middle East (Block 6g, checksum-gated) ===
+# Turkey TCKN is keyword-free (two check digits); Israel Teudat Zehut is
+# label-gated (single mod-10 too FP-prone bare). Synthetic, checksum-valid.
+# expect: Turkey TC Kimlik No
+19191919190
+# expect: Israel Teudat Zehut (labeled)
+Israel ID: 039285754
+
+# === Oceania ===
+# expect: Australia TFN (labeled)
+TFN: 123 456 789
+
+# expect: New Zealand NHI
+ABC1234
+
+# === Passport MRZ TD3 (Block 4a, validator-gated) ===
+# expect: Passport MRZ (TD3)
+P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<
+L898902C36UTO7408122F1204159ZE184226B<<<<<10
+
+# === Canada Driver's License distinctive formats (Block 4b) ===
+# expect: Canada Driver's License (distinctive province format)
+A1234-5678901203
+Q123456789012
+ABCDE123456789

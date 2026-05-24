@@ -1,0 +1,79 @@
+# cloud_aws corpus. Synthetic invalid placeholders only.
+
+# === AWS / IAM and STS unique IDs ===
+# expect: AWS STS Temporary Access Key
+# expect: AWS STS Bearer Token Unique ID
+# expect: AWS Context-Specific Credential ID
+# expect: AWS IAM User Unique ID
+# expect: AWS EC2 Instance Profile ID
+# expect: AWS IAM Role Unique ID
+# expect: AWS Server Certificate ID
+# expect: AWS Public Key ID
+# expect: AWS IAM User Group ID
+# expect: AWS Managed Policy ID
+# expect: AWS Managed Policy Version ID
+Token ASIAIOSFODNN7EXAMPLE in text.
+Bearer ABIAIOSFODNN7EXAMPLE here.
+Context ACCAIOSFODNN7EXAMPLE here.
+User AIDAIOSFODNN7EXAMPLE here.
+Profile AIPAIOSFODNN7EXAMPLE here.
+Role AROAIOSFODNN7EXAMPLE here.
+Cert ASCAIOSFODNN7EXAMPLE here.
+Public APKAEIBAERJR2EXAMPLE here.
+Group AGPAIOSFODNN7EXAMPLE here.
+Policy ANPAIOSFODNN7EXAMPLE here.
+Version ANVAIOSFODNN7EXAMPLE here.
+
+# === AWS / ARNs ===
+# expect: AWS IAM ARN
+# expect: AWS STS Assumed-Role ARN
+# expect: AWS KMS Key ARN
+# expect: AWS Secrets Manager ARN
+# expect: AWS DynamoDB Stream ARN
+# expect: AWS IoT Thing ARN
+arn:aws:iam::123456789012:role/S3AccessExample
+arn:aws:sts::123456789012:assumed-role/AccountingRole/MaryExample
+arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012
+arn:aws:secretsmanager:us-east-1:123456789012:secret:prod/db-AbCdEf
+arn:aws:dynamodb:us-east-1:123456789012:table/Orders/stream/2024-01-01T00:00:00.000
+arn:aws:iot:us-east-1:123456789012:thing/sensor-01-example
+
+# === AWS / AppSync and Cognito ===
+# expect: AWS AppSync API Key
+# expect: AWS Cognito User Pool ID
+da2-abcdefghijklmnopqrstuvwxyz
+us-east-1_aBcDeFgHi
+
+# === AWS / S3 and CloudFront signed URLs ===
+# expect: AWS S3 Presigned URL
+# expect: AWS S3 Presigned URL (legacy v2)
+# expect: AWS CloudFront Signed URL
+https://bucket.s3.amazonaws.com/key?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+https://x/k?AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE&Expires=1700000000&Signature=abcDEF123%3D
+https://d.cloudfront.net/v?Expires=1700000000&Signature=aBcD~_-eFgH&Key-Pair-Id=APKAEIBAERJR2EXAMPLE
+
+# === AWS / EKS and SigV4 ===
+# expect: AWS EKS aws-auth Bearer Token
+# expect: AWS SigV4 Authorization Header
+k8s-aws-v1.aHR0cHM6Ly9zdHMuYW1hem9uYXdzExample
+AWS4-HMAC-SHA256 Credential=AKIAIOSFODNN7EXAMPLE/20240101/us-east-1/s3/aws4_request
+
+# === AWS / Marketplace and SP-API ===
+# expect: AWS MWS Auth Token
+# expect: AWS SP-API LWA Refresh Token
+# expect: AWS SP-API LWA Access Token
+amzn.mws.4ea38b7b-f563-7709-4bae-87aeaEXAMPLE
+Atzr|IwEBIAexampleRefreshTokenValue123
+Atza|IwEBIAexampleAccessTokenValue1234
+
+# === AWS / Bedrock ===
+# expect: AWS Bedrock API Key (long-lived)
+# expect: AWS Bedrock API Key (short-lived)
+ABSKabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789==
+bedrock-api-key-eyJexample.token-value
+
+# === AWS / SageMaker and RDS ===
+# expect: AWS SageMaker Notebook Token URL
+# expect: AWS RDS IAM Auth Connection String
+https://nb.notebook.us-east-1.sagemaker.aws/?token=abc123def456789
+mysql://appuser@mydb.cluster.rds.amazonaws.com:3306/app?plugin=AWSAuthenticationPlugin

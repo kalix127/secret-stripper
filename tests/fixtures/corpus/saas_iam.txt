@@ -1,0 +1,59 @@
+# saas_iam corpus. Synthetic invalid placeholders only.
+
+# === Okta ===
+# expect: Okta API Token (SSWS)
+Authorization: SSWS 00QCjAl4MlV-WPXM00000000HmjFx-vbGua00000
+
+# === Auth0 ===
+# expect: Auth0 Management API Token
+token eyJhbGciOiJSUzI1NiJ9.eyJ0audGVzdDEyMzQ1.c2lnbmF0dXJlMDAw here
+
+# === Duo Security ===
+# expect: Duo Security Integration Key
+# expect: Duo Security API Hostname
+ikey DIWJ8X6AEYOR5OMC6TQ1 paired
+host api-1a2b3c4d.duosecurity.com here
+
+# === 1Password ===
+# expect: 1Password Service Account Token
+# expect: 1Password Secret Reference URI
+token ops_eyJhbGci.cGF5bG9hZA.c2lnbmF0dXJl here
+ref op://Production/Stripe/credential here
+
+# === Bitwarden ===
+# expect: Bitwarden Secrets Manager Access Token
+token 0.fbf17ab1-90c0-4f88-9e2f-1234567890ab.SGI1eHl6QUJDREVGMTIzNDU2:UVdFcnR5dWlvcEFTREYxMjM0 here
+
+# === Microsoft Entra ID ===
+# expect: Microsoft Entra ID Refresh Token
+refresh 0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here
+
+# === YubiKey ===
+# expect: YubiKey OTP
+otp ccccccbtbhrvkucnlcbgnincjbfddddtknbnchhicvln here
+
+# === SAML ===
+# expect: SAML Certificate (PEM)
+-----BEGIN CERTIFICATE-----
+MIIDXjCCAkagAwIBAgIEXAMPLEcert0000000000000000000000000000
+-----END CERTIFICATE-----
+
+# === Salesforce ===
+# expect: Salesforce Session ID
+# expect: Salesforce Refresh Token
+sid 00D5g000004Wabcd!ARQAQHexampleSessionBodyValue00000000000000000000000000000000000000000000000000000 here
+refresh 5Aep861dlMxAL.LhVTuPRaExampleRefreshTokenValue00000 here
+
+# === Stytch / Ory / Ramp / Hex / Prefect (Block 3b) ===
+# expect: Stytch Secret
+# expect: Stytch Project ID
+# expect: Ory API Key
+# expect: Ramp API Credential
+# expect: Hex API Token
+# expect: Prefect API Key
+secret-test-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+project-live-abcdef01-abcd-abcd-abcd-abcdef012345
+ory_pat_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+ramp_sec_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+hxtp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+pnu_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

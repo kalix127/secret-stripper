@@ -1,0 +1,27 @@
+name: ✨ Feature request
+description: Suggest an idea or improvement
+title: "feat: "
+labels: ["feature"]
+assignees: ["kalix127"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. Lead with the problem you are trying to
+        solve, not the solution.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you unable to do today, and why does it matter?
+      placeholder: I can't ...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What you would like to happen.
+      placeholder: Proposed solution
+    validations:
+      required: true

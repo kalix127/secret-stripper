@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        if command -v secret-stripper >/dev/null 2>&1; then
+            secret-stripper install >/dev/null 2>&1 || true
+        fi
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        exit 0
+        ;;
+esac

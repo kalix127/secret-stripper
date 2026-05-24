@@ -1,0 +1,92 @@
+# cloud_other corpus. Synthetic invalid placeholders only.
+
+# === Oracle Cloud OCIDs ===
+# expect: Oracle Cloud Tenancy OCID
+# expect: Oracle Cloud User OCID
+# expect: Oracle Cloud Compartment OCID
+# expect: Oracle Cloud Vault/Secret OCID
+ocid1.tenancy.oc1..aaaaaaaaexampleexampleexampleexample
+ocid1.user.oc1..aaaaaaaaexampleexampleexampleexample
+ocid1.compartment.oc1..aaaaaaaaexampleexampleexampleexample
+ocid1.secret.oc1.iad.amaaaaaaexampleexampleexample
+
+# === Oracle Cloud endpoints ===
+# expect: Oracle Cloud Object Storage Endpoint
+objectstorage.us-ashburn-1.oraclecloud.com
+
+# === Alibaba Cloud ===
+# expect: Alibaba RAM AccessKey ID
+# expect: Alibaba OSS Signed URL
+LTAI5tABCDEFGhijkLMnopq
+https://bucket.oss-cn-hangzhou.aliyuncs.com/file.txt?OSSAccessKeyId=LTAI5tExampleKey&Signature=abc123def456&Expires=1700000000
+
+# === Tencent Cloud ===
+# expect: Tencent Cloud SecretId
+# expect: Tencent COS Signed URL
+AKIDz8krbsJ5yKBZQpn74WFkmLPx3EXAMPLE
+https://b.cos.ap-guangzhou.myqcloud.com/k?q-ak=AKIDexamplekey0&q-signature=0123456789abcdef0123456789abcdef01234567
+
+# === DigitalOcean ===
+# expect: DigitalOcean OAuth Refresh Token
+# expect: DigitalOcean OAuth Access Token
+# expect: DigitalOcean Spaces Access Key
+# expect: DigitalOcean Spaces Endpoint
+dor_v1_aabbccdd00112233445566778899aabbccddeeff00112233445566778899aabb
+doo_v1_aabbccdd00112233445566778899aabbccddeeff00112233445566778899aabb
+DO00ABCDEFGHIJKLMNOP
+nyc3.digitaloceanspaces.com
+
+# === Linode ===
+# expect: Linode Object Storage Endpoint
+us-east-1.linodeobjects.com
+
+# === Scaleway ===
+# expect: Scaleway Access Key
+SCWABCDEFGH123456789
+
+# === Exoscale ===
+# expect: Exoscale API Key
+EXOabcdef0123456789abcdef
+
+# === Fly.io ===
+# expect: Fly.io API Token (fo1)
+# expect: Fly.io API Token (macaroon)
+fo1_abcdefghijklmnopqrstuvwxyz0123456789ABCDEF
+FlyV1 fm2_lJPECAABCDEFexampletoken_payload-data
+
+# === Render ===
+# expect: Render API Key
+rnd_aBc123def456ghi789jkl0
+
+# === Heroku ===
+# expect: Heroku API Key (HRKU)
+HRKU-aBc123def456ghi789jkl0mn
+
+# === Northflank ===
+# expect: Northflank API Token
+nf_abcdefghij0123456789abcdefghij0123456789xyz
+
+# === Snowflake ===
+# expect: Snowflake Account Endpoint
+xy12345.us-east-1.snowflakecomputing.com
+
+# === Databricks ===
+# expect: Databricks PAT
+dapiabcdef0123456789abcdef0123456701
+
+# === PlanetScale ===
+# expect: PlanetScale Service Token
+# expect: PlanetScale OAuth Token
+pscale_tkn_abcdefghijklmnopqrstuvwxyz0123456789ABCD
+pscale_oauth_abcdefghijklmnopqrstuvwxyz0123
+
+# === Cloudflare R2 ===
+# expect: Cloudflare R2 S3 Endpoint
+abcdef0123456789.r2.cloudflarestorage.com
+
+# === Vercel / DigitalOcean GenAI (Block 3a) ===
+# expect: Vercel Access Token
+# expect: DigitalOcean GenAI Key
+vcp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+cl_BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+sk-do-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

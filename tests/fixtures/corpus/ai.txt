@@ -1,0 +1,66 @@
+# ai corpus. Synthetic invalid placeholders only.
+
+# === OpenAI ===
+# expect: OpenAI Service Account Key
+sk-svcacct-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: OpenAI Admin API Key
+sk-admin-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: OpenAI User Key (no project)
+sk-None-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: OpenAI Organization ID
+org-AAAAAAAAAAAAAAAAAAAAAAAA
+
+# === Anthropic ===
+# expect: Anthropic API Key
+sk-ant-api03-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: Anthropic Admin API Key
+sk-ant-admin01-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+# === Hosted model APIs ===
+# expect: Groq API Key
+gsk_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: Replicate API Token
+r8_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: HuggingFace User Access Token
+hf_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: HuggingFace Organization API Token
+api_org_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: OpenRouter API Key
+sk-or-v1-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+# expect: Perplexity API Key
+pplx-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: Fireworks AI API Key
+fw_AAAAAAAAAAAAAAAAAAAAAAAA
+# expect: Anyscale Endpoints API Key
+esecret_AAAAAAAAAAAAAAAAAAAA
+
+# === LangChain stack ===
+# expect: LangSmith API Key
+ls__aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+# expect: LangChain API Key
+lsv2_pt_AAAAAAAAAAAAAAAAAAAA
+# expect: Helicone API Key
+sk-helicone-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# expect: LlamaIndex Cloud Key
+llx-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+# === Speech ===
+# expect: Deepgram API Key
+dg_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+# === OpenAI API Key (T3BlbkFJ + classic 48) ===
+# expect: OpenAI API Key
+sk-proj-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaT3BlbkFJbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+sk-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV
+
+# === OpenAI Realtime / Firecrawl / LangSmith / Pinecone / ElevenLabs (Block 3a) ===
+# expect: OpenAI Realtime Ephemeral Key
+# expect: Firecrawl API Key
+# expect: LangSmith API Key
+# expect: Pinecone API Key
+# expect: ElevenLabs API Key
+ek_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+fc-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+lsv2_pt_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_aaaaaaaaaa
+pcsk_abcde_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+sk_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

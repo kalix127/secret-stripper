@@ -1,0 +1,73 @@
+# payments corpus. Synthetic invalid placeholders only.
+
+# === Stripe ===
+# expect: Stripe Restricted Key (live)
+# expect: Stripe Restricted Key (test)
+# expect: Stripe Org Secret Key
+# expect: Stripe Webhook Signing Secret
+# expect: Stripe OAuth Refresh Token
+Key rk_live_AAAAAAAAAAAAAAAAAAAAAAAA here.
+Key rk_test_AAAAAAAAAAAAAAAAAAAAAAAA here.
+Org sk_org_AAAAAAAAAAAAAAAAAAAA here.
+Hook whsec_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+Refresh rt_test_AAAAAAAAAAAAAAAAAAAAAAAA here.
+
+# === Braintree ===
+# expect: Braintree Access Token (production)
+# expect: Braintree Access Token (sandbox)
+Token access_token$production$abc123$0123456789abcdef0123456789abcdef here.
+Token access_token$sandbox$abc123$0123456789abcdef0123456789abcdef here.
+
+# === Square ===
+# expect: Square Access Token (legacy)
+# expect: Square OAuth Secret
+# expect: Square Personal Access Token
+Legacy sq0atp-AAAAAAAAAAAAAAAAAAAAAA here.
+Secret sq0csp-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+Pat EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+
+# === Adyen ===
+# expect: Adyen API Key
+Key AQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+
+# === Razorpay ===
+# expect: Razorpay Key ID
+Id rzp_test_AAAAAAAAAAAAAA here.
+
+# === Mollie ===
+# expect: Mollie API Key
+Key live_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+
+# === Klarna ===
+# expect: Klarna API Credentials
+Creds PK01234_abc:DEF123 here.
+
+# === Flutterwave ===
+# expect: Flutterwave Public Key
+# expect: Flutterwave Secret Key
+# expect: Flutterwave Encryption Key
+Pub FLWPUBK_TEST-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-X here.
+Sec FLWSECK_TEST-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-X here.
+Enc FLWSECK_TESTencryptionAAAAAAAAAAAA here.
+
+# === GoCardless ===
+# expect: GoCardless API Token
+Token sandbox_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+
+# === EasyPost ===
+# expect: EasyPost API Token
+# expect: EasyPost Test API Token
+Live EZAKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+Test EZTKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+
+# === Stripe ek_ / Paddle / Plaid / PayPal / Mercado Pago (Block 3c) ===
+# expect: Stripe Ephemeral Key
+# expect: Paddle API Key
+# expect: Plaid Access Token
+# expect: PayPal OAuth Access Token
+# expect: Mercado Pago Access Token
+ek_test_AAAAAAAAAAAAAAAAAAAAAAAA
+pdl_live_apikey_aaaaaaaaaaaaaaaaaaaaaaaaaa_BBBBBBBBBBBBBBBBBBBBBB_CCC
+access-sandbox-abcdef01-abcd-abcd-abcd-abcdef012345
+A21AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+APP_USR-1234567890-abcdef-AAAAAAAAAAAAAAAAAAAAAAAAA-123456

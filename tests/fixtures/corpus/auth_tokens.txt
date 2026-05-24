@@ -1,0 +1,93 @@
+# auth_tokens corpus. Synthetic invalid placeholders only.
+
+# === HTTP Basic Authorization Header ===
+# expect: HTTP Basic Authorization Header
+Authorization: Basic dXNlcm5hbWU6c3VwZXJzZWNyZXRwYXNzd29yZA==
+
+# === HTTP Token Authorization Header ===
+# expect: HTTP Token Authorization Header
+Authorization: Token abcdef0123456789abcdef0123456789ABCDEF
+
+# === curl Basic Auth Flag ===
+# expect: curl Basic Auth Flag
+curl -s https://api.example.com -u admin:notARealPassword
+
+# === OAuth2 client_secret Parameter ===
+# expect: OAuth2 client_secret Parameter
+client_secret=notARealClientSecretValue1234567890abcdef
+
+# === OAuth2 refresh_token Parameter ===
+# expect: OAuth2 refresh_token Parameter
+refresh_token=notARealRefreshToken_0123456789abcdef0123456789
+
+# === OAuth2 access_token Parameter ===
+# expect: OAuth2 access_token Parameter
+https://app.example.com/cb#access_token=notARealAccessToken0123456789abcdef
+
+# === OAuth2 client_assertion Parameter ===
+# expect: OAuth2 client_assertion Parameter
+client_assertion=eyJhbGciOiJSUzI1NiJ9.notARealAssertionBody0123456789
+
+# === OAuth2 grant_type password ===
+# expect: OAuth2 grant_type password
+grant_type=password&username=admin&password=notARealSecret
+
+# === OAuth2 Authorization Code Callback ===
+# expect: OAuth2 Authorization Code Callback
+https://app.example.com/callback?code=notARealAuthorizationCode01234567&state=xyz789
+
+# === OAuth2 Device Code ===
+# expect: OAuth2 Device Code
+device_code=notARealDeviceCode0123456789abcdef0123456789
+
+# === SAML Response (POST binding) ===
+# expect: SAML Response (POST binding)
+SAMLResponse=PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwExampleNotARealSamlResponseAAAA
+
+# === SAML Request (POST binding) ===
+# expect: SAML Request (POST binding)
+SAMLRequest=PD94bWwgdmVyc2lvbj0iMS4wIj8+ExampleNotARealSamlRequestPayloadAAAA
+
+# === JWT alg none ===
+# expect: JWT alg none
+eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0NTY3ODkwIn0.
+
+# === Session Cookie Header ===
+# expect: Session Cookie Header
+Cookie: sessionid=notARealSessionCookieValue0123456789abcdef
+
+# === JWE compact (5-segment) ===
+# expect: JWE Token
+eyJaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.cccccccccccccccc.dddddddddddddddddddddddddddddddddddddddddddddddddd.eeeeeeeeeeeeeeeeeeeeee
+
+# === Block 3e framework session cookies + OAuth/JOSE + headers ===
+# expect: Framework Session Cookie
+# expect: Flask Signed Session Cookie
+# expect: ASP.NET Core Auth Cookie
+# expect: Cognito Refresh Token Cookie
+# expect: ASP.NET ViewState
+# expect: PKCE code_verifier
+# expect: OAuth PAR request_uri
+# expect: OAuth CIBA auth_req_id
+# expect: OAuth Token Exchange Token
+# expect: OIDC id_token_hint
+# expect: DPoP Proof JWT
+# expect: GitLab PRIVATE-TOKEN Header
+# expect: Azure Functions Key Header
+# expect: API Key Auth Header
+# expect: Negotiate/NTLM Authorization Header
+sessionid=AbCdEf0123456789AbCdEf0123456789xyz
+session=eyJ1c2VyIjoxfQ.ZAbcDe.aBcDeFgHiJkLmNoPqRsTuVwXyZ012345
+.AspNetCore.Identity.Application=CfDJ8abcdefghijklmnopqrstuvwxyz0123456789
+CognitoIdentityServiceProvider.1abc2def3.userpool.refreshToken=eyJjdHkiOiabcdefghij
+__VIEWSTATE=/wEPDwUKMTYxNjI4OTYzMmRkabcdefghijklmnopqrstuvwxyz0123456789==
+&code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk
+request_uri=urn:ietf:params:oauth:request_uri:6esc_11ABCDEF
+?auth_req_id=1c266114-a1be-4252-8ad1-04986c5b9ac1xyz
+&subject_token=eyJhbGciaccesstokenvalue1234567890abc
+?id_token_hint=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9
+DPoP eyJ0eXAiOiJkcG9wK2p3dCabcdefghijklmnop1234567890
+PRIVATE-TOKEN: glpat-xxxxxxxxxxxxxxxxxxxx_abc
+x-functions-key: aBcDeF0123456789aBcDeF0123456789aBcDeF==
+X-Api-Key: 0123456789abcdef0123456789abcdef
+Authorization: NTLM TlRMTVNTUAABAAAAB4IIaaaaaaaaaaaa

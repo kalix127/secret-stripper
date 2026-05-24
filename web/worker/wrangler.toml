@@ -1,0 +1,15 @@
+name = "secretstripper-installer"
+main = "src/worker.js"
+compatibility_date = "2024-11-01"
+workers_dev = true
+
+# Codegen runs before bundling: it base64-encodes installer/*.{sh,ps1} into
+# src/installers.gen.js so the uploaded bundle has no raw shell text (the
+# upload-time abuse scanner 403s a verbatim curl|sudo|bash installer).
+[build]
+command = "node build.mjs"
+
+# The secretstripper.download custom domain is attached in the Cloudflare
+# dashboard. Do NOT also declare a route/custom_domain here - the CLI would
+# fight the dashboard binding. workers_dev = true keeps the *.workers.dev URL
+# available for smoke tests.

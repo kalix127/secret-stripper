@@ -1,0 +1,83 @@
+# infra corpus. Synthetic invalid placeholders only.
+
+# === HashiCorp Vault ===
+# expect: HashiCorp Vault Service Token
+hvs.CAESIExampleExampleExampleExampleExampleABCD
+
+# expect: HashiCorp Vault Batch Token
+hvb.AAAAAQIExampleExampleExampleExampleExampleAB
+
+# expect: HashiCorp Vault Recovery Token
+hvr.AAAAExampleExampleExampleExampleExampleABCD
+
+# expect: HashiCorp Vault Transit Ciphertext
+vault:v1:abcdABCD1234567890efghEXAMPLEEXAMPLE==
+
+# === Terraform / Pulumi ===
+# expect: HashiCorp Terraform Cloud Token
+abcdEFGH123456.atlasv1.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+# expect: Pulumi Access Token
+pul-0123456789abcdef0123456789abcdef01234567
+
+# === Ansible ===
+# expect: Ansible Vault Encrypted Blob
+$ANSIBLE_VAULT;1.1;AES256
+31326566313233346162636465663132
+
+# === Doppler ===
+# expect: Doppler Service Token
+dp.pt.abcdefghijklmnopqrstuvwxyz0123456789ABCDEF
+
+# expect: Doppler CLI Token
+dp.ct.abcdefghijklmnopqrstuvwxyz0123456789ABCDEF
+
+# expect: Doppler Service Account Token
+dp.sa.abcdefghijklmnopqrstuvwxyz0123456789ABCDEF
+
+# expect: Doppler Personal Token
+dp.pa.abcdefghijklmnopqrstuvwxyz0123456789ABCDEF
+
+# === Docker ===
+# expect: Docker Hub Personal Access Token
+dckr_pat_AAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+# === Proxmox ===
+# expect: Proxmox API Token
+root@pam!mytoken=00000000-0000-0000-0000-000000000000
+
+# === SettleMint ===
+# expect: SettleMint Personal Access Token
+sm_pat_abcdef0123456789ABCDEF
+
+# expect: SettleMint Application Access Token
+sm_aat_abcdef0123456789ABCDEF
+
+# expect: SettleMint Service Access Token
+sm_sat_abcdef0123456789ABCDEF
+
+# === Infisical / Akeyless ===
+# expect: Infisical Service Token
+st.abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOP.qrst
+
+# expect: Akeyless Token
+t-abcdefghijklmnopqrstuvwxyz0123456789ABCDEF
+
+# === 1Password ===
+# expect: 1Password Secret Key
+A3-ABCDEF-GHIJKL-MNOPQ-RSTUV-WXYZA-BCDEF
+
+# expect: 1Password Service Account Token
+ops_abcdefghijklmnopqrstuvwxyz0123456789ABCDEF
+
+# === age ===
+# expect: Age Secret Key
+AGE-SECRET-KEY-1GFPYYSJZGFPYYSJZGFPYYSJZGFPYYSJZGFPYYSJZGFPYYSJZGFPYYSJZGF
+
+# === Doppler / Bitwarden SM / Keeper (Block 3a) ===
+# expect: Doppler SCIM/Audit/Service-Account Token
+# expect: Bitwarden Secrets Manager Machine Token
+# expect: Keeper KSM One-Time Token
+dp.audit.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+0.12345678-1234-1234-1234-123456789abc.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:QUJDREVGQUJDREVGQUJDREVGQUJDREVG
+US:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

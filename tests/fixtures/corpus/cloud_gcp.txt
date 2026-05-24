@@ -1,0 +1,45 @@
+# cloud_gcp corpus. Synthetic invalid placeholders only.
+
+# === GCP / OAuth ===
+# expect: GCP OAuth Client ID
+# expect: GCP OAuth Refresh Token
+407408718192-abcdefghijklmnopqrstuvwxyz012345.apps.googleusercontent.com
+token 1//04abcDEFghiJKLmnoPQRstuvEXAMPLE here
+
+# === GCP / Service Account ===
+# expect: GCP Service Account client_email
+# expect: GCP Service Account JSON Type
+svc-bot@my-project-123.iam.gserviceaccount.com
+{ "type": "service_account", "project_id": "demo" }
+
+# === GCP / GCS HMAC ===
+# expect: GCS HMAC Access ID
+GOOG1EXAMPLEABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJ
+
+# === GCP / Firebase ===
+# expect: GCP FCM Legacy Server Key
+# expect: GCP Firebase Database URL
+AAAAxxxxxyz:APA91babcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJ
+https://my-app-demo.firebaseio.com
+
+# === GCP / reCAPTCHA ===
+# expect: GCP reCAPTCHA Key
+6LcExampleAAAAABBBBBCCCCCDDDDDEEEEEFFFFG
+
+# === GCP / Analytics and Tag Manager ===
+# expect: GCP GA4 Measurement ID
+# expect: GCP UA Legacy Property ID
+# expect: GCP Tag Manager Container ID
+G-ABC1234567
+UA-12345678-1
+GTM-ABC1234
+
+# === GCP / Cloud Run ===
+# expect: GCP Cloud Run Service URL
+https://svc-abc-uc.a.run.app
+
+# === Yandex Cloud ===
+# expect: Yandex Cloud API Key
+# expect: Yandex Cloud IAM Token
+AQVNexampleABCDEFGHIJKLMNOPQRSTUVWXYZ0123
+t1.9euExampleHeaderPartABCDEF.9euExamplePayloadPartABCDEF

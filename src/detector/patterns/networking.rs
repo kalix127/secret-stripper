@@ -1,0 +1,246 @@
+use super::{re, SecretPattern, Severity};
+
+pub fn patterns() -> Vec<SecretPattern> {
+    vec![
+        SecretPattern {
+            name: "Cisco Type 0 Cleartext Password",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"(?i)(?:enable\s+password|password|username\s+\S+\s+password)\s+0\s+\S+"),
+        },
+        SecretPattern {
+            name: "Cisco Type 7 Password",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"(?i)(?:password|key|secret)\s+7\s+[0-9A-Fa-f]{4,}\b"),
+        },
+        SecretPattern {
+            name: "Cisco Type 5 Secret",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"\$1\$[A-Za-z0-9./]{1,8}\$[A-Za-z0-9./]{22}\b"),
+        },
+        SecretPattern {
+            name: "Cisco Type 8 Secret",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"\$8\$[A-Za-z0-9./]{14}\$[A-Za-z0-9./]{43}\b"),
+        },
+        SecretPattern {
+            name: "Cisco Type 9 Secret",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"\$9\$[A-Za-z0-9./]{14}\$[A-Za-z0-9./]{43}\b"),
+        },
+        SecretPattern {
+            name: "Cisco ASA Encrypted Password",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"(?i)passwd\s+[A-Za-z0-9./]{13,}\s+encrypted"),
+        },
+        SecretPattern {
+            name: "Juniper Junos $9$ Secret",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"\$9\$[A-Za-z0-9./]{8,}"),
+        },
+        SecretPattern {
+            name: "Juniper Junos $8$ Secret",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"\$8\$[a-z0-9-]+\$[a-z0-9-]+\$\d+\$[A-Za-z0-9+/=]{8,}"),
+        },
+        SecretPattern {
+            name: "FortiGate Encrypted Password",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"(?i)set\s+(?:passwd|password)\s+ENC\s+[A-Za-z0-9+/=]{40,}"),
+        },
+        SecretPattern {
+            name: "FortiManager Access Token",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\baccess_token=[A-Za-z0-9]{30,}"),
+        },
+        SecretPattern {
+            name: "Palo Alto PAN-OS API Key",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\bLUFRP[A-Za-z0-9+/=]{60,}"),
+        },
+        SecretPattern {
+            name: "Cisco RADIUS/TACACS Key Type 7",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"(?i)(?:radius|tacacs)-server\s+key\s+7\s+[0-9A-Fa-f]{4,}"),
+        },
+        SecretPattern {
+            name: "Cisco RADIUS/TACACS Key Cleartext",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"(?i)(?:radius|tacacs)-server\s+key\s+0?\s*\S+"),
+        },
+        SecretPattern {
+            name: "SNMP Community String",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"(?i)snmp-server\s+community\s+\S+\s+(?:RO|RW)"),
+        },
+        SecretPattern {
+            name: "SNMPv3 USM Credentials",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(
+                r"(?i)snmp-server\s+user\s+\S+\s+\S+\s+v3\s+auth\s+(?:md5|sha)\s+\S+\s+priv\s+(?:des|aes\d*)\s+\S+",
+            ),
+        },
+        SecretPattern {
+            name: "FreeRADIUS Shared Secret",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r#"(?i)secret\s*=\s*(?:"[^"]{6,}"|\S{6,})"#),
+        },
+        SecretPattern {
+            name: "BIND rndc.key HMAC Secret",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r#"(?i)secret\s+"[A-Za-z0-9+/=]{20,}";"#),
+        },
+        SecretPattern {
+            name: "NS1 API Key",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"(?i)X-NSONE-Key:\s*[A-Za-z0-9]{20}"),
+        },
+        SecretPattern {
+            name: "Cloudflare User API Token",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\bcfut_[A-Za-z0-9]{48}\b"),
+        },
+        SecretPattern {
+            name: "Cloudflare Account API Token",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\bcfat_[A-Za-z0-9]{48}\b"),
+        },
+        SecretPattern {
+            name: "HAProxy Stats Auth",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"(?i)stats\s+auth\s+\S+:\S+"),
+        },
+        SecretPattern {
+            name: "HAProxy Insecure Password",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"(?i)user\s+\S+\s+insecure-password\s+\S+"),
+        },
+        SecretPattern {
+            name: "strongSwan IPsec PSK",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r#"(?i):\s*PSK\s+(?:"[^"]+"|0x[0-9a-fA-F]+|0s[A-Za-z0-9+/=]+)"#),
+        },
+        SecretPattern {
+            name: "WireGuard Private Key",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"(?i)PrivateKey\s*=\s*[A-Za-z0-9+/]{43}="),
+        },
+        SecretPattern {
+            name: "WireGuard Preshared Key",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"(?i)PresharedKey\s*=\s*[A-Za-z0-9+/]{43}="),
+        },
+        SecretPattern {
+            name: "WireGuard Public Key",
+            category: "Networking",
+            severity: Severity::Low,
+            regex: re(r"(?i)PublicKey\s*=\s*[A-Za-z0-9+/]{43}="),
+        },
+        SecretPattern {
+            name: "OpenVPN Static Key",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(
+                r"(?s)-----BEGIN OpenVPN Static key V1-----.*?-----END OpenVPN Static key V1-----",
+            ),
+        },
+        SecretPattern {
+            name: "Tailscale Auth Key",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\btskey-auth-[A-Za-z0-9]{8,}-[A-Za-z0-9]{20,}"),
+        },
+        SecretPattern {
+            name: "Tailscale API Key",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\btskey-api-[A-Za-z0-9]{8,}-[A-Za-z0-9]{20,}"),
+        },
+        SecretPattern {
+            name: "Tailscale OAuth Client Secret",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\btskey-client-[A-Za-z0-9]{8,}-[A-Za-z0-9]{20,}"),
+        },
+        SecretPattern {
+            name: "Splunk HEC Token",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(
+                r"(?i)Authorization:\s*Splunk\s+[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+            ),
+        },
+        SecretPattern {
+            name: "Sumo Logic Access ID",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r#"(?i)accessid['"]?\s*[:=]\s*['"]?su[A-Za-z0-9]{12}\b"#),
+        },
+        SecretPattern {
+            name: "OpenStack Keystone Fernet Token",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"\bgAAAAA[A-Za-z0-9_-]{100,}"),
+        },
+        SecretPattern {
+            name: "Cloudflare API Token (cfk_)",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\bcfk_[A-Za-z0-9]{48}\b"),
+        },
+        SecretPattern {
+            name: "NetBox v2 API Token",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\bnbt_[A-Za-z0-9]{20,}\.[A-Za-z0-9]{20,}\b"),
+        },
+        SecretPattern {
+            name: "NetBird Access Token",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\bnbp_[A-Za-z0-9]{40,}\b"),
+        },
+        SecretPattern {
+            name: "Defined Networking API Key",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\bdnkey-[a-z0-9=_-]{26}-[a-z0-9=_-]{52}\b"),
+        },
+        SecretPattern {
+            name: "Porkbun API Credential",
+            category: "Networking",
+            severity: Severity::High,
+            regex: re(r"\b(?:pk1|sk1)_[a-f0-9]{40,}\b"),
+        },
+        SecretPattern {
+            name: "Cloudflare Access Service Token ID",
+            category: "Networking",
+            severity: Severity::Critical,
+            regex: re(r"\b[0-9a-f]{32}\.access\b"),
+        },
+    ]
+}

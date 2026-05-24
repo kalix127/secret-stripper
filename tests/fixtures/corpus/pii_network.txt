@@ -1,0 +1,60 @@
+# pii_network corpus. Synthetic invalid placeholders only.
+
+# === IPv6 ===
+# expect: IPv6 Address
+2001:0db8:85a3:0000:0000:8a2e:0370:7334
+
+# expect: IPv6 Address (compressed)
+2001:db8::8a2e:370:7334
+
+# expect: IPv6 Address (link-local)
+fe80::1
+
+# === CIDR ===
+# expect: CIDR Block (IPv4)
+10.0.0.0/24
+
+# expect: CIDR Block (IPv6)
+2001:db8::/32
+
+# === UUID ===
+# expect: UUID/GUID
+f47ac10b-58cc-4372-a567-0e02b2c3d479
+0190b6e0-7c3a-7def-8abc-0e02b2c3d479
+017f22e2-79b0-7cc3-98c4-dc0c0c07398f
+
+# === Device IDs ===
+# IMEI/ICCID are Luhn-gated (Block 6f); values are Luhn-valid synthetics.
+# expect: IMEI
+imei: 490154203237518
+
+# expect: IMSI
+imsi: 310150123456789
+
+# expect: ICCID
+iccid: 8910120000000000007
+
+# expect: MEID
+meid: A100000049CD20
+
+# === Wi-Fi ===
+# expect: BSSID (labeled)
+bssid: 00:1A:2B:3C:4D:5E
+
+# === Device tokens / cookies / fingerprints (Block 8c) ===
+# expect: FCM Registration Token
+deviceTokenABCDEF:APA91bGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghij
+# expect: TLS SHA-256 Fingerprint
+01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF
+# expect: TLS SHA-1 Fingerprint
+A1:B2:C3:D4:E5:F6:07:18:29:3A:4B:5C:6D:7E:8F:90:A1:B2:C3:D4
+# expect: SSH Key Fingerprint (SHA256)
+SHA256:abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPq
+# expect: HPKP Pin (pin-sha256)
+pin-sha256="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPq="
+# expect: Google Analytics Cookie
+GA1.2.123456789.1234567890
+# expect: Facebook Pixel Cookie
+fb.1.1234567890123.1234567
+# expect: Adobe Experience Cloud ID
+0123456789ABCDEF01234567@AdobeOrg

@@ -1,0 +1,41 @@
+# iot corpus. Synthetic invalid placeholders only.
+
+# === IoT / AWS and Azure ===
+# expect: AWS IoT Core ATS Endpoint
+# expect: Azure IoT Hub Device Connection String
+# expect: Azure IoT Hub X.509 Connection String
+# expect: Azure DPS ID Scope
+# expect: Azure DPS Symmetric Key
+a1b2c3d4e5f6g7-ats.iot.eu-central-1.amazonaws.com
+HostName=myhub.azure-devices.net;DeviceId=mydevice;SharedAccessKey=QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVowMTIzNDU2
+HostName=myhub.azure-devices.net;DeviceId=mydevice;x509=true
+0ne00ABC1234567
+symmetricKey=cGFzc3dvcmRwYXNzd29yZHBhc3N3b3JkcGFzc3dvcmQ=
+
+# === IoT / TTN and LoRaWAN ===
+# expect: The Things Stack API Key
+# expect: LoRaWAN AppKey
+NNSXS.ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRST.ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRST
+AppKey=2B7E151628AED2A6ABF7158809CF4F3C
+
+# === IoT / Balena and Adafruit ===
+# expect: Balena Cloud Device API Key
+# expect: Adafruit IO Key
+deviceApiKey=006e82c27eabcd579ce310687b937cd5
+aio_AbCd1234EfGh5678IjKl9012MnOp
+
+# === IoT / Tuya ===
+# expect: Tuya Cloud Access ID
+# expect: Tuya Cloud Access Secret
+# expect: Tuya Device Local Key
+tuya_access_id=gv7tunzhwf3xs4qkkc8x
+tuya_access_secret=89aacf4e5c4f4e9b9b1234567890abcd
+local_key=3a9b50126fe47312
+
+# === IoT / RTSP camera URLs ===
+# expect: RTSP Credentials URL (Hikvision)
+# expect: RTSP Credentials URL (Dahua)
+# expect: RTSP Credentials URL (generic)
+rtsp://admin:hunter2@192.168.1.100:554/Streaming/Channels/101
+rtsp://admin:hunter2@192.168.1.100:554/cam/realmonitor?channel=1&subtype=0
+rtsp://user:pass@10.0.0.5:554/live

@@ -1,0 +1,14 @@
+# mnemonic corpus. Synthetic invalid placeholders only.
+# BIP39 wordlist words only; these are not real seeds (invalid checksums).
+
+# === BIP39 12-word seed phrase ===
+# expect: BIP39 mnemonic
+legal winner thank year wave sausage worth useful legal winner thank yellow
+
+# === BIP39 24-word seed phrase ===
+# expect: BIP39 mnemonic
+abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art
+
+# === BIP39 seed phrase in surrounding prose ===
+# expect: BIP39 mnemonic
+Recovery words: ozone drill grab fiber curtain grace pudding thank cruise elder eight picnic please keep them safe.

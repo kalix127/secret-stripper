@@ -1,0 +1,91 @@
+# banking corpus. Synthetic invalid placeholders only.
+
+# === SWIFT MT message envelope ===
+# expect: SWIFT MT Message Block Header
+{1:F01BANKBEBBAXXX0000000000}{2:I103BANKDEFFXXXXN}
+
+# === SWIFT MT transaction reference ===
+# expect: SWIFT Transaction Reference (:20: tag)
+:20:REF20240115ABC
+
+# === SWIFT MT ordering customer ===
+# expect: SWIFT Ordering Customer with IBAN (:50K:)
+:50K:/DE89370400440532013000
+
+# === SWIFT MT beneficiary customer ===
+# expect: SWIFT Beneficiary Customer with IBAN (:59:)
+:59:/GB29NWBK60161331926819
+
+# === SWIFT block-3 UETR carrier ===
+# expect: SWIFT Block-3 UETR Tag 121
+{121:eb6305c9-1f7f-4def-aa05-3a3f3f8d1234}
+
+# === SWIFT GPI UETR labeled ===
+# expect: SWIFT GPI UETR (labeled)
+UETR: eb6305c9-1f7f-4def-aa05-3a3f3f8d1234
+
+# === ISO 20022 message identifier ===
+# expect: ISO 20022 Message Identifier
+Schema pacs.008.001.10 in use here.
+
+# === Legal Entity Identifier labeled ===
+# expect: Legal Entity Identifier (labeled)
+LEI: 529900T8BM49AURSDO55
+
+# === Fedwire input message accountability data ===
+# expect: Fedwire IMAD (labeled)
+IMAD: 20240115F1QC07000001
+
+# === Fedwire output message accountability data ===
+# expect: Fedwire OMAD (labeled)
+OMAD: 20240115L1B707000002
+
+# === CHIPS universal identifier ===
+# expect: CHIPS UID (labeled)
+CHIPS UID: 000002
+
+# === Russia correspondent account ===
+# expect: Russia Correspondent Account
+30101810400000000225
+
+# === India IFSC ===
+# expect: India IFSC Code
+HDFC0000123
+
+# === India UPI virtual payment address ===
+# expect: India UPI VPA
+merchant.store-01@paytm
+
+# === Brazil PIX key labeled ===
+# expect: Brazil PIX Key (labeled)
+pix: 123.456.789-09
+
+# === Card track 1 magstripe ===
+# expect: Card Track 1 Magstripe
+%B4012888888881881^DOE/JOHN^2512101000000000000000?
+
+# === Card track 2 magstripe ===
+# expect: Card Track 2 Magstripe
+;4012888888881881=25121010000012345678?
+
+# === Card PAN with CVV labeled ===
+# expect: Card PAN with CVV (labeled)
+4012888888881881 CVV: 123
+
+# === FATCA global intermediary identification number ===
+# expect: FATCA GIIN
+98Q96B.00000.LE.250
+
+# === Open Banking request id labeled ===
+# expect: Open Banking X-Request-ID (labeled)
+X-Request-ID: 99391c7e-ad88-49ec-a2ad-99ddcb1f7721
+
+# === Bank account formats (Block 5) ===
+# expect: New Zealand Bank Account Number
+# expect: Mexico CLABE (labeled)
+# expect: Canada Bank Transit (labeled)
+# expect: Australia BSB (labeled)
+12-3456-7890123-00
+CLABE: 002010077777777771
+transit number: 12345
+BSB: 062-000

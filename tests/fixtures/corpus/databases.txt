@@ -1,0 +1,63 @@
+# databases corpus. Synthetic invalid placeholders only.
+
+# === Connection strings ===
+# expect: JDBC Connection String with Password
+# expect: ODBC/SQLServer Connection String
+# expect: AMQP Connection String with Credentials
+# expect: Kafka SASL Connection String
+jdbc:postgresql://db.example.com:5432/app?user=u&password=s3cretValue
+Server=tcp:sql.example.com,1433;Database=app;User Id=admin;Password=Hunter2Pass;
+amqps://guest:s3cretpw@rabbit.example.com:5671/vhost
+SASL_SSL://svcuser:s3cretpw@broker.example.com:9092
+
+# === Hosted DB URLs ===
+# expect: ClickHouse Cloud URL with Credentials
+# expect: Elasticsearch URL with Credentials
+# expect: MongoDB Atlas SRV Host
+https://admin:s3cretpw@abc-xyz.clickhouse.cloud:8443/
+https://elastic:s3cretpw@my-deploy.es.us-east-1.elastic-cloud.com:9243
+cluster0.ab1cd.mongodb.net
+
+# === Platform tokens ===
+# expect: Databricks OAuth Token
+# expect: PlanetScale Database Password
+# expect: Neon Project API Key
+# expect: CockroachDB Cloud API Key
+# expect: FaunaDB Server Key
+doseabcdefghijklmnopqrstuvwxyz0123456789AB
+pscale_pw_Aa0Bb1Cc2Dd3Ee4Ff5Gg6Hh7
+napi_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+CCDB1_abcdefgh12345678_ijklmnop87654321
+fnAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+
+# === More platform tokens ===
+# expect: Firebase Cloud Messaging Server Key (legacy)
+# expect: Firebase Database URL with Secret
+# expect: ClickHouse Cloud API Secret
+# expect: MotherDuck Service Token
+AAAAabcdefg:APA91bzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+https://my-app.firebaseio.com/users.json?auth=abcdEFGH1234567890
+4b1dA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v2W3x4Y5z6
+motherduck_token=eyJaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+# === Service tokens ===
+# expect: Convex Deploy Key
+# expect: Xata API Key
+# expect: Upstash Redis REST Token
+prod:my-app:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+xau_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+UPSTASH_REDIS_REST_TOKEN=A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1V2
+
+# === Supabase / PlanetScale / InfluxDB3 (Block 3a) ===
+# expect: Supabase Secret Key
+# expect: Supabase Publishable Key
+# expect: Supabase Service Key (legacy sbp_)
+# expect: PlanetScale Database Token
+# expect: PlanetScale OAuth Token
+# expect: InfluxDB v3 API Token
+sb_secret_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+sb_publishable_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+sbp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+pscale_tkn_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+pscale_oauth_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+apiv3_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

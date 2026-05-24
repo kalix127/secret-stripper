@@ -1,0 +1,20 @@
+# Soft-wrapped secrets: a single token a human (or a terminal) hard-wrapped
+# across one newline. No single pattern spans the break; the conservative
+# soft-wrap pass joins only newlines sitting strictly between secret-body
+# characters, so each of these must still be detected and round-trip clean.
+# All values are synthetic.
+
+# === AWS access key wrapped mid-token ===
+# expect: AWS Access Key ID
+AKIAIOSFOD
+NN7EXAMPLE
+
+# === GitHub PAT wrapped mid-token ===
+# expect: GitHub Personal Access Token
+ghp_AAAAAAAAAAAA
+BBBBBBBBBBBBBBBBBBBBBBBB
+
+# === Slack bot token wrapped mid-token ===
+# expect: Slack Bot Token
+xoxb-1234567890
+ABCDEFGHIJ

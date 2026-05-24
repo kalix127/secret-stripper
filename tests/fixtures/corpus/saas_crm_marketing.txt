@@ -1,0 +1,45 @@
+# saas_crm_marketing corpus. Synthetic invalid placeholders only.
+
+# === SaaS / CRM core tokens ===
+# expect: HubSpot Private App Token
+# expect: Salesforce Session ID Access Token
+# expect: Salesforce OAuth Refresh Token
+# expect: Salesforce Connected App Consumer Key
+# expect: Pipedrive API Token
+# expect: Close CRM API Key
+# expect: Zoho Self-Client API Key
+# expect: Zoho OAuth Refresh Token
+pat-na1-12345678-1234-1234-1234-123456789abc
+00D5g000004Wabcd!ARQAQHexampleSessionTokenBodyValue0000000000000000000000000000000000000000000000abcdef
+5Aep861dlMxALexampleRefreshTokenValue0000000000abcdef
+3MVG9exampleConsumerKeyValue0000000000000000000000000000abcdef
+pipedrive api_token=dcf558aac1ae4e8c4f849ba5e668430d8df9be12
+api_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789abcdef
+1000.abcdef0123456789abcdef0123456789.0123456789abcdef0123456789abcdef
+1000.AbCdEfGhIjKlMnOpQrStUvWxYz0123456789abcd.ZyXwVuTsRqPoNmLkJiHgFeDcBa9876543210wxyz
+
+# === SaaS / Marketing and CDP ===
+# expect: Marketo REST Endpoint URL
+# expect: Marketo Munchkin ID
+# expect: Mandrill API Key
+# expect: Klaviyo Private API Key
+# expect: Iterable API Key
+# expect: Braze REST API Key
+# expect: Webflow Site API Token
+# expect: Customer.io Track API Credentials
+# expect: ActiveCampaign API Credentials
+# expect: ConvertKit API Secret
+# expect: Drip API Token
+# expect: Zapier Catch Webhook URL
+https://123-ABC-456.mktorest.com/rest/v1/leads.json
+munchkin: 123-ABC-456
+mandrill api_key=AbCdEfGhIjKlMnOpQrStUv
+pk_abcdef0123456789abcdef0123456789AB
+iterable api_key=abcdef0123456789abcdef0123456789
+braze api_key=00000000-0000-0000-0000-000000000000
+webflow token=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+site_id=abcdefghij0123456789, api_key=0123456789abcdefghij
+https://acme.api-us1.com/api/3/contacts?api_key=abcdef0123456789abcdef0123456789abcdef01
+convertkit api_secret=AbCdEfGhIjKlMnOpQrStUv
+getdrip token=AbCdEfGhIjKlMnOpQrStUv
+https://hooks.zapier.com/hooks/catch/1234567/abcde/

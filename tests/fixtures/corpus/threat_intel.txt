@@ -1,0 +1,45 @@
+# threat_intel corpus. Synthetic invalid placeholders only.
+
+# === Threat Intel / distinctive-prefix tokens ===
+# expect: OpenCTI API Token (new format)
+# expect: GitGuardian API Key
+# expect: Snyk Service Account Token
+# expect: TheHive API Key
+flgrn_octi_tkn_a1B2c3D4e5F6g7H8i9J0kLmNoPqRsTuVwXyZ1234567890aBcDeFgHiJkLmNoPq
+ggsk_a1B2c3D4e5F6g7H8i9J0kLmNoPqRsTuVw
+snyk_st_3F2k9LpMnQrTsVwZbCdEfHjKmAeUiOoPqRsTvWxYz123456
+thehive_GPX20GUAQWwpqnhA6JpOwNGPMfWuxsX3
+
+# === Threat Intel / header-anchored tokens ===
+# expect: Snyk API Token
+# expect: Bugcrowd API Token
+# expect: HackerOne API Token
+# expect: MISP Authkey
+# expect: urlscan.io API Key
+Authorization: token 3fa85f64-5717-4562-b3fc-2c963f66afa6
+Authorization: Token gvnzkgmklo:gPYS2SMN3zJ-k-QAEvyMAcr-PqsGlA-vJ2voA7ysZ635
+X-H1-Token: acmeprog:Y2lUVTJOVXBxckxWNEdwVmFCM3Y4
+Authorization: a4PLf8QICdDdOmFjwdtSYqkCqn9CvN0VQt7mpUUf
+API-Key: 0196d976-07f6-7aae-8a57-aa019145f31c
+
+# === Threat Intel / vendor key headers ===
+# expect: MaxMind Account License Key
+# expect: AbuseIPDB API Key
+# expect: VirusTotal API Key
+# expect: AlienVault OTX API Key
+# expect: Shodan API Key
+# expect: SecurityTrails API Key
+123456:Mx9Lp_KjQrTsVnWzBcEfHaGdYuIoPqRsTvWxYzAb
+Key: 1ce4f7d9a8b3c6e2d5f0a9b7c4e8d1f3a2b5c8d7e6f9a0b3c2e5d8f1a4b7c0e3d6f9a2b5c8e1d4f7
+x-apikey: 9d0c3a4d3eebbe9b6f5b7e1c2a4d8e0f1234567890abcdef1234567890abcdef
+X-OTX-API-KEY: 8c4d6e2f1a9b3c5e7d8f0a2b4c6e8d0f1a3c5e7d9f1b3d5f7a9c1e3b5d7f9a1c
+SHODAN_API_KEY=Lk7Hp3VqRm9XwN2YzBcFs5JdGtAeQu8P
+APIKEY: Xy9L2mNpQrTsVwZbCdFgHjKmAeUiOoPq
+
+# === Threat Intel / scanner and breach keys ===
+# expect: Tenable.io API Keys Header
+# expect: SpyCloud API Key
+# expect: Lacework Underscore Secret
+X-ApiKeys: accessKey=0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9;secretKey=f9e8d7c6b5a4039281706152433f9e8d7c6b5a4039281706152433f9e8d7c6b5
+x-api-key: sc_2f7b9c1a4d6e8f0b3c5a7d9e1f2b4c6d8a0e2f4b
+{"secret":"_3F2k9LpMnQrTsVwZbCdEfHjKmAeUiOoPqRsTvWxYz1234567890"}

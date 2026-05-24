@@ -1,0 +1,263 @@
+# negatives corpus. Every section here MUST produce zero pattern matches and
+# zero deep findings. Dummy values that the regexes intentionally match
+# (AKIAIOSFODNN7EXAMPLE, 4111-1111-1111-1111, the canonical jwt.io token, the
+# nil UUID, RFC 5737/3849 documentation IPs, RFC 2606 example domains, etc.)
+# are deliberately NOT here: those are an allowlist concern, not false
+# positives, and live outside this change.
+
+# === English prose ===
+The quarterly review went well and the team agreed to ship the new onboarding
+flow once the remaining copy has been polished. Everyone felt the discussion
+was productive and the next steps were clear to all of us in the room.
+
+# === French prose ===
+Le rapport trimestriel a ete bien recu et l equipe a decide de livrer le
+nouveau parcours apres une derniere relecture du texte. La discussion fut
+utile et chacun est reparti avec une idee claire des prochaines etapes.
+
+# === Italian prose ===
+La revisione trimestrale e andata bene e il gruppo ha deciso di rilasciare il
+nuovo percorso dopo un ultimo controllo dei testi. La conversazione e stata
+utile e tutti hanno lasciato la sala con le idee chiare sui passi successivi.
+
+# === Spanish prose ===
+La revision trimestral salio bien y el equipo acordo lanzar el nuevo flujo
+despues de pulir los textos restantes. La conversacion resulto util y todos
+salimos de la sala con una idea clara de los siguientes pasos a seguir.
+
+# === Below-threshold key value pairs ===
+key=ab12
+code=12ab
+pin=4u7
+ratio=hi
+
+# === Out of context short numbers ===
+We sold 12345 widgets and shipped order 4567 the same afternoon.
+The recipe needs 350 grams of flour and about 12 minutes in the oven.
+
+# === Placeholder tokens ===
+Use xxx or *** as a stand-in here, and replace changeme before launch.
+The config still says your-api-key-here and TODO in a couple of spots.
+
+# === BIP39 wordlist run below the twelve-word threshold ===
+# Exactly 11 wordlist words, isolated by numeric-only tokens (which normalize
+# to empty and break the run), so the 12-word mnemonic floor is not reached.
+1234567
+legal winner thank year wave sausage worth useful legal winner thank
+7654321
+
+# === Vendor host without a token ===
+# The vendor-host heuristic needs both the anchor and an in-window token; a
+# bare host on its own must stay quiet.
+We host the public API at api.linode.com and keep the guide online for now.
+Send the X-Api-Key header but omit the value here while we draft the docs.
+
+# === Token without a vendor host ===
+# A bare opaque token with no host/label anchor nearby must stay quiet.
+A standalone marker abcdEFghijklMNopqrst sits in this note without any anchor.
+
+# === Vendor brand names in prose ===
+We evaluated Datadog, New Relic, Linode, Hetzner, Neon, Vultr, Scaleway and
+Postmark before settling on the current monitoring and hosting stack we run.
+
+# === Near-miss vendor token prefixes ===
+# Prefixes are present but the body is too short to clear the length floor, so
+# the backfilled SecretPatterns must not fire.
+The secret_value and lin_api_key notes are placeholders, not real tokens.
+A packagist_uat_ entry with no digest and an empty ntn_ marker stay quiet.
+
+# === Block 1 precision-fix near misses ===
+# Old over-broad Azure Entra shape (no offset-4 \dQ~ anchor) must stay quiet
+# now that the pattern was tightened.
+Bb2~Cc3Dd4Ee5Ff6Gg7Hh8Ii9Jj0Kk1Ll2Mm3N
+# ghs_ below the 36-char floor, ABSK below the 109-char floor, and an
+# Atlassian token missing the fixed 3xFfG segment are all non-tokens.
+ghs_tooShort and ABSKtooshort plus ATATT3plainTokenNoMagicSeg here
+# sk- followed by 47 chars (one short of the classic 48) and no T3BlbkFJ.
+sk-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRST
+
+# === Block 3a prefix near misses ===
+# Each prefix is present but the body is below its length floor, so the new
+# Block 3a SecretPatterns must not fire. Tokens are deliberately short to
+# avoid the broad low-severity catch-alls (MAC, Solana base58, card, phone).
+vcp_tiny, sk-do-x, dp.audit.x, console-x, fc-dead, sbp_abc, sk_abcdef,
+apiv3_x, lsv2_pt_x, pscale_tkn_x, ek_x and pcsk_a_b all stay quiet.
+
+# === Block 3b prefix near misses ===
+# Prefixes present, body below floor; short on purpose (see Block 3a note).
+secret-test-x, project-live-x, ory_pat_x, ramp_sec_x, hxtp_x, pnu_x,
+endr+x, sktsec_x, duffel_live_x, ddw_x and rh-api-x all stay quiet.
+
+# === Block 3c prefix near misses ===
+# Prefixes present, body below floor; short on purpose (see Block 3a note).
+cfk_x, nbt_x, nbp_x, dnkey-x, pk1_x, AuthKey_x.p8, sk_appl_x, ek_test_x,
+pdl_live_x, A21AA-x, APP_USR-x, KEYshort and a .access marker stay quiet.
+
+# === Block 3d hash family near misses ===
+# Tag/brace present but no payload, or below the length floor; short on
+# purpose (see Block 3a note).
+{SHA} and {CRYPT} bare, $keepass$ alone, WPA*0 fragment, $A$0$ short,
+pbkdf2_sha256$ with no salt, grub.pbkdf2.sha512. truncated stay quiet.
+
+# === Block 3e auth near misses ===
+# Cookie/param names present but value below floor; short on purpose. Header
+# labels are intentionally omitted: a pre-existing deep_scan heuristic
+# ("Generic API Key Header") legitimately flags label+nearby-token, which is
+# unrelated to these Block 3e regex patterns.
+sessionid=x, session=a.b.c, code_verifier=short, auth_req_id=x and a bare
+__VIEWSTATE=short marker all stay quiet.
+
+# === Block 4a MRZ / credential-file near misses ===
+# A TD3-shaped MRZ whose document-number check digit is wrong (6 -> 0):
+# the mrz_td3 validator must reject it, so nothing fires.
+P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<
+L898902C30UTO7408122F1204159ZE184226B<<<<<10
+# pgpass-shaped line with a trivially short password tail stays quiet.
+host.example.com:5432:db:user:x
+
+# === Block 4b driver-license near misses ===
+# Too short / wrong shape for the distinctive DL formats; numeric-only and
+# CA-short DL forms are intentionally kw-gated (deferred to Block 7), so a
+# CA-short A+7-digit string must NOT fire here.
+A1234567 and AB12345 and A1B2C3 all stay quiet.
+
+# === Block 5 IBAN checksum gate ===
+# IBAN-shaped but ISO 7064 MOD 97-10 invalid (NL prefix, not a per-country
+# fast-path): the iban_mod97 validator must reject it so nothing fires.
+NL00ABNAXYZ1A2B3C4D5E is not a valid IBAN here.
+
+# === Block 6a EU gov-ID near misses ===
+# Labels present but the number is too short to match the structure (and
+# checksum-invalid forms are unit-tested in validators::eu_govid_known_
+# vectors). Kept free of long digit runs to avoid the phone/card catch-alls.
+PESEL: 123, BSN: 45, RRN: 6 and NIR: 789 are too short to even match.
+
+# === Block 6b Spain DNI/NIE checksum gate ===
+# Label present but the control letter is wrong: spain_dni must reject it.
+# 8 digits only (no phone/card-length run) keeps the broad catch-alls quiet.
+DNI: 12345678A is not a valid Spanish DNI.
+
+# === Block 6c Brazil CNPJ/CPF checksum gate ===
+# 2026 alphanumeric CNPJ shape with wrong check digits: brazil_cnpj must
+# reject it. Alphanumeric (letters present) so no phone/card digit-run.
+12ABC34DE5FG99 is not a valid 2026 CNPJ.
+
+# === Block 6d EU checksum-gated near misses ===
+# Estonia/Czech/Romania are now keyword-free but checksum-gated; invalid
+# check-digit forms are unit-tested in validators::eu_govid_known_vectors.
+# These are structurally too short to match at all, with no long digit run
+# so the phone/card/CPF catch-alls also stay quiet.
+Isikukood 376, rodne cislo 12/34 and CNP 198 stay quiet.
+
+# === Block 6e China Resident ID checksum gate ===
+# 18-char RIC shape is now ISO 7064 MOD 11-2 gated (invalid check char
+# unit-tested in validators::eu_govid_known_vectors). This is too short
+# to match at all; no long digit run keeps the catch-alls quiet.
+China ID 11010519 is far too short to be a RIC.
+
+# === Block 6f SSN / IMEI / ICCID gates ===
+# SSN with an invalid area (000) -> us_ssn rejects it; the imei/iccid
+# labels carry sub-length bodies below the structural floor. Invalid
+# Luhn/structural forms are unit-tested in validators.
+SSN 000-12-3456 is invalid; imei 123 and iccid 89 are too short.
+
+# === Block 6g MEA gov-ID gates ===
+# Turkey TCKN is keyword-free + double-check-digit gated; Israel TZ is
+# label-gated. Both kept structurally too short here (no 11-digit run)
+# so neither fires; invalid-checksum forms are unit-tested in validators.
+TC kimlik 100 and teudat zehut 12 are too short to match.
+
+# === Block 6h NPI / DEA / NHS checksum gates ===
+# DEA/NHS/NPI are now checksum-gated (DEA: dea, NHS: nhs_mod11, NPI:
+# npi_80840/luhn). These are sub-length, no digit run; invalid-checksum
+# forms are unit-tested in validators.
+DEA AB123, NHS: 400 22 and NPI: 999 are too short to match.
+
+# === Block 7a E.164 country-code post-filter ===
+# Unassigned-CC and freephone E.164 are rejected by the e164 filter
+# (unit-tested in validators). Kept too short to match the regex at all
+# and free of long digit runs so the phone catch-alls also stay quiet.
+Call +999 or the freephone +800 line; neither is a personal number.
+
+# === Block 7b per-country phone NSN-length gates ===
+# Numbers too short for their country's national number length are
+# rejected by the per-country validators; kept short enough that the
+# generic E.164 and US 3-3-4 catch-alls also stay quiet.
+Call +44 12345 or +1 555 12 - both too short to be real numbers.
+
+# === Block 8a vehicle / maritime / mail checksum gates ===
+# VIN/IMO/container are checksum-gated (invalid forms unit-tested in
+# validators). These are structurally too short to match at all and
+# carry no long digit run, so the broad catch-alls also stay quiet.
+VIN 1HGCM, IMO 90747 and container CSQU30 are too short.
+
+# === Block 8b geo coordinate range gate ===
+# A geo: URI whose lat/lon are out of range is rejected by geo_coord
+# (in-range vectors are unit-tested in validators). No long digit run.
+geo:999.9,-999.9 is not a valid location on Earth.
+
+# === Block 8c device token / fingerprint near misses ===
+# Structured prefixes/suffixes present but bodies below the floor, so
+# the self-distinct device patterns must not fire.
+A fingerprint AB:CD, a SHA256: stub and a GA1.2.1 cookie all stay quiet.
+
+# === Block 8d genetic-file header near misses ===
+# Talking about the formats without the actual headers / sequence data
+# must not fire the biometric patterns.
+We discussed rsid columns and a FASTA export but pasted no data here.
+
+# === Block 11 do-NOT-redact allowlist ===
+# Anti-CSRF / OAuth-public / device-flow tokens and wire-signature
+# headers carry token-shaped values that would otherwise trip entropy
+# or generic patterns; the built-in allowlist must suppress all of them.
+csrftoken=Gx7Hk2pLqR9sT4vW8yZ1aB3cD5eF6gHjK
+X-CSRF-Token: aBcDeF0123456789aBcDeF0123456789aBcD
+__RequestVerificationToken=Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5MGFiY2RlZg
+The OAuth redirect carried state=Gx7Hk2pLqR9sT4vW8yZ1aB3cD5eF6gHjK
+and nonce=aB3cD5eF6gHjK7lM9nP1qR3sT5vW7yZ9 plus
+code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM here.
+Device flow shows user_code=WDJB-MJHT for the user to type.
+WWW-Authenticate: Bearer realm="api", error="invalid_token"
+X-Hub-Signature-256: sha256=7d38cdd689735b008b3c702edd92eea23791c5f6
+Stripe-Signature: t=1700000000,v1=5257a869e7ecebeda32affa62cdca3fa51cad7e77a0e56ff536d0ce8e108d8bd
+webhook-signature: v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE=
+
+# === Block 9/10 long-tail near misses ===
+# Prefixes/labels present but bodies below floor; ORCID/ISIN checksum
+# forms unit-tested in validators. No long digit run.
+An ORCID 0000-0002 stub, ISIN US03, an otpauth link with no secret,
+and HC1: alone all stay quiet.
+
+# === Soft-wrap guard: blank line between halves ===
+# A blank line leaves both newlines in place, so no AKIA... key forms.
+AKIAIOSFOD
+
+NN7EXAMPLE
+
+# === Soft-wrap guard: second line starts with a space ===
+# Leading space after the break means it is not one wrapped token.
+AKIAIOSFOD
+ NN7EXAMPLE
+
+# === Soft-wrap must not fuse ordinary wrapped prose ===
+# A hard-wrapped sentence has spaces / sentence punctuation at the break,
+# so it is never treated as one token.
+Please review the first paragraph of the report before the meeting
+and then forward the summary to the rest of the team afterwards.
+
+# === FP lock: bare 9-digit run is not a US passport ===
+# The old US Passport rule was a bare \b\d{9}\b - it redacted every order,
+# zip+4 and tracking number. It is now keyword-gated, so an unlabeled run
+# must stay quiet.
+Order 483920114 shipped, tracking ref 729104553 attached.
+
+# === FP lock: card shape without a valid Luhn checksum ===
+# Visa/Mastercard BIN shape but the Mod-10 check fails: the card patterns
+# are now luhn-gated, so a coincidental 16-digit run must not redact.
+Invoice 4111 1111 1111 1112 and ticket 5555 5555 5555 4445 are internal ids.
+A plain 16-digit order number 1234567890123456 is not a card.
+
+# === FP lock: 12-hex short hash is not a bare MAC ===
+# The separator-less 12-hex MAC form was removed - it redacted git short
+# SHAs / hex ids. A bare 12-hex run must now stay quiet.
+Build commit a1b2c3d4e5f6 deployed; blob id 0e02b2c3d479 cached.

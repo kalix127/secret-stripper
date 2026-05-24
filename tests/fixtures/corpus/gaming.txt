@@ -1,0 +1,31 @@
+# gaming corpus. Synthetic invalid placeholders only.
+
+# === Gaming / Steam ===
+# expect: Steam Web API Key
+# expect: Steam Trade URL Token
+webapi_key=B2F7A0873A0C4B5EBB2E3A0C4B5EBB2E
+https://steamcommunity.com/tradeoffer/new/?partner=46143802&token=KYworVTM
+
+# === Gaming / PlayFab ===
+# expect: PlayFab Developer Secret Key
+X-SecretKey: RTKBNXKOH9NGPC5S0AT0K9B1ZPDWIWKK67G54VYN6RKLB
+
+# === Gaming / Twitch ===
+# expect: Twitch Client ID
+# expect: Twitch Client Secret
+# expect: Twitch OAuth Token
+twitch_client_id=wbmytr93xzw8zbg0p1izqyzzc5mbiz
+twitch_client_secret=nyo51xcdrerl8z9m56w9w6wg012345
+oauth:rfx2uswqe8l4g1mkagrvg5tv0ks3ab
+
+# === Gaming / Roblox and Riot ===
+# expect: Roblox .ROBLOSECURITY Cookie
+# expect: Riot Games API Key
+_|WARNING:-DO-NOT-SHARE-THIS.ABC|_AAB1F6B0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF
+RGAPI-01234567-89ab-cdef-0123-456789abcdef
+
+# === Gaming / Epic and Xbox ===
+# expect: Epic Online Services Client ID
+# expect: Xbox Live XUID
+xyza7891AbCDe23fgHIJkL45MnopQR67stuVWX89
+xuid=2533274792395904

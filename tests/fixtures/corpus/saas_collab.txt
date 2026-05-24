@@ -1,0 +1,43 @@
+# saas_collab corpus. Synthetic invalid placeholders only.
+
+# === ClickUp ===
+# expect: ClickUp Personal Access Token
+token pk_12345678_AB1CD2EF3GH4IJ5KL6MN7OP8QR9ST0UV1WXYZ here
+
+# === Airtable ===
+# expect: Airtable Personal Access Token
+# expect: Airtable Legacy API Key
+pat patmrNEbCdEfGhIj0.aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789ABCDEFGHIJKLMNOPQRSTUVWX0000 here
+legacy keyAbCdEfGhIjKlMn here
+
+# === Contentful ===
+# expect: Contentful Content Management PAT
+token CFPAT-aBcDeFg1234567890aBcDeFg1234567890aBcD0000 here
+
+# === Dropbox ===
+# expect: Dropbox Short-Lived OAuth Token
+token sl.AucTz_J1sX05bhNr8Pp-AucTz_J1sX05bhNr8Pp-AucTz_J1sX05bhNr8Pp-AucTz_J1sX05bhNr8Pp-AucTz_J1sX05bhNr8Pp-AucTz_J1sX05bhNr8Pp-AucTz_J1sX05bhN here
+
+# === ServiceNow ===
+# expect: ServiceNow Instance URL
+instance https://acme.service-now.com here
+
+# === Zendesk ===
+# expect: Zendesk API Token (email/token)
+basic agent@acme.com/token:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here
+
+# === Notion ===
+# expect: Notion Integration Token
+token secret_AbCdEf0123456789AbCdEf0123456789AbCdEf012345 here
+
+# === Linear ===
+# expect: Linear API Key
+key lin_api_AbCdEf0123456789AbCdEf0123456789AbCdEf012345 here
+
+# === Asana ===
+# expect: Asana Personal Access Token
+token 1/1234567890123456:AbCdEf0123456789AbCdEf0123456789 here
+
+# === Dropbox Refresh Token (Block 3b) ===
+# expect: Dropbox Refresh Token
+abcdef01234AAAAAAAAAAZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ

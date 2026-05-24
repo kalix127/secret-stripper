@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  quality:
+    name: Lint & Test (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxcb1-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev \
+            libxkbcommon-dev \
+            libdbus-1-dev
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry and target dir
+        uses: Swatinem/rust-cache@v2
+
+      - name: Format check
+        run: make fmt-check
+
+      - name: Clippy
+        run: make lint
+
+      - name: Test
+        run: make test
+
+  corpus:
+    name: Secret Corpus & Property Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and target dir
+        uses: Swatinem/rust-cache@v2
+
+      - name: Pattern coverage summary
+        run: |
+          buckets=$(ls src/detector/patterns/*.rs | grep -v '/legacy.rs$' | wc -l)
+          patterns=$(grep -roh 'SecretPattern {' src/detector/patterns/*.rs | wc -l)
+          expects=$(grep -rh '^# expect:' tests/fixtures/corpus/*.txt | grep -v '(none)' | wc -l)
+          echo "pattern modules: $((buckets + 1)) | SecretPattern entries: $patterns | corpus expect lines: $expects"
+
+      - name: Corpus + property tests
+        run: cargo test --test corpus --test proptest_entropy --test proptest_deep_scan -- --nocapture
+
+  windows-cross-check:
+    name: Windows Cross-Compile Check (Ubuntu, mingw)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install MinGW toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+          components: clippy
+
+      - name: Cache cargo registry and target dir
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: windows-cross
+
+      - name: Cargo check (windows-gnu)
+        run: cargo check --target x86_64-pc-windows-gnu --all-targets
+
+      - name: Clippy (windows-gnu)
+        run: cargo clippy --target x86_64-pc-windows-gnu --all-targets -- -D warnings

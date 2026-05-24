@@ -1,0 +1,37 @@
+# mobile corpus. Synthetic invalid placeholders only.
+
+# === Mobile / Apple ===
+# expect: Apple Pay Merchant ID
+# expect: Apple App-Specific Password
+# expect: Apple iOS UDID (2018+)
+merchant.com.example.payments
+Password abcd-efgh-ijkl-mnop here.
+Device 00008030-001A2B3C4D5E6F70 here.
+
+# === Mobile / Google Play and Android ===
+# expect: AdMob Ad Unit ID
+# expect: AdMob App ID
+# expect: Google Sign-In OAuth Client ID
+ca-app-pub-1234567890123456/1234567890
+ca-app-pub-1234567890123456~1234567890
+123456-abcdefghijklmnopqrstuvwxyz012345.apps.googleusercontent.com
+
+# === Mobile / Branch.io ===
+# expect: Branch.io Live Key
+# expect: Branch.io Test Key
+# expect: Branch.io Live Secret
+# expect: Branch.io Test Secret
+key_live_hkDytPACtipny3N9XmnbZlapBDdj4WIL
+key_test_kkXVdpHEAPJgnMnUaQyabghcAEpwm9P3
+secret_live_aB7cD8eF9gH0iJ1kL2mN3oP4qR5sT6uV
+secret_test_aB7cD8eF9gH0iJ1kL2mN3oP4qR5sT6uV
+
+# === Mobile / Attribution and push ===
+# expect: OneSignal REST API Key
+# expect: Kochava App GUID
+# expect: Expo Push Token
+# expect: Expo EAS Access Token
+os_v2_app_aaaaaaaaaaaaaaaaaaaaaaaa
+kokochavabingodemo1347526e855c56f11
+ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
+expo_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123

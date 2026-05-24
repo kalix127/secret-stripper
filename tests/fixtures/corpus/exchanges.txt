@@ -1,0 +1,55 @@
+# exchanges corpus. Synthetic invalid placeholders only.
+
+# === Centralized Exchange API keys ===
+
+# expect: Coinbase CDP API Key Name
+key organizations/abcd1234-ab12-cd34-ef56-abcdef123456/apiKeys/bcde5678-12ab-34cd-56ef-fedcba654321 here.
+
+# expect: Coinbase Pro API Secret
+coinbase_api_secret = "FRsgtq09rR7OFtKj9BGhyOGS3u5vtYEdiIBO9kD8NFtRX7w7LeJDSrX6cq1D8zmQmGkWFjksuhBvKOAWJohQAB=="
+
+# expect: Kraken API Key
+KRAKEN_API_KEY=ABCDefgh1234567890MNopqrstUVwxyz0123456789ABCDefghIJklmn
+
+# expect: Binance API Key
+binance_api_key: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+
+# expect: Gemini API Key (master)
+key master-1Aabcdef1234567890ab here.
+
+# expect: Gemini API Key (account)
+key account-1Aabcdef1234567890ab here.
+
+# expect: KuCoin Passphrase
+kucoin_passphrase = "MyKuCoinPass123"
+
+# expect: OKX Secret Key
+OKX_SECRET=22582BD0CFF14C41EDBF1AB98506286D
+
+# expect: Bybit API Secret
+bybit_api_secret: BYBITSECRETabcdef0123456789abcdef012
+
+# expect: Bitget API Key
+bitget_api_key = "AbCdEf0123456789AbCdEf0123456789"
+
+# expect: Gate.io API Key
+gateio_api_key: 1234567890abcdef1234567890abcdef
+
+# expect: MEXC API Key
+key mx0vglHabcdef0123456789ABCDEF01234 here.
+
+# expect: HTX (Huobi) API Key
+htx_api_key = "12345678-abcdef12-12345678-abcdef"
+
+# expect: Crypto.com Exchange API Key
+crypto_com_api_key: AbCdEf0123456789GhIjKlMn
+
+# expect: dYdX StarkEx Stark Key
+dydx_stark_key = "0x0123abc456def789012345678901234567890123456789012345678901234567"
+
+# expect: Fireblocks API Key
+fireblocks_api_key: f5b4c3d2-1e0a-4b9c-8d7e-6f5a4b3c2d1e
+
+# === Robinhood Crypto (Block 3b) ===
+# expect: Robinhood Crypto API Key
+rh-api-abcdef01-abcd-abcd-abcd-abcdef012345

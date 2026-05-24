@@ -1,0 +1,100 @@
+# hashes corpus. Synthetic invalid placeholders only.
+
+# === bcrypt ===
+# expect: bcrypt Hash
+$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy
+
+# === md5crypt ===
+# expect: md5crypt Hash
+$1$abcdefgh$abcdefghijklmnopqrstuv
+
+# === sha256crypt ===
+# expect: sha256crypt Hash
+$5$rounds=5000$saltsaltsalt1234$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ
+
+# === sha512crypt ===
+# expect: sha512crypt Hash
+$6$rounds=5000$saltsaltsalt1234$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwx
+
+# === yescrypt ===
+# expect: yescrypt Hash
+$y$j9T$saltsaltsalt$abcdefghijklmnopqrstuvwxyz0123456789
+
+# === gost-yescrypt ===
+# expect: gost-yescrypt Hash
+$gy$j9T$saltsaltsalt$abcdefghijklmnopqrstuvwxyz0123456789
+
+# === argon2 ===
+# expect: argon2 Hash
+$argon2id$v=19$m=65536,t=3,p=4$c2FsdHNhbHQ$abcdEFGHijklMNOPqrstUVWXyz0123456789
+
+# === scrypt ===
+# expect: scrypt Hash
+$scrypt$ln=14,r=8,p=1$c2FsdHNhbHQ=$aGFzaGhhc2hoYXNo=
+
+# === PBKDF2 ===
+# expect: PBKDF2 Hash
+$pbkdf2-sha256$29000$c2FsdHNhbHQ=$aGFzaGhhc2hoYXNo=
+
+# === phpass ===
+# expect: phpass Hash
+$P$abcdefghijklmnopqrstuvwxyz01234
+
+# === phpBB3 ===
+# expect: phpBB3 Hash
+$H$abcdefghijklmnopqrstuvwxyz01234
+
+# === Drupal7 ===
+# expect: Drupal7 Hash
+$S$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+# === Apache apr1 ===
+# expect: Apache apr1 Hash
+$apr1$abcdefgh$abcdefghijklmnopqrstuv
+
+# === Kerberos ===
+# expect: Kerberos krb5 Hash
+$krb5asrep$23$user@DOMAIN.LOCAL:abcdef0123456789abcdef0123456789
+
+# === NTLM labeled ===
+# expect: NTLM Hash (labeled)
+NTLM: aad3b435b51404eeaad3b435b51404ee
+
+# === pwdump ===
+# expect: pwdump Hash Line
+admin:500:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+
+# === htpasswd ===
+# expect: htpasswd Hash Line
+deployuser:$apr1$abcdefgh$abcdefghijklmnopqrstuv
+
+# === shadow ===
+# expect: shadow Hash Line
+root:$6$saltsalt$abcdefghijklmnopqrstuvwxyzABCDEF:18000:0:99999:7:::
+
+# === Block 3d $tag$ / {SCHEME} hash family ===
+# expect: LDAP/Dovecot {SCHEME} Hash
+# expect: PostgreSQL SCRAM-SHA-256 Verifier
+# expect: WPA Handshake Hash
+# expect: Application $tag$ Hash
+# expect: Cisco Type 8/9 Hash
+# expect: GRUB2 PBKDF2 Hash
+# expect: MySQL caching_sha2 Hash
+# expect: Django PBKDF2 Password Hash
+# expect: Werkzeug PBKDF2 Hash
+# expect: NetNTLMv2 Hash
+# expect: MySQL Native Password Hash
+# expect: bcrypt Hash
+{SSHA512}AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+{ARGON2ID}$argon2id$v=19$m=65536,t=3,p=4$YWJjZHNhbHQ$ZWZnaGhhc2g
+SCRAM-SHA-256$4096:AAAAAAAAAAAAAAAAAAAAAAAA$BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+WPA*02*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa*bbbbbbbbbbbb*cccccccccccc*0
+$keepass$*1*60000*0*aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa*bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+$8$mNVU82akcUaWE1xx$dpYzgABe9ZGc4mNcQRfWv2V6FZ3RNF2RDXIDDXORfa
+grub.pbkdf2.sha512.10000.ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB.CDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCDCD
+$A$005$xxxxxxxxxxxxxxxxxxxxyyyyyyyyyyyyyyyyyyyyyyyyy
+pbkdf2_sha256$390000$abcsalt12$ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+pbkdf2:sha256:600000$abcsalt$dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+admin::CORP:1122334455667788:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+*A4B6157319038724E3560894F7F932C8886EBFCF
+$2c$12$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

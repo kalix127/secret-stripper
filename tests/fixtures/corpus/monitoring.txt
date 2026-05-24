@@ -1,0 +1,121 @@
+# monitoring corpus. Synthetic invalid placeholders only.
+
+# === Datadog ===
+# expect: Datadog API Key
+# expect: Datadog Application Key
+DD_API_KEY=0123456789abcdef0123456789abcdef
+DD_APP_KEY=0123456789abcdef0123456789abcdef01234567
+
+# === New Relic ===
+# expect: New Relic User API Key
+# expect: New Relic Admin Key (legacy)
+# expect: New Relic Insert Key
+# expect: New Relic Browser API Token
+# expect: New Relic License Key
+NRAK-AAAAAAAAAAAAAAAAAAAAAAAAAAA
+NRAA-AAAAAAAAAAAAAAAAAAAAAAAAAAA
+NRII-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+NRJS-AAAAAAAAAAAAAAAAAAA
+0123456789abcdef0123456789abcdef0123NRAL
+
+# === Sentry ===
+# expect: Sentry Org Auth Token
+# expect: Sentry User Auth Token
+# expect: Sentry DSN
+sntrys_eyJpYXQiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+sntryu_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+https://0123456789abcdef0123456789abcdef@o123456.ingest.sentry.io/7654321
+
+# === Honeycomb ===
+# expect: Honeycomb API Key
+hcaic_0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijkl
+
+# === Grafana ===
+# expect: Grafana API Key (legacy)
+# expect: Grafana Cloud API Token
+# expect: Grafana Service Account Token
+eyJrIjoiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+glc_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+glsa_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_0123abcd
+
+# === SumoLogic ===
+# expect: Sumologic Access ID
+# expect: Sumologic Access Key
+sumo_access_id=suABCDEFGHIJKL
+sumo_access_key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+# === Dynatrace ===
+# expect: Dynatrace API Token
+dt0c01.ABCDEFGHIJKLMNOPQRSTUVWX.ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ01
+
+# === PagerDuty ===
+# expect: PagerDuty API Token
+Authorization: Token token=abcdEFGH1234ijklMNOP
+
+# === Opsgenie ===
+# expect: Opsgenie API Key
+opsgenie_api_key=01234567-89ab-cdef-0123-456789abcdef
+
+# === Rollbar ===
+# expect: Rollbar Access Token
+rollbar_access_token=0123456789abcdef0123456789abcdef
+
+# === Bugsnag ===
+# expect: Bugsnag API Key
+bugsnag_api_key=0123456789abcdef0123456789abcdef
+
+# === Mixpanel ===
+# expect: Mixpanel API Secret
+mixpanel_secret=0123456789abcdef0123456789abcdef
+
+# === Amplitude ===
+# expect: Amplitude API Key
+amplitude_api_key=0123456789abcdef0123456789abcdef
+
+# === Segment ===
+# expect: Segment Write Key
+segment_write_key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+# === PostHog ===
+# expect: PostHog Project API Key
+# expect: PostHog Personal API Key
+phc_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+phx_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+# === Statsig ===
+# expect: Statsig Server Secret
+secret-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+# === LaunchDarkly ===
+# expect: LaunchDarkly SDK Key
+# expect: LaunchDarkly Mobile Key
+# expect: LaunchDarkly Access Token (Personal)
+sdk-01234567-89ab-cdef-0123-456789abcdef
+mob-01234567-89ab-cdef-0123-456789abcdef
+api-01234567-89ab-cdef-0123-456789abcdef
+
+# === GrowthBook ===
+# expect: GrowthBook API Key
+secret_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+# === LogRocket ===
+# expect: LogRocket App ID
+logrocket_app_id=abcdef/myapp
+
+# === FullStory ===
+# expect: FullStory Org ID
+fullstory_org_id=ABCDEFGH1234
+
+# === Datadog (modern non-hex charset) ===
+# expect: Datadog API Key
+# expect: Datadog Application Key
+DD_API_KEY=AbCdEf0123456789AbCdEf0123456789
+DD_APP_KEY=Ab-Cd-Ef-0123456789-AbCdEf0123456789-012
+
+# === Dynatrace / Datadog RUM / Statsig (Block 3a) ===
+# expect: Dynatrace Platform Token
+# expect: Datadog RUM Client Token
+# expect: Statsig Console Key
+dt0s16.ABCD1234.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+pub00000000000000000000000000000000
+console-AAAAAAAAAAAAAAAAAAAAAAAA

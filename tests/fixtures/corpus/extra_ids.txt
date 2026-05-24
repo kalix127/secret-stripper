@@ -1,0 +1,18 @@
+# extra_ids corpus (Blocks 9/10 self-distinct + checksummed). Synthetic.
+
+# === Long-tail identifiers ===
+# ORCID/ISIN are checksum-gated; the rest are self-distinct.
+# expect: ORCID iD
+0000-0002-1825-0097
+# expect: ISIN
+US0378331005
+# expect: otpauth TOTP/HOTP URI
+otpauth://totp/ACME:alice@acme.com?secret=JBSWY3DPEHPK3PXP&issuer=ACME
+# expect: BitLocker Recovery Key
+123456-234567-345678-456789-567890-678901-789012-890123
+# expect: EU Digital COVID Certificate
+HC1:NCFOXN%TSMAHN-H3ZSUZK+.V0ET9X8KESABCDEFGHIJKLMNOPQRSTUVWXYZ012345
+# expect: Credential-bearing URL
+https://admin:S3cr3tP4ss@db.internal.example/health
+# expect: Classification Banner
+TOP SECRET//SI//NOFORN

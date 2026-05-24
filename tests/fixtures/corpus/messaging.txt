@@ -1,0 +1,71 @@
+# messaging corpus. Synthetic invalid placeholders only.
+
+# === Slack ===
+# expect: Slack User Token
+# expect: Slack Workflow Token
+# expect: Slack Configuration Access Token
+# expect: Slack Configuration Refresh Token
+# expect: Slack Legacy Token
+# expect: Slack Legacy Workspace Token
+# expect: Slack Session Cookie Token
+User xoxp-1234567890-0987654321-1122334455-0123456789abcdef0123456789abcdef here.
+Workflow xwfp-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+ConfigAccess xoxe.xoxb-1-AAAAAAAAAAAA here.
+ConfigRefresh xoxe-1-AAAAAAAAAAAA here.
+Legacy xoxs-AAAAAAAAAAAAAAAAAAAA here.
+Workspace xoxa-AAAAAAAAAAAAAAAAAAAA here.
+Cookie xoxc-AAAAAAAAAAAAAAAAAAAA here.
+
+# === Discord / Teams ===
+# expect: Discord Webhook URL
+# expect: Microsoft Teams Webhook URL
+Hook https://discord.com/api/webhooks/123456789/AAAAAAAAAAAAAAAAAAAA here.
+Teams https://example.webhook.office.com/webhookb2/0123abcd-0000@4567ef00-1111/IncomingWebhook/0123456789abcdef/2222aaaa-3333 here.
+
+# === Twilio ===
+# expect: Twilio Account SID
+Sid ACa1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6 here.
+
+# === SendGrid / Mailgun ===
+# expect: SendGrid API Key
+# expect: Mailgun Private API Key
+# expect: Mailgun Public Validation Key
+Sg SG.AAAAAAAAAAAAAAAAAAAAAA.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+Mg key-0123456789abcdef0123456789abcdef here.
+Pub pubkey-0123456789abcdef0123456789abcdef here.
+
+# === Mailchimp / Brevo / Resend ===
+# expect: Mailchimp API Key
+# expect: Brevo API Key
+# expect: Resend API Key
+Mc 0123456789abcdef0123456789abcdef-us10 here.
+Brevo xkeysib-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef-AAAAAAAAAAAAAAAA here.
+Resend re_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+
+# === Meta / WhatsApp ===
+# expect: WhatsApp Business Cloud API Token
+# expect: Meta Graph API Page Access Token
+Wa EAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB here.
+Page EAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+
+# === Plivo / Pushbullet ===
+# expect: Plivo Auth ID
+# expect: Pushbullet Access Token
+Plivo MAABCDEFGHIJKLMNOPQR here.
+Pb o.0123456789abcdef0123456789abcdef here.
+
+# === Project tools ===
+# expect: Linear API Key
+# expect: Notion API Token
+# expect: Notion Internal Integration Token (legacy)
+# expect: Intercom API Token
+# expect: Asana Personal Access Token
+Lin lin_api_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+Notion ntn_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+NotionLegacy secret_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+Intercom dG9rOg==AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
+Asana 1/12345:0123456789abcdef0123456789abcdef here.
+
+# === Telnyx (Block 3c) ===
+# expect: Telnyx API Key
+KEYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

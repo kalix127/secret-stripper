@@ -1,0 +1,61 @@
+# crypto_keys corpus. Synthetic invalid placeholders only.
+
+# === SSH Public Key (RSA) ===
+# expect: SSH Public Key (RSA)
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDZ0Pl4cQwExampleNotARealKeyAAAAAAAABBBBBBBBCCCCCCCCDDDDDDDDEEEEEEEEFFFFFFFFGGGGGGGG== user@host
+
+# === SSH Public Key (Ed25519) ===
+# expect: SSH Public Key (Ed25519)
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleNotARealEd25519PublicKeyAAAABBBBCCCCDDDDEEEEFFFF user@host
+
+# === SSH Public Key (DSS) ===
+# expect: SSH Public Key (DSS)
+ssh-dss AAAAB3NzaC1kc3MAAAEBExampleNotARealDssPublicKeyAAAAAAAABBBBBBBBCCCCCCCCDDDDDDDDEEEEEEEE== user@host
+
+# === SSH Public Key (ECDSA) ===
+# expect: SSH Public Key (ECDSA)
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAExampleNotARealEcdsaPublicKeyAAAABBBBCCCCDDDDEEEE= user@host
+
+# === SSH Public Key (FIDO Ed25519) ===
+# expect: SSH Public Key (FIDO Ed25519)
+sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tExampleNotARealFidoKeyAAAABBBB= user@host
+
+# === SSH Public Key (FIDO ECDSA) ===
+# expect: SSH Public Key (FIDO ECDSA)
+sk-ecdsa-sha2-nistp256@openssh.com AAAAInNrLWVjZHNhLXNoYTItbmlzdHAyNTZAb3BlbnNzaExampleAAAA= user@host
+
+# === SSH2 Public Key Block ===
+# expect: SSH2 Public Key Block
+---- BEGIN SSH2 PUBLIC KEY ----
+
+# === PuTTY Private Key File ===
+# expect: PuTTY Private Key File
+PuTTY-User-Key-File-3: ssh-ed25519
+
+# === Encrypted PKCS#8 Private Key ===
+# expect: Encrypted PKCS#8 Private Key
+-----BEGIN ENCRYPTED PRIVATE KEY-----
+
+# === PEM Encrypted Header ===
+# expect: PEM Encrypted Header
+Proc-Type: 4,ENCRYPTED
+
+# === OpenVPN Static Key ===
+# expect: OpenVPN Static Key
+-----BEGIN OpenVPN Static key V1-----
+
+# === X.509 Certificate ===
+# expect: X.509 Certificate
+-----BEGIN CERTIFICATE-----
+
+# === X.509 Certificate Request ===
+# expect: X.509 Certificate Request
+-----BEGIN CERTIFICATE REQUEST-----
+
+# === PGP Public Key Block ===
+# expect: PGP Public Key Block
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+# === DKIM Private Key Record ===
+# expect: DKIM Private Key Record
+v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQExampleNotARealDkimPublicKeyAAAABBBBCCCCDDDDEEEEFFFFGGGGHHHH

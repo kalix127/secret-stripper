@@ -1,0 +1,14 @@
+# pii_biometric corpus. Synthetic genetic-file headers (Block 8d).
+
+# === Genetic file headers ===
+# expect: Consumer DNA Raw Data Header
+rsid chromosome position genotype
+# expect: VCF Genomic File Header
+vcf header line: ##fileformat=VCFv4.2
+# expect: FASTQ Sequence Record
+@SEQ_ID_001
+GATTTGGGGTTCAAAGCAGTAT
++
+# expect: FASTA Sequence Record
+>seq1 sample description
+MKTAYIAKQRQISFVKSHFSRQLEERLGLIE

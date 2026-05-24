@@ -1,0 +1,76 @@
+# pii_govid_eu corpus. Synthetic invalid placeholders only.
+
+# === UK & Ireland ===
+# expect: UK NINO
+AB123456C
+# expect: UK NHS Number (labeled)
+NHS: 943 476 5919
+# expect: Ireland PPSN
+1234567FA
+# expect: Ireland Eircode
+D02 X285
+
+# === France ===
+# expect: France NIR (labeled)
+NIR: 185037511600123
+
+# === Germany ===
+# expect: Germany Steuer-ID (labeled)
+Steuer-ID: 12345678901
+# expect: Germany Steuernummer
+21/815/08150
+
+# === Italy ===
+# expect: Italy Codice Fiscale
+MRTMTT91D08F205J
+# expect: Italy Partita IVA (labeled)
+Partita IVA: IT12345678901
+# expect: Italy Passport
+YA1234567
+
+# === Spain ===
+# expect: Spain DNI/NIE (labeled)
+DNI: 12345678Z
+DNI: X1234567L
+# expect: Spain NIE
+X1234567L
+# expect: Spain NIF (business)
+A58818501
+# expect: Spain SSN
+28/12345678/90
+
+# === Netherlands & Belgium ===
+# expect: Netherlands BSN (labeled)
+BSN: 111222333
+# expect: Belgium Rijksregisternummer
+85.07.30-033.28
+
+# === Nordic ===
+# expect: Sweden Personnummer
+811228-9874
+# expect: Finland HETU
+131052-308T
+
+# === Baltics & Central / Eastern Europe ===
+# Estonia/Czech/Romania are checksum-gated (Block 6d); values are
+# synthetic but ISO/national check-digit valid.
+# expect: Estonia Isikukood
+37605030299
+# expect: Poland PESEL (labeled)
+PESEL: 02070803628
+# expect: Czech/Slovak Rodne cislo
+900101/1239
+# expect: Romania CNP
+1800101221144
+# expect: Russia SNILS
+112-233-445 95
+
+# === EU national IDs, label+checksum gated (Block 6a) ===
+# expect: Poland PESEL (labeled)
+# expect: Netherlands BSN (labeled)
+# expect: Belgium Rijksregisternummer (labeled)
+# expect: France NIR (labeled)
+PESEL: 44051401359
+BSN: 123456782
+RRN: 93051822361
+NIR 1 84 01 76 451 089 64

@@ -1,0 +1,26 @@
+# pii_geo corpus. Synthetic coordinates (San Francisco), check-valid.
+
+# === Geolocation (Block 8b) ===
+# Decimal-pair patterns are range-validated (lat +/-90, lon +/-180).
+# expect: Geo URI
+geo:37.786971,-122.399677
+# expect: ISO 6709 Coordinates
++37.786971-122.399677/
+# expect: Map Link Coordinates
+https://www.google.com/maps/@37.786971,-122.399677,15z
+# expect: KML Coordinates
+<coordinates>-122.399677,37.786971</coordinates>
+# expect: GeoJSON Point
+{"type": "Point", "coordinates": [-122.399677, 37.786971]}
+# expect: what3words Address
+///filled.count.soap
+# expect: Plus Code (Open Location Code)
+849VCWC8+R9
+# expect: WKT Geometry
+POINT (-122.399677 37.786971)
+# expect: GPX Track Point
+<trkpt lat="37.786971" lon="-122.399677">
+# expect: EXIF GPS Tag
+GPSLatitude: 37 deg 47 min 13.10 sec N
+# expect: NMEA Sentence
+$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47

@@ -1,0 +1,61 @@
+# structured corpus. Synthetic invalid placeholders only.
+
+# === dotenv ===
+# expect: Dotenv Secret Line
+STRIPE_SECRET_KEY=sk_live_aaaaaaaaaaaaaaaaaaaa
+
+# === npmrc ===
+# expect: npmrc Auth Token
+//registry.npmjs.org/:_authToken=npmTokenPlaceholderaaaaaaaa
+
+# === pypirc ===
+# expect: pypirc Password
+password = pypiPasswordPlaceholder
+
+# === git-credentials ===
+# expect: Git Credentials URL
+https://gituser:gitPasswordPlaceholder@github.com
+
+# === netrc ===
+# expect: Netrc Credentials
+machine api.example.com login deployuser password netrcSecretPlaceholder
+
+# === docker config ===
+# expect: Docker Config Auth
+"auth": "ZGVwbG95dXNlcjpkZXBsb3lwYXNz"
+
+# === sidekiq url ===
+# expect: Sidekiq Sensitive URL
+https://user:sidekiqPwdPlaceholder@gems.contribsys.com
+
+# === bundler enterprise ===
+# expect: Bundler Enterprise Creds
+BUNDLE_ENTERPRISE__CONTRIBSYS__COM=user:bundlerPwdPlaceholder
+
+# === nuget ===
+# expect: NuGet ClearText Password
+<add key="ClearTextPassword" value="nugetCleartextPlaceholder" />
+
+# === oauth2 access_token ===
+# expect: OAuth2 access_token Param
+https://app.example.com/cb#access_token=accessTokenPlaceholderaaaaaaaa
+
+# === oauth2 id_token ===
+# expect: OAuth2 id_token Param
+https://app.example.com/cb#id_token=eyJhbGciOiJSUzI1NiIsImtpZCI6abc
+
+# === oauth2 code ===
+# expect: OAuth2 code Param
+https://app.example.com/cb?code=authorizationCodePlaceholderaaaa
+
+# === Password-manager exports + credential files (Block 4a) ===
+# expect: Password Manager Export Header
+# expect: 1Password 1PIF Concealed Field
+# expect: PostgreSQL .pgpass Line
+# expect: AWS Secret Access Key (labeled)
+# expect: kubeconfig client-key-data
+name,url,username,password
+{"k":"concealed","v":"hunter2P@ss"}
+db.example.com:5432:mydb:appuser:S3cretPassw0rd
+aws_secret_access_key = wJalrXUtnFEMIaaaaaaaaaaaaaaaaaaaaaaaaaaa
+client-key-data: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789

@@ -1,0 +1,142 @@
+# vendor_host corpus. Synthetic invalid placeholders only. Each section pairs
+# a vendor host (or labelled-key prefix) with a bare-shape token in the same
+# window, which the vendor-host deep-scan heuristic flags. Tokens are crafted
+# low-entropy so the base64 deep scanner does not also engage.
+
+# === Azure Cognitive Services ===
+# expect: Azure Cognitive Services Key (host-gated)
+endpoint westus.cognitiveservices.azure.com path speech v1
+0123456789abcdef0123456789abcdef
+
+# === Linode ===
+# expect: Linode API Token (host-gated)
+GET https://api.linode.com/v4/account profile
+0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+# === Neon ===
+# expect: Neon Database Token (host-gated)
+dashboard console.neon.tech project main
+abcdef0123456789abcdef0123456789abcdef0123
+
+# === Hetzner ===
+# expect: Hetzner Cloud Token (host-gated)
+base url api.hetzner.cloud v1 servers
+abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
+
+# === Cloudant ===
+# expect: Cloudant Credential (host-gated)
+service host acme.cloudant.com database orders
+abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
+
+# === Cloudflare R2 ===
+# expect: Cloudflare R2 Access Key (host-gated)
+bucket abc123.r2.cloudflarestorage.com region auto
+0123456789abcdef0123456789abcdef01234567
+
+# === Generic API Key header ===
+# expect: Generic API Key Header
+X-Api-Key: abcdef0123456789abcd
+
+# === Authorization Bearer ===
+# expect: Authorization Bearer Token
+Authorization: Bearer abcdef0123456789abcdef01
+
+# === Authorization Basic ===
+# expect: Authorization Basic Credential
+Authorization: Basic YWxhZGRpbjpvcGVuc2VzYW1l
+
+# === Datadog ===
+# expect: Datadog API Key (host-gated)
+DD-API-KEY: 0123456789abcdef0123456789abcdef
+
+# === New Relic ===
+# expect: New Relic License Key (host-gated)
+X-License-Key: 0123456789abcdef0123456789abcdef0123abcd
+
+# === Civo ===
+# expect: Civo API Key (host-gated)
+base url api.civo.com v2 instances
+abcdef0123456789abcdef0123456789abcdef0123
+
+# === Railway ===
+# expect: Railway Token (host-gated)
+graphql backboard.railway.app v2
+12345678-1234-4123-8123-1234567890ab
+
+# === Porter ===
+# expect: Porter Token (host-gated)
+dashboard.porter.run cluster prod
+abcdef0123456789abcdef0123456789abcdef0123
+
+# === Vultr ===
+# expect: Vultr API Key (host-gated)
+base url api.vultr.com v2 account
+ABCDEF0123456789ABCDEF0123456789ABCD
+
+# === OVH ===
+# expect: OVH Application Secret (host-gated)
+endpoint eu.api.ovh.com 1.0 me
+abcdef0123456789abcdef0123456789
+
+# === Postmark ===
+# expect: Postmark Server Token (host-gated)
+X-Postmark-Server-Token: 12345678-1234-4123-8123-1234567890ab
+
+# === Scaleway ===
+# expect: Scaleway Secret Key (host-gated)
+base url api.scaleway.com instance v1
+12345678-1234-4123-8123-1234567890ab
+
+# === Maven Central ===
+# expect: Maven Central Token (host-gated)
+repository url https://central.sonatype.com api
+ABCDEFabcdef0123ABCDEFabcdef0123ABCDEFabcdef0123
+
+# === Hex.pm ===
+# expect: Hex.pm API Key (host-gated)
+publish target hex.pm registry release
+abcdef0123456789abcdef0123456789abcdef0123
+
+# === UpCloud ===
+# expect: UpCloud API Credential (host-gated)
+base url api.upcloud.com 1.3 account
+YWxhZGRpbjpvcGVuc2VzYW1lYWxhZGRpbg==
+
+# === Coolify ===
+# expect: Coolify API Token (labeled)
+coolify_api_token=abcdef0123456789abcdef0123456789abcdef0123
+
+# === Criteo ===
+# expect: Criteo API Token (host-gated)
+endpoint api.criteo.com 2024 marketing
+ABCDEFabcdef0123ABCDEFabcdef0123ABCDEFabcdef0123
+
+# === Xandr ===
+# expect: Xandr Token (host-gated)
+endpoint api.adnxs.com v3 auth
+abcdef0123456789abcdef0123456789abcdef0123
+
+# === Twilio (SID-anchored auth token) ===
+# expect: Twilio Auth Token (paired with Account SID)
+ACabcdef0123456789abcdef0123456789
+0123456789abcdef0123456789abcdef
+
+# === Wiz ===
+# expect: Wiz Service Account Token (host-gated)
+endpoint auth.app.wiz.io oauth token
+abcdef0123456789ABCDEF0123456789abcdef0123456789
+
+# === Censys ===
+# expect: Censys API Secret (host-gated)
+base url search.censys.io api v2
+abcdef0123456789abcdef0123456789abcd
+
+# === Tatum ===
+# expect: Tatum API Key (host-gated)
+endpoint api.tatum.io v3 blockchain
+12345678-1234-4123-8123-1234567890ab
+
+# === Particle ===
+# expect: Particle Access Token (host-gated)
+base url api.particle.io v1 devices
+abcdef0123456789abcdef0123456789abcdef01
