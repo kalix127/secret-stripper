@@ -1,8 +1,8 @@
-<img src="https://raw.githubusercontent.com/kalix127/secret-stripper/main/.github/assets/secret-stripper.png" width="100%">
-
 <p align="center">
   <a href="https://github.com/kalix127/secret-stripper"><img src="https://shieldcn.dev/group/badge/platform-Linux_%7C_macOS_%7C_Windows-blue+crates/secret-stripper+github/license/kalix127/secret-stripper.svg?variant=secondary" alt="status"></a>
 </p>
+
+<img src="https://raw.githubusercontent.com/kalix127/secret-stripper/main/.github/assets/banner.gif" width="100%">
 
 **A small Rust CLI that strips secrets from your clipboard on demand. Bind a hotkey, highlight text, press the chord - the clipboard holds a redacted version. Normal Ctrl+C / Ctrl+V is never intercepted.**
 
