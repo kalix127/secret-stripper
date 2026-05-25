@@ -34,14 +34,10 @@ iwr -useb https://secretstripper.download/install.ps1 | iex
 cargo install secret-stripper && secret-stripper init
 ```
 
-**From source (git clone):**
+**From source (git):**
 
 ```bash
-git clone https://github.com/kalix127/secret-stripper.git
-cd secret-stripper
-cargo build --release
-sudo cp target/release/secret-stripper /usr/local/bin/
-secret-stripper init
+cargo install --git https://github.com/kalix127/secret-stripper.git --locked && secret-stripper init
 ```
 
 Highlight text and press your default chord (Linux `Ctrl+Alt+X` / macOS `Cmd+Shift+C` / Windows `Ctrl+Alt+C`). The clipboard now holds a redacted version - paste with `Ctrl+V` (`Cmd+V` on macOS). On Linux the PRIMARY selection is read directly, so you can skip the `Ctrl+C`.
