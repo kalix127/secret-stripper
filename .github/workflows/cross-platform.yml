@@ -32,7 +32,6 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request_review'
        && github.event.review.state == 'approved')
-    environment: cross-platform
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -57,20 +56,19 @@ jobs:
             libxkbcommon-dev \
             libdbus-1-dev
 
-      - name: Install make on Windows
-        if: runner.os == 'Windows'
-        run: choco install make --no-progress -y
-
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo registry and target dir
         uses: Swatinem/rust-cache@v2
 
+      - name: Install just
+        uses: taiki-e/install-action@just
+
       - name: Build (smoke)
-        run: make build
+        run: just build
 
       - name: Functional integration tests (filesystem seam)
         env:
           SECRET_STRIPPER_NO_OS_SIDE_EFFECTS: "1"
-        run: make test-fs
+        run: just test-fs
