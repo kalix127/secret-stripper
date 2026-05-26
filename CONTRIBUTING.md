@@ -4,27 +4,36 @@ Thanks for your interest in Secret Stripper. This file covers the day-to-day mec
 
 ## Local development
 
-The repo ships a `Makefile` that wraps the cargo commands CI runs. The single most useful target is:
+The repo uses [`just`](https://github.com/casey/just) as the task runner. Install it once:
 
 ```bash
-make ci
+cargo install just
 ```
 
-That runs `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test --all-targets`. For every pull request CI runs `make ci` plus the secret corpus on Linux, and a Windows cross-compile check via mingw. The full 3-OS build + filesystem integration matrix (`make build` + `make test-fs` on Ubuntu / macOS / Windows) runs on `pull_request_review: approved`, post-merge to `main`, or manual `workflow_dispatch`. A green local `make ci` is the cheapest way to know your PR will pass the per-PR gates.
+The single most useful recipe is:
 
-Other targets:
+```bash
+just ci
+```
 
-| Target | What it does |
+That runs `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test --all-targets`. For every pull request CI runs `just ci` plus the secret corpus on Linux, and a Windows cross-compile check via mingw. The full 3-OS build + filesystem integration matrix (`just build` + `just test-fs` on Ubuntu / macOS / Windows) runs on `pull_request_review: approved`, post-merge to `main`, or manual `workflow_dispatch`. A green local `just ci` is the cheapest way to know your PR will pass the per-PR gates.
+
+Other recipes:
+
+| Recipe | What it does |
 |--------|--------------|
-| `make build` | `cargo build` |
-| `make build-release` | `cargo build --release` |
-| `make test` | `cargo test --all-targets` |
-| `make test-fs` | `cargo test --test config_fs` (filesystem seam integration; what CI runs on macOS/Windows) |
-| `make lint` | `cargo clippy --all-targets --all-features -- -D warnings` |
-| `make fmt` | `cargo fmt --all` |
-| `make fmt-check` | `cargo fmt --all -- --check` |
-| `make clean` | `cargo clean` |
-| `make help` | Print the target list |
+| `just build` | `cargo build` |
+| `just build-release` | `cargo build --release` |
+| `just test` | `cargo test --all-targets` |
+| `just test-fs` | `cargo test --test config_fs` (filesystem seam integration; what CI runs on macOS/Windows) |
+| `just lint` | `cargo clippy --all-targets --all-features -- -D warnings` |
+| `just fmt` | `cargo fmt --all` |
+| `just fmt-check` | `cargo fmt --all -- --check` |
+| `just bench` | Release build + the hidden preset-latency benchmark |
+| `just release` | Interactive version bump + CHANGELOG + commit + tag |
+| `just patterns-doc` | Regenerate `DETECTION_COVERAGE.md` from the live catalog |
+| `just clean` | `cargo clean` |
+| `just` (no args) | List every recipe |
 
 Linux contributors need a few system packages so `arboard` and `notify-rust` link:
 
@@ -34,9 +43,9 @@ sudo apt-get install -y \
     libxkbcommon-dev libdbus-1-dev
 ```
 
-macOS and Windows need no extra system packages. Windows contributors need `make` on `PATH` (`choco install make`) to use the Makefile targets; otherwise invoke the underlying `cargo` commands directly.
+macOS and Windows need no extra system packages.
 
-The repo treats `clippy` warnings as bugs. `make lint` must pass before a PR is reviewable.
+The repo treats `clippy` warnings as bugs. `just lint` must pass before a PR is reviewable.
 
 ## Commit and PR conventions
 

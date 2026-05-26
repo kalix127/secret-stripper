@@ -33,7 +33,7 @@ path = "src/main.rs"
 
 # Maintainer tool: regenerates DETECTION_COVERAGE.md from the live pattern
 # catalog. Gated behind a feature so `cargo install secret-stripper` does NOT
-# install it on end-user machines. Run locally with `make patterns-doc`.
+# install it on end-user machines. Run locally with `just patterns-doc`.
 [[bin]]
 name = "patterns_doc"
 path = "src/bin/patterns_doc.rs"

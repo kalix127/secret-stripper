@@ -39,14 +39,17 @@ jobs:
       - name: Cache cargo registry and target dir
         uses: Swatinem/rust-cache@v2
 
+      - name: Install just
+        uses: taiki-e/install-action@just
+
       - name: Format check
-        run: make fmt-check
+        run: just fmt-check
 
       - name: Clippy
-        run: make lint
+        run: just lint
 
       - name: Test
-        run: make test
+        run: just test
 
   corpus:
     name: Secret Corpus & Property Tests

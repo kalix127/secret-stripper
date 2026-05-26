@@ -28,7 +28,7 @@ _e.g. `Closes #123`, or `None`._
 
 ## Testing
 
-- [ ] `make ci` is green locally (format, lint, tests)
+- [ ] `just ci` is green locally (format, lint, tests)
 - [ ] Added or updated tests for this change
 - [ ] Manually verified the behavior end-to-end
 
