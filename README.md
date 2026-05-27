@@ -10,13 +10,7 @@
 
 ## Quick Start
 
-**Linux:**
-
-```bash
-curl -sSf https://secretstripper.download/install.sh | bash
-```
-
-**macOS:**
+**Linux / macOS:**
 
 ```bash
 curl -sSf https://secretstripper.download/install.sh | bash
@@ -43,6 +37,31 @@ cargo install --git https://github.com/kalix127/secret-stripper.git --locked && 
 Highlight text and press your default chord (Linux `Ctrl+Alt+X` / macOS `Cmd+Shift+C` / Windows `Ctrl+Alt+C`). The clipboard now holds a redacted version - paste with `Ctrl+V` (`Cmd+V` on macOS). On Linux the PRIMARY selection is read directly, so you can skip the `Ctrl+C`.
 
 Run `secret-stripper menu` to tune settings, or `secret-stripper --help` for all commands.
+
+---
+
+## Auto-redact paste into AI TUIs
+
+`secret-stripper init` looks for installed AI terminal tools (Claude Code, Codex CLI, aider, Gemini CLI, Continue, opencode) and prints a ready-to-copy shell alias block. Each alias routes the tool through `paste-guard`, a PTY wrapper that intercepts clipboard pastes and redacts secrets before they reach the AI's prompt - typing and normal output are untouched. Copy the snippet into your shell config (`~/.zshrc`, `~/.bashrc`, `~/.config/fish/config.fish`, or your PowerShell profile) and open a new shell:
+
+```bash
+# ----------------------------------
+alias claude='secret-stripper paste-guard -- claude'
+alias codex='secret-stripper paste-guard -- codex'
+# ----------------------------------
+```
+
+Secret Stripper never writes to your shell rc on its own. To stop routing through `paste-guard`, delete the block between the dashed comment lines.
+
+**Scope.** `paste-guard` is a per-process wrapper - it only filters pastes into the *one* command you ran it on. Daily use of `ssh`, `psql`, `vim`, `kubectl`, the bare shell prompt, GUI apps, the system clipboard - all completely untouched. You can also add aliases for non-AI tools by hand (live demos against `psql` / `mysql`, screen-recordings) - wrapping leaf commands is fine, wrapping a whole shell usually is not.
+
+You can also pipe arbitrary text through the same engine:
+
+```bash
+cat secrets.log | secret-stripper redact > clean.log
+```
+
+**Limitations.** Bracketed paste must be supported by your terminal (every modern emulator does, including the VSCode integrated terminal and tmux passthrough); typed secrets are never modified, only pasted ones; paste payloads above 1 MiB fall through unredacted.
 
 ---
 
