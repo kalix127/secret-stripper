@@ -1,6 +1,9 @@
+pub mod ai_tui;
 pub mod config;
 pub mod detector;
 pub mod lang;
+pub mod redact_cli;
+pub mod shell_rc;
 pub mod stats;
 
 pub use detector::deep_scan::DeepFinding;

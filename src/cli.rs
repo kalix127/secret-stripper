@@ -30,6 +30,19 @@ pub enum Command {
         #[arg(long)]
         auto_install: bool,
     },
+    /// Read text from stdin, redact secrets/PII using the active config, write
+    /// the result to stdout. Designed for shell pipelines and as the engine
+    /// behind the `paste-guard` wrapper.
+    Redact,
+    /// Run a child program inside a PTY and redact any bracketed-paste
+    /// payloads on the way in. Exits with the child's exit code. Use it to
+    /// wrap AI TUIs like Claude Code or Codex so pasted secrets never reach
+    /// the prompt.
+    PasteGuard {
+        /// The child command and its arguments. Pass after `--`.
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true, num_args = 0..)]
+        argv: Vec<String>,
+    },
     /// Benchmark redact-trigger latency across the three detection presets.
     /// Hidden from --help; intended for maintainers comparing release builds.
     #[command(hide = true)]
