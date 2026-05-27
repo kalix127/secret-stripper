@@ -2,12 +2,13 @@ mod cli;
 mod clipboard;
 mod hotkey;
 mod notify;
+mod paste_guard;
 mod proc;
 mod shortcut;
 mod tui;
 mod updater;
 
-pub use secret_stripper::{config, detector, lang, stats};
+pub use secret_stripper::{ai_tui, config, detector, lang, redact_cli, shell_rc, stats};
 
 /// Product name. Single source so window/notification/shortcut labels stay
 /// consistent; deliberately not localized (it is a proper noun).
@@ -32,6 +33,12 @@ fn main() -> anyhow::Result<()> {
         cli::Command::Uninstall => run_uninstall()?,
         cli::Command::Upgrade => updater::run_upgrade()?,
         cli::Command::UpgradeCheck { auto_install } => updater::run_upgrade_check(auto_install)?,
+        cli::Command::Redact => redact_cli::run_redact()?,
+        cli::Command::PasteGuard { argv } => {
+            let cfg = Config::load();
+            let code = paste_guard::run(&argv, &cfg)?;
+            std::process::exit(code);
+        }
         cli::Command::Bench { iterations } => run_bench(iterations)?,
     }
 
@@ -98,6 +105,17 @@ fn run_uninstall() -> anyhow::Result<()> {
     let lang = lang::Lang::active();
     let _ = shortcut::unregister();
     let _ = updater::uninstall_update_check_timer();
+
+    // Trim our managed alias block from the user's shell rc. Best effort:
+    // unknown shell, missing rc, or unreadable rc just skips silently.
+    // Honors SECRET_STRIPPER_NO_OS_SIDE_EFFECTS via shell_rc::uninstall_aliases.
+    if let Some(shell) = shell_rc::Shell::from_env() {
+        if let Some(rc) = shell.rc_path() {
+            if let Ok(true) = shell_rc::uninstall_aliases(&rc) {
+                println!("{}", lang.ai_tui_alias_removed(&rc.display().to_string()));
+            }
+        }
+    }
 
     let removed = config::purge_config_dir();
 
@@ -385,8 +403,52 @@ fn run_init() -> anyhow::Result<()> {
             eprintln!("{}", lang.cli_last_error(&err.to_string()));
         }
     }
+    // Print the general settings hint here, before the paste-guard section,
+    // so the "tweak settings" line clearly applies to the defaults above
+    // (sensitivity, redact pattern, notifications, etc.) and not to the
+    // paste-guard alias snippet that follows.
     println!("{}", lang.cli_tweak_later());
+    print_paste_guard_hint(lang);
     Ok(())
+}
+
+/// Show the user the alias snippet for paste-guard, explain why, and tell
+/// them which file to paste it into. We never edit the file ourselves -
+/// shell rc files belong to the user.
+fn print_paste_guard_hint(lang: lang::Lang) {
+    let detected = ai_tui::detect();
+    if detected.is_empty() {
+        println!();
+        println!("{}", lang.ai_tui_none_detected());
+        return;
+    }
+
+    let shell = shell_rc::Shell::from_env();
+    let bins: Vec<&str> = detected.iter().map(|t| t.binary).collect();
+
+    println!();
+    println!("{}", lang.ai_tui_detected_title());
+    for t in &detected {
+        println!("  - {} ({})", t.label, t.binary);
+    }
+    println!();
+    println!("{}", lang.ai_tui_why());
+    println!();
+
+    let snippet_shell = shell.unwrap_or(shell_rc::Shell::Bash);
+    match shell.and_then(|s| s.rc_path().map(|p| (s, p))) {
+        Some((_, path)) => {
+            let path_str = path.display().to_string();
+            println!("{}", lang.ai_tui_add_to_file(&path_str));
+        }
+        None => {
+            println!("{}", lang.ai_tui_add_to_unknown_shell());
+        }
+    }
+    println!();
+    print!("{}", shell_rc::render_alias_snippet(snippet_shell, &bins));
+    println!();
+    println!("{}", lang.ai_tui_remove_hint());
 }
 
 fn run_bench(iterations: usize) -> anyhow::Result<()> {

@@ -1532,6 +1532,55 @@ lang_strings! {
         IT => "Cambia la lingua dell'interfaccia",
         ES => "Cambia el idioma de la interfaz",
     }
+
+    ai_tui_detected_title {
+        EN => "Detected AI TUIs on this system:",
+        FR => "Outils TUI d'IA détectés sur ce système :",
+        IT => "TUI di IA rilevate su questo sistema:",
+        ES => "TUI de IA detectadas en este sistema:",
+    }
+    ai_tui_why {
+        EN => "Add the snippet below to your shell config so each tool runs through 'paste-guard'. The wrapper sits between your terminal and the AI TUI, intercepting clipboard pastes and redacting any secrets or PII before they reach the prompt. Typing and normal output stay untouched.",
+        FR => "Ajoutez le bloc ci-dessous à la configuration de votre shell pour que chaque outil passe par 'paste-guard'. Ce wrapper se place entre votre terminal et l'outil d'IA, intercepte les collages du presse-papiers et masque les secrets ou les données personnelles avant qu'ils n'atteignent l'invite. La frappe et la sortie normale ne sont pas modifiées.",
+        IT => "Aggiungi il blocco qui sotto alla configurazione della shell così ogni strumento passa attraverso 'paste-guard'. Il wrapper si frappone tra il terminale e la TUI di IA, intercetta gli incolla dagli appunti e oscura segreti o dati personali prima che raggiungano il prompt. La digitazione e l'output normale restano invariati.",
+        ES => "Añade el bloque siguiente a la configuración de tu shell para que cada herramienta pase por 'paste-guard'. El envoltorio se sitúa entre tu terminal y la TUI de IA, intercepta los pegados del portapapeles y redacta los secretos o datos personales antes de que lleguen al prompt. La escritura y la salida normal no se ven afectadas.",
+    }
+    ai_tui_add_to_file(path: &str,) {
+        EN => format!("Add the lines below to {} (then open a new shell or run 'source {}'):", path, path),
+        FR => format!("Ajoutez les lignes ci-dessous à {} (puis ouvrez un nouveau shell ou exécutez 'source {}') :", path, path),
+        IT => format!("Aggiungi le righe sottostanti a {} (poi apri una nuova shell o esegui 'source {}'):", path, path),
+        ES => format!("Añade las líneas siguientes a {} (después abre un nuevo shell o ejecuta 'source {}'):", path, path),
+    }
+    ai_tui_add_to_unknown_shell {
+        EN => "Could not detect your shell from $SHELL. Add the lines below to your shell's startup file (e.g. ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, or the PowerShell profile on Windows):",
+        FR => "Impossible de détecter votre shell via $SHELL. Ajoutez les lignes ci-dessous au fichier de démarrage de votre shell (par ex. ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, ou le profil PowerShell sous Windows) :",
+        IT => "Impossibile rilevare la shell da $SHELL. Aggiungi le righe sottostanti al file di avvio della tua shell (ad es. ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, oppure il profilo PowerShell su Windows):",
+        ES => "No se pudo detectar tu shell desde $SHELL. Añade las líneas siguientes al archivo de inicio de tu shell (por ejemplo ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, o el perfil de PowerShell en Windows):",
+    }
+    ai_tui_none_detected {
+        EN => "No supported AI TUIs detected on PATH. If you install one later, re-run 'secret-stripper init' to see the alias snippet.",
+        FR => "Aucun outil TUI d'IA pris en charge détecté dans le PATH. Si vous en installez un plus tard, relancez 'secret-stripper init' pour obtenir le bloc d'alias.",
+        IT => "Nessuna TUI di IA supportata rilevata nel PATH. Se ne installi una in seguito, rilancia 'secret-stripper init' per vedere lo snippet di alias.",
+        ES => "No se detectó ninguna TUI de IA compatible en el PATH. Si instalas una más adelante, vuelve a ejecutar 'secret-stripper init' para ver el bloque de alias.",
+    }
+    ai_tui_remove_hint {
+        EN => "To stop routing through paste-guard, delete the block above (between the dashed comment lines) from your shell config, or run 'secret-stripper uninstall' to clean up everything at once.",
+        FR => "Pour cesser d'utiliser paste-guard, supprimez le bloc ci-dessus (entre les lignes de commentaire en tirets) de la configuration de votre shell, ou exécutez 'secret-stripper uninstall' pour tout nettoyer en une fois.",
+        IT => "Per non far più passare il pasting da paste-guard, elimina il blocco qui sopra (tra le righe di commento tratteggiate) dalla configurazione della tua shell, oppure esegui 'secret-stripper uninstall' per ripulire tutto in una volta.",
+        ES => "Para dejar de pasar por paste-guard, elimina el bloque de arriba (entre las líneas de comentario con guiones) de la configuración de tu shell, o ejecuta 'secret-stripper uninstall' para limpiar todo de una vez.",
+    }
+    ai_tui_alias_removed(path: &str,) {
+        EN => format!("Removed paste-guard alias block from {}", path),
+        FR => format!("Bloc d'alias paste-guard supprimé de {}", path),
+        IT => format!("Blocco di alias paste-guard rimosso da {}", path),
+        ES => format!("Bloque de alias paste-guard eliminado de {}", path),
+    }
+    pg_no_child {
+        EN => "paste-guard: no child command provided. Usage: secret-stripper paste-guard -- <cmd> [args...]",
+        FR => "paste-guard : aucune commande enfant fournie. Usage : secret-stripper paste-guard -- <cmd> [args...]",
+        IT => "paste-guard: nessun comando figlio fornito. Uso: secret-stripper paste-guard -- <cmd> [args...]",
+        ES => "paste-guard: no se proporcionó ningún comando hijo. Uso: secret-stripper paste-guard -- <cmd> [args...]",
+    }
 }
 
 #[cfg(test)]
