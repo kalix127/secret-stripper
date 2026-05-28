@@ -8,7 +8,7 @@ token pk_12345678_AB1CD2EF3GH4IJ5KL6MN7OP8QR9ST0UV1WXYZ here
 # expect: Airtable Personal Access Token
 # expect: Airtable Legacy API Key
 pat patmrNEbCdEfGhIj0.aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789ABCDEFGHIJKLMNOPQRSTUVWX0000 here
-legacy keyAbCdEfGhIjKlMn here
+Authorization: Bearer keyAbCdEfGhIjKlMn here
 
 # === Contentful ===
 # expect: Contentful Content Management PAT

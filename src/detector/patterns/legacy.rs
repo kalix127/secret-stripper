@@ -9,12 +9,6 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"(?i)AKIA[0-9A-Z]{16}"),
         },
         SecretPattern {
-            name: "AWS Secret Access Key",
-            category: "Cloud Secret",
-            severity: Severity::Critical,
-            regex: re(r"(?i)\b[A-Za-z0-9+/]{40}\b"),
-        },
-        SecretPattern {
             name: "GitHub Personal Access Token",
             category: "VCS Token",
             severity: Severity::Critical,
@@ -97,16 +91,16 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"(?i)GOCSPX-[A-Za-z0-9_\-]{20,40}"),
         },
         SecretPattern {
-            name: "Heroku API Key",
-            category: "Cloud Secret",
-            severity: Severity::Critical,
-            regex: re(r"(?i)heroku[A-Za-z0-9_\-]{20,40}"),
-        },
-        SecretPattern {
+            // The bare `24.6.27` length triple collides with arbitrary
+            // dot-separated identifiers of those exact lengths (commit
+            // hashes, version strings). Real Discord tokens always sit
+            // behind one of these labels in Discord's docs and SDKs.
             name: "Discord Bot Token",
             category: "Messaging Token",
             severity: Severity::Critical,
-            regex: re(r"[A-Za-z0-9_\-]{24}\.[A-Za-z0-9_\-]{6}\.[A-Za-z0-9_\-]{27}"),
+            regex: re(
+                r#"(?i)(?:authorization:\s*(?:bot|bearer)\s+|discord[_-]?(?:bot[_-]?)?token\s*[:=]\s*['"]?|client\.login\(['"])[A-Za-z0-9_\-]{24,28}\.[A-Za-z0-9_\-]{6,7}\.[A-Za-z0-9_\-]{27,38}"#,
+            ),
         },
         SecretPattern {
             name: "Stripe API Key",

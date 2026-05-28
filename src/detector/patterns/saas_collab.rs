@@ -15,10 +15,15 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"\bpat[A-Za-z0-9]{14}\.[A-Za-z0-9]{64}\b"),
         },
         SecretPattern {
+            // The bare `key<14>` shape collided with arbitrary identifiers
+            // starting with `key`. Real legacy keys only appear under an
+            // Airtable-context label or in the API URL.
             name: "Airtable Legacy API Key",
             category: "SaaS / Collab",
             severity: Severity::High,
-            regex: re(r"\bkey[A-Za-z0-9]{14}\b"),
+            regex: re(
+                r#"(?i)(?:airtable[^\n]{0,80}|authorization:\s*bearer\s+|x-api-key:\s*|airtable[._-]?api[._-]?key\s*[:=]\s*['"]?)key[A-Za-z0-9]{14}\b"#,
+            ),
         },
         SecretPattern {
             name: "Contentful Content Management PAT",

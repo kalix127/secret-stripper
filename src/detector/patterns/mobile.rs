@@ -3,22 +3,14 @@ use super::{re, SecretPattern, Severity};
 pub fn patterns() -> Vec<SecretPattern> {
     vec![
         SecretPattern {
+            // Real Apple merchant IDs are reverse-DNS with at least three
+            // dot-separated segments after `merchant.`. The previous form
+            // `merchant\.[A-Za-z0-9.-]{3,}` fired on `merchant.identifier`
+            // / `merchant.example` in unrelated docs.
             name: "Apple Pay Merchant ID",
             category: "Mobile",
             severity: Severity::Low,
-            regex: re(r"\bmerchant\.[A-Za-z0-9][A-Za-z0-9.-]{3,}"),
-        },
-        SecretPattern {
-            name: "Apple App-Specific Password",
-            category: "Mobile",
-            severity: Severity::Critical,
-            regex: re(r"\b[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}\b"),
-        },
-        SecretPattern {
-            name: "Apple iOS UDID (2018+)",
-            category: "Mobile",
-            severity: Severity::Low,
-            regex: re(r"\b[0-9A-F]{8}-[0-9A-F]{16}\b"),
+            regex: re(r"\bmerchant\.[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*){2,}\b"),
         },
         SecretPattern {
             name: "AdMob Ad Unit ID",
