@@ -6,23 +6,52 @@
 
 **A small Rust CLI that strips secrets from your clipboard on demand. Bind a hotkey, highlight text, press the chord - the clipboard holds a redacted version. Normal Ctrl+C / Ctrl+V is never intercepted.**
 
+## Contents
+
+- [Quick Start](#quick-start)
+- [Supported OS](#supported-os)
+- [Platform setup](#platform-setup)
+  - [macOS setup](#macos-setup)
+  - [Windows setup](#windows-setup)
+- [What It Detects](#what-it-detects)
+- [Auto-redact paste into AI TUIs](#auto-redact-paste-into-ai-tuis)
+- [Contributing](#contributing)
+- [Star history](#star-history)
+- [License](#license)
+
 ---
 
 ## Quick Start
 
-**Linux / macOS:**
+**Linux** - one command, no extra setup:
 
 ```bash
 curl -sSf https://secretstripper.download/install.sh | bash
 ```
 
-**Windows (PowerShell):**
+Default chord: `Ctrl+Alt+X`.
+
+**macOS** - needs a one-time global-hotkey helper (skhd or Hammerspoon). See [macOS setup](#macos-setup) for permissions and troubleshooting.
+
+```bash
+brew install koekeishiya/formulae/skhd
+curl -sSf https://secretstripper.download/install.sh | bash
+# Grant skhd Accessibility: System Settings -> Privacy & Security -> Accessibility
+skhd --restart-service
+```
+
+Default chord: `Cmd+Shift+C`.
+
+**Windows (PowerShell)** - needs AutoHotkey v2. See [Windows setup](#windows-setup) for the full flow.
 
 ```powershell
+winget install AutoHotkey.AutoHotkey
 iwr -useb https://secretstripper.download/install.ps1 | iex
 ```
 
-**From [crates.io](https://crates.io/crates/secret-stripper) (Rust):**
+Default chord: `Ctrl+Alt+C`.
+
+**From [crates.io](https://crates.io/crates/secret-stripper) (Rust)** - same per-OS prerequisites apply (skhd on macOS, AutoHotkey on Windows):
 
 ```bash
 cargo install secret-stripper && secret-stripper init
@@ -34,34 +63,9 @@ cargo install secret-stripper && secret-stripper init
 cargo install --git https://github.com/kalix127/secret-stripper.git --locked && secret-stripper init
 ```
 
-Highlight text and press your default chord (Linux `Ctrl+Alt+X` / macOS `Cmd+Shift+C` / Windows `Ctrl+Alt+C`). The clipboard now holds a redacted version - paste with `Ctrl+V` (`Cmd+V` on macOS). On Linux the PRIMARY selection is read directly, so you can skip the `Ctrl+C`.
+After install, highlight text and press your chord. On Linux the PRIMARY selection is read directly, so you can skip the `Ctrl+C`. Paste with `Ctrl+V` (`Cmd+V` on macOS).
 
 Run `secret-stripper menu` to tune settings, or `secret-stripper --help` for all commands.
-
----
-
-## Auto-redact paste into AI TUIs
-
-`secret-stripper init` looks for installed AI terminal tools (Claude Code, Codex CLI, aider, Gemini CLI, Continue, opencode) and prints a ready-to-copy shell alias block. Each alias routes the tool through `paste-guard`, a PTY wrapper that intercepts clipboard pastes and redacts secrets before they reach the AI's prompt - typing and normal output are untouched. Copy the snippet into your shell config (`~/.zshrc`, `~/.bashrc`, `~/.config/fish/config.fish`, or your PowerShell profile) and open a new shell:
-
-```bash
-# ----------------------------------
-alias claude='secret-stripper paste-guard -- claude'
-alias codex='secret-stripper paste-guard -- codex'
-# ----------------------------------
-```
-
-Secret Stripper never writes to your shell rc on its own. To stop routing through `paste-guard`, delete the block between the dashed comment lines.
-
-**Scope.** `paste-guard` is a per-process wrapper - it only filters pastes into the *one* command you ran it on. Daily use of `ssh`, `psql`, `vim`, `kubectl`, the bare shell prompt, GUI apps, the system clipboard - all completely untouched. You can also add aliases for non-AI tools by hand (live demos against `psql` / `mysql`, screen-recordings) - wrapping leaf commands is fine, wrapping a whole shell usually is not.
-
-You can also pipe arbitrary text through the same engine:
-
-```bash
-cat secrets.log | secret-stripper redact > clean.log
-```
-
-**Limitations.** Bracketed paste must be supported by your terminal (every modern emulator does, including the VSCode integrated terminal and tmux passthrough); typed secrets are never modified, only pasted ones; paste payloads above 1 MiB fall through unredacted.
 
 ---
 
@@ -75,8 +79,7 @@ cat secrets.log | secret-stripper redact > clean.log
 
 ## Platform setup
 
-<details>
-<summary><strong>macOS setup</strong></summary>
+### macOS setup
 
 There is no zero-install way to register a true global hotkey on macOS without a resident process. Secret Stripper itself stays one-shot, so it delegates hotkey capture to one of two well-known helpers: [skhd](https://github.com/koekeishiya/skhd) (lightweight, recommended) or [Hammerspoon](https://www.hammerspoon.org/) (heavier, scriptable). If neither is installed, `init` falls back to printing manual binding instructions.
 
@@ -106,10 +109,7 @@ There is no zero-install way to register a true global hotkey on macOS without a
 
 *Default chord:* `Cmd+Shift+C`. macOS apps often claim Cmd-modifier chords, so if it conflicts with something you use (browser DevTools, Finder "Copy Path", etc.), rebind from `secret-stripper menu -> Rebind Hotkey`. Two safer options if you want to plan ahead: `Cmd+Option+X` or `Cmd+Ctrl+X`.
 
-</details>
-
-<details>
-<summary><strong>Windows setup</strong></summary>
+### Windows setup
 
 Windows has no zero-install way to register a true global hotkey. Same constraint as macOS - Secret Stripper delegates hotkey capture to [AutoHotkey](https://www.autohotkey.com/) v2 (the Windows analogue of skhd). AutoHotkey uses the Win32 `RegisterHotKey` API under the hood and is the only mechanism that delivers the chord reliably across focused windows, full-screen apps, and elevated processes. AutoHotkey is required - `init` aborts with an install hint if it cannot find it.
 
@@ -137,8 +137,6 @@ Windows has no zero-install way to register a true global hotkey. Same constrain
 - The daily update check runs as a `schtasks` daily task at 11:00.
 - *Uninstall* kills the AHK process bound to our script and removes the `.ahk` file and the startup `.lnk`. Other AHK scripts you have running are untouched.
 
-</details>
-
 ---
 
 ## What It Detects
@@ -154,6 +152,31 @@ Windows has no zero-install way to register a true global hotkey. Same constrain
 | **🟢 Safe** | Normal text, emails, documents - no false alerts |
 
 For the full list of buckets, severity tiers, and patterns, see [DETECTION_COVERAGE.md](DETECTION_COVERAGE.md).
+
+---
+
+## Auto-redact paste into AI TUIs
+
+`secret-stripper init` looks for installed AI terminal tools (Claude Code, Codex CLI, aider, Gemini CLI, Continue, opencode) and prints a ready-to-copy shell alias block. Each alias routes the tool through `paste-guard`, a PTY wrapper that intercepts clipboard pastes and redacts secrets before they reach the AI's prompt - typing and normal output are untouched. Copy the snippet into your shell config (`~/.zshrc`, `~/.bashrc`, `~/.config/fish/config.fish`, or your PowerShell profile) and open a new shell:
+
+```bash
+# ----------------------------------
+alias claude='secret-stripper paste-guard -- claude'
+alias codex='secret-stripper paste-guard -- codex'
+# ----------------------------------
+```
+
+Secret Stripper never writes to your shell rc on its own. To stop routing through `paste-guard`, delete the block between the dashed comment lines.
+
+**Scope.** `paste-guard` is a per-process wrapper - it only filters pastes into the *one* command you ran it on. Daily use of `ssh`, `psql`, `vim`, `kubectl`, the bare shell prompt, GUI apps, the system clipboard - all completely untouched. You can also add aliases for non-AI tools by hand (live demos against `psql` / `mysql`, screen-recordings) - wrapping leaf commands is fine, wrapping a whole shell usually is not.
+
+You can also pipe arbitrary text through the same engine:
+
+```bash
+cat secrets.log | secret-stripper redact > clean.log
+```
+
+**Limitations.** Bracketed paste must be supported by your terminal (every modern emulator does, including the VSCode integrated terminal and tmux passthrough); typed secrets are never modified, only pasted ones; paste payloads above 1 MiB fall through unredacted.
 
 ---
 
