@@ -155,6 +155,20 @@ For the full list of buckets, severity tiers, and patterns, see [DETECTION_COVER
 
 ---
 
+## Redaction styles
+
+Pick how detected secrets are replaced from `secret-stripper menu` -> **Redaction Style**:
+
+| Style | Output for `aws=AKIAIOSFODNN7EXAMPLE` |
+|-------|----------------------------------------|
+| **Marker** (default) | `aws=[REDACTED]` - uses a configurable marker string (eight presets + custom) |
+| **Drop** | `aws=` - removes the matched bytes entirely |
+| **Typed** | `aws=[AWS_ACCESS_KEY_ID]` - replaces each span with a tag derived from the matched pattern name |
+
+The same setting applies to the hotkey trigger, the `redact` pipeline subcommand, and the `paste-guard` AI-TUI wrapper.
+
+---
+
 ## Auto-redact paste into AI TUIs
 
 `secret-stripper init` looks for installed AI terminal tools (Claude Code, Codex CLI, aider, Gemini CLI, Continue, opencode) and prints a ready-to-copy shell alias block. Each alias routes the tool through `paste-guard`, a PTY wrapper that intercepts clipboard pastes and redacts secrets before they reach the AI's prompt - typing and normal output are untouched. Copy the snippet into your shell config (`~/.zshrc`, `~/.bashrc`, `~/.config/fish/config.fish`, or your PowerShell profile) and open a new shell:
