@@ -23,12 +23,6 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"HostName=[^;\s]+\.azure-devices\.net;DeviceId=[^;\s]+;x509=true"),
         },
         SecretPattern {
-            name: "Azure DPS ID Scope",
-            category: "IoT",
-            severity: Severity::Medium,
-            regex: re(r"\b0ne[0-9A-F]{12,15}\b"),
-        },
-        SecretPattern {
             name: "Azure DPS Symmetric Key",
             category: "IoT",
             severity: Severity::Critical,

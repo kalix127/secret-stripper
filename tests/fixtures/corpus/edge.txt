@@ -1,12 +1,10 @@
 # edge corpus. Synthetic invalid placeholders only.
 
-# === Cloudflare / Fastly / Akamai ===
+# === Cloudflare / Fastly ===
 # expect: Cloudflare Origin CA Key
 # expect: Fastly API Token
-# expect: Akamai EdgeGrid Client Token
 v1.0-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 Fastly-Key: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-akab-aaaaaaaaaaaaaaaaaaaaaaaa
 
 # === Bunny / Netlify / Deno / NS1 ===
 # expect: Bunny.net API Key

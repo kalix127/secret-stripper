@@ -81,30 +81,6 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"\b(?:live|test)_[A-Za-z0-9]{30}\b"),
         },
         SecretPattern {
-            name: "Klarna API Credentials",
-            category: "Payments",
-            severity: Severity::Critical,
-            regex: re(r"\bPK[0-9]+_[a-z0-9]+:[A-Za-z0-9]+\b"),
-        },
-        SecretPattern {
-            name: "Flutterwave Public Key",
-            category: "Payments",
-            severity: Severity::Medium,
-            regex: re(r"\bFLWPUBK_TEST-[A-Za-z0-9]{32}-X\b"),
-        },
-        SecretPattern {
-            name: "Flutterwave Secret Key",
-            category: "Payments",
-            severity: Severity::Critical,
-            regex: re(r"\bFLWSECK_TEST-[A-Za-z0-9]{32}-X\b"),
-        },
-        SecretPattern {
-            name: "Flutterwave Encryption Key",
-            category: "Payments",
-            severity: Severity::Critical,
-            regex: re(r"\bFLWSECK_TESTencryption[A-Za-z0-9]+\b"),
-        },
-        SecretPattern {
             name: "GoCardless API Token",
             category: "Payments",
             severity: Severity::Critical,

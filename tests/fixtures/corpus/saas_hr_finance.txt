@@ -25,8 +25,6 @@ api.personio.de client_secret=AbCdEfGhIjKlMnOpQrStUv
 # expect: Langfuse Secret Key
 # expect: Weights & Biases API Key
 # expect: Voyage AI API Key
-# expect: Modal Token ID
-# expect: Modal Token Secret
 # expect: Comet ML API Key
 # expect: Looker API3 Credentials
 # expect: Tableau Personal Access Token
@@ -40,8 +38,6 @@ pk-lf-12345678-1234-1234-1234-123456789abc
 sk-lf-12345678-1234-1234-1234-123456789abc
 WANDB_API_KEY=abcdef0123456789abcdef0123456789abcdef01
 pa-AbCdEfGhIjKlMnOpQrStUvWxYz0123456789abcd
-ak-AbCdEfGhIjKlMnOpQrStUv
-as-AbCdEfGhIjKlMnOpQrStUv
 COMET_API_KEY=AbCdEfGhIjKlMnOpQrStUvWxYz0123456789
 client_id=abcDEF1234567890abcd, client_secret=ABCDefgh1234567890abcdEF
 tableau pat_secret=AbCdEfGhIjKlMn0123==

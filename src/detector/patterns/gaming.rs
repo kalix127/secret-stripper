@@ -58,11 +58,5 @@ pub fn patterns() -> Vec<SecretPattern> {
             severity: Severity::Medium,
             regex: re(r"\bxyz[A-Za-z0-9]{37,}\b"),
         },
-        SecretPattern {
-            name: "Xbox Live XUID",
-            category: "Gaming",
-            severity: Severity::Low,
-            regex: re(r"(?i)xuid\s*[=:]\s*[0-9]{16}\b"),
-        },
     ]
 }

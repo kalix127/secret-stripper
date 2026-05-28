@@ -89,12 +89,6 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"https://[a-z0-9-]+\.firebaseio\.com/[^\s]*\.json\?auth=[A-Za-z0-9_-]{10,}"),
         },
         SecretPattern {
-            name: "ClickHouse Cloud API Secret",
-            category: "Databases",
-            severity: Severity::Critical,
-            regex: re(r"\b4b1d[A-Za-z0-9]{52}\b"),
-        },
-        SecretPattern {
             name: "MotherDuck Service Token",
             category: "Databases",
             severity: Severity::High,

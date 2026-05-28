@@ -38,11 +38,9 @@ arn:aws:secretsmanager:us-east-1:123456789012:secret:prod/db-AbCdEf
 arn:aws:dynamodb:us-east-1:123456789012:table/Orders/stream/2024-01-01T00:00:00.000
 arn:aws:iot:us-east-1:123456789012:thing/sensor-01-example
 
-# === AWS / AppSync and Cognito ===
+# === AWS / AppSync ===
 # expect: AWS AppSync API Key
-# expect: AWS Cognito User Pool ID
 da2-abcdefghijklmnopqrstuvwxyz
-us-east-1_aBcDeFgHi
 
 # === AWS / S3 and CloudFront signed URLs ===
 # expect: AWS S3 Presigned URL

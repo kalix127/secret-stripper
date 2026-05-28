@@ -15,12 +15,6 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"(?i)Fastly-Key:\s*[A-Za-z0-9_-]{32,}"),
         },
         SecretPattern {
-            name: "Akamai EdgeGrid Client Token",
-            category: "Edge / CDN",
-            severity: Severity::Critical,
-            regex: re(r"\bakab-[A-Za-z0-9-]{20,}"),
-        },
-        SecretPattern {
             name: "Bunny.net API Key",
             category: "Edge / CDN",
             severity: Severity::High,

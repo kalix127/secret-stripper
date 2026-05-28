@@ -97,18 +97,6 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"\bpa-[A-Za-z0-9_-]{40,}\b"),
         },
         SecretPattern {
-            name: "Modal Token ID",
-            category: "SaaS / HR",
-            severity: Severity::High,
-            regex: re(r"\bak-[A-Za-z0-9]{20,}\b"),
-        },
-        SecretPattern {
-            name: "Modal Token Secret",
-            category: "SaaS / HR",
-            severity: Severity::Critical,
-            regex: re(r"\bas-[A-Za-z0-9]{20,}\b"),
-        },
-        SecretPattern {
             name: "Comet ML API Key",
             category: "SaaS / HR",
             severity: Severity::Critical,

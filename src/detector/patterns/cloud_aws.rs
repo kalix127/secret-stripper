@@ -117,12 +117,6 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"\bda2-[a-z0-9]{26}\b"),
         },
         SecretPattern {
-            name: "AWS Cognito User Pool ID",
-            category: "Cloud / AWS",
-            severity: Severity::Medium,
-            regex: re(r"\b[a-z]{2}-[a-z]+-\d_[A-Za-z0-9]{9}\b"),
-        },
-        SecretPattern {
             name: "AWS S3 Presigned URL",
             category: "Cloud / AWS",
             severity: Severity::Critical,
