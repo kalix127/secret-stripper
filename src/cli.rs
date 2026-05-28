@@ -43,12 +43,4 @@ pub enum Command {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true, num_args = 0..)]
         argv: Vec<String>,
     },
-    /// Benchmark redact-trigger latency across the three detection presets.
-    /// Hidden from --help; intended for maintainers comparing release builds.
-    #[command(hide = true)]
-    Bench {
-        /// Iterations per preset.
-        #[arg(long, default_value_t = 1000)]
-        iterations: usize,
-    },
 }

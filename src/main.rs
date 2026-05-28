@@ -39,7 +39,6 @@ fn main() -> anyhow::Result<()> {
             let code = paste_guard::run(&argv, &cfg)?;
             std::process::exit(code);
         }
-        cli::Command::Bench { iterations } => run_bench(iterations)?,
     }
 
     Ok(())
@@ -228,8 +227,11 @@ fn run_trigger() -> anyhow::Result<()> {
         .iter()
         .map(|(t, _)| t.as_str())
         .collect();
-    let mut deep_spans: Vec<(usize, usize)> =
-        result.deep_findings.iter().filter_map(|f| f.span).collect();
+    let mut deep_spans: Vec<(usize, usize, &'static str)> = result
+        .deep_findings
+        .iter()
+        .filter_map(|f| f.span.map(|(s, e)| (s, e, f.finding_type)))
+        .collect();
     deep_spans.extend(result.extra_spans.iter().copied());
     let redacted: zeroize::Zeroizing<String> =
         zeroize::Zeroizing::new(detector::redact::redact_with_spans(
@@ -238,6 +240,7 @@ fn run_trigger() -> anyhow::Result<()> {
             &entropy_tokens,
             &deep_spans,
             detector.allowlist(),
+            config.redact_style,
             &config.redact_pattern,
         ));
 
@@ -247,10 +250,19 @@ fn run_trigger() -> anyhow::Result<()> {
 
     // Fallback: detection found something but the redactor produced an
     // identical string. This happens when only deep-scan caught the secret
-    // (DeepFinding does not carry the matched span). Fail-closed: replace the
-    // whole clipboard with a single marker so the secret cannot be pasted.
+    // (DeepFinding does not carry the matched span). Fail-closed per style:
+    // Marker writes the configured marker; Typed writes [SECRET]; Drop empties
+    // the clipboard and force-notifies regardless of `silent` so an empty
+    // clipboard does not look like silent breakage.
+    let drop_fallback_fired =
+        *redacted == *text && matches!(config.redact_style, config::RedactStyle::Drop);
     let to_write: zeroize::Zeroizing<String> = if *redacted == *text {
-        zeroize::Zeroizing::new(config.redact_pattern.clone())
+        let fallback = match config.redact_style {
+            config::RedactStyle::Marker => config.redact_pattern.clone(),
+            config::RedactStyle::Typed => "[SECRET]".to_string(),
+            config::RedactStyle::Drop => String::new(),
+        };
+        zeroize::Zeroizing::new(fallback)
     } else {
         redacted
     };
@@ -279,7 +291,9 @@ fn run_trigger() -> anyhow::Result<()> {
 
     stats::append(total as u64);
 
-    if !config.silent {
+    if drop_fallback_fired {
+        notify::drop_fallback_notification(config.notification_timeout_secs, config.lang);
+    } else if !config.silent {
         notify::redacted_notification(total, config.notification_timeout_secs, config.lang);
     }
     Ok(())
@@ -449,112 +463,6 @@ fn print_paste_guard_hint(lang: lang::Lang) {
     print!("{}", shell_rc::render_alias_snippet(snippet_shell, &bins));
     println!();
     println!("{}", lang.ai_tui_remove_hint());
-}
-
-fn run_bench(iterations: usize) -> anyhow::Result<()> {
-    use detector::presets::Preset;
-    use std::time::{Duration, Instant};
-
-    const CORPUS: &str = include_str!("bench_corpus.txt");
-
-    let iters = iterations.max(1);
-    println!(
-        "secret-stripper bench  |  corpus {} bytes  |  {} iterations / preset",
-        CORPUS.len(),
-        iters
-    );
-    println!();
-    println!(
-        "{:<10} {:>10} {:>10} {:>10} {:>10} {:>10} {:>10}",
-        "preset", "iters", "mean", "p50", "p95", "p99", "max"
-    );
-    println!("{}", "-".repeat(76));
-
-    for preset in [Preset::Minimal, Preset::Balanced, Preset::Full] {
-        let mut cfg = Config::default();
-        preset.apply(&mut cfg);
-        let det = Detector::from_config(&cfg);
-
-        // Warmup: one untimed run so the OnceLock-cached regexes are hot
-        // before the measured loop.
-        let _ = det.scan(CORPUS);
-
-        let mut samples: Vec<Duration> = Vec::with_capacity(iters);
-        for _ in 0..iters {
-            let t0 = Instant::now();
-            let result = det.scan(CORPUS);
-            let entropy: Vec<&str> = result
-                .high_entropy_tokens
-                .iter()
-                .map(|(t, _)| t.as_str())
-                .collect();
-            let mut deep: Vec<(usize, usize)> =
-                result.deep_findings.iter().filter_map(|f| f.span).collect();
-            deep.extend(result.extra_spans.iter().copied());
-            let _ = detector::redact::redact_with_spans(
-                CORPUS,
-                &result.matched_spans,
-                &entropy,
-                &deep,
-                det.allowlist(),
-                &cfg.redact_pattern,
-            );
-            samples.push(t0.elapsed());
-        }
-        let stats = summarize(&mut samples);
-        println!(
-            "{:<10} {:>10} {:>10} {:>10} {:>10} {:>10} {:>10}",
-            preset_name(&preset),
-            iters,
-            fmt_dur(stats.mean),
-            fmt_dur(stats.p50),
-            fmt_dur(stats.p95),
-            fmt_dur(stats.p99),
-            fmt_dur(stats.max),
-        );
-    }
-    Ok(())
-}
-
-fn preset_name(p: &detector::presets::Preset) -> &'static str {
-    use detector::presets::Preset;
-    match p {
-        Preset::Minimal => "Minimal",
-        Preset::Balanced => "Balanced",
-        Preset::Full => "Full",
-    }
-}
-
-struct BenchStats {
-    mean: std::time::Duration,
-    p50: std::time::Duration,
-    p95: std::time::Duration,
-    p99: std::time::Duration,
-    max: std::time::Duration,
-}
-
-fn summarize(samples: &mut [std::time::Duration]) -> BenchStats {
-    samples.sort();
-    let n = samples.len();
-    let sum: std::time::Duration = samples.iter().sum();
-    let mean = sum / n as u32;
-    let pct = |p: f64| samples[((n as f64 * p) as usize).min(n - 1)];
-    BenchStats {
-        mean,
-        p50: pct(0.50),
-        p95: pct(0.95),
-        p99: pct(0.99),
-        max: *samples.last().expect("at least one sample"),
-    }
-}
-
-fn fmt_dur(d: std::time::Duration) -> String {
-    let us = d.as_micros();
-    if us >= 1000 {
-        format!("{:.3}ms", us as f64 / 1000.0)
-    } else {
-        format!("{}us", us)
-    }
 }
 
 fn print_status() -> anyhow::Result<()> {
