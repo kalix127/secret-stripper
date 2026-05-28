@@ -490,10 +490,13 @@ fn scan_key_value_pairs(text: &str) -> Vec<DeepFinding> {
                 .get(1)
                 .map(|m| m.as_str().to_lowercase())
                 .unwrap_or_default();
-            let value = cap.get(2).map(|m| m.as_str()).unwrap_or_default();
+            let value_m = match cap.get(2) {
+                Some(m) => m,
+                None => continue,
+            };
+            let value = value_m.as_str();
 
-            let is_secret_key = SECRET_KEY_INDICATORS.iter().any(|k| key.contains(k));
-            if !is_secret_key || is_do_not_redact_key(&key) {
+            if !is_secret_key_match(&key) || is_do_not_redact_key(&key) {
                 continue;
             }
 
@@ -517,12 +520,25 @@ fn scan_key_value_pairs(text: &str) -> Vec<DeepFinding> {
                     key, entropy
                 ),
                 severity,
-                span: None,
+                span: Some((value_m.start(), value_m.end())),
             });
         }
     }
 
     findings
+}
+
+// Word-boundary match against SECRET_KEY_INDICATORS. A plain `.contains()` lets
+// "pat" trigger on "pattern", "auth" trigger on "authenticate", and similar
+// substring collisions across the 70-entry keyword list. We treat `_` as the
+// only safe separator inside config keys.
+fn is_secret_key_match(key: &str) -> bool {
+    SECRET_KEY_INDICATORS.iter().any(|k| {
+        key == *k
+            || key.starts_with(&format!("{}_", k))
+            || key.ends_with(&format!("_{}", k))
+            || key.contains(&format!("_{}_", k))
+    })
 }
 
 fn env_format_re() -> &'static regex::Regex {
@@ -544,10 +560,13 @@ fn scan_env_format(text: &str) -> Vec<DeepFinding> {
             .get(1)
             .map(|m| m.as_str().to_lowercase())
             .unwrap_or_default();
-        let value = cap.get(2).map(|m| m.as_str()).unwrap_or_default();
+        let value_m = match cap.get(2) {
+            Some(m) => m,
+            None => continue,
+        };
+        let value = value_m.as_str();
 
-        let is_secret = SECRET_KEY_INDICATORS.iter().any(|k| key.contains(k));
-        if !is_secret || is_do_not_redact_key(&key) {
+        if !is_secret_key_match(&key) || is_do_not_redact_key(&key) {
             continue;
         }
 
@@ -567,7 +586,7 @@ fn scan_env_format(text: &str) -> Vec<DeepFinding> {
             } else {
                 "High"
             },
-            span: None,
+            span: Some((value_m.start(), value_m.end())),
         });
     }
 
@@ -809,12 +828,12 @@ fn scan_credential_composites(text: &str) -> Vec<DeepFinding> {
     let mut findings = Vec::new();
 
     for (re, label) in credential_composite_patterns() {
-        if re.is_match(text) {
+        for m in re.find_iter(text) {
             findings.push(DeepFinding {
                 finding_type: label,
                 description: format!("{} detected in clipboard", label),
                 severity: "Critical",
-                span: None,
+                span: Some((m.start(), m.end())),
             });
         }
     }
@@ -926,15 +945,16 @@ fn scan_json_secrets(text: &str) -> Vec<DeepFinding> {
 
                             if has_secret_key {
                                 let values = extract_string_values(slice);
-                                for val in values {
+                                for (val, off) in values {
                                     if val.len() >= 8 {
                                         let ent = entropy::shannon_entropy(&val);
                                         if ent > 3.5 {
+                                            let abs = s + off;
                                             findings.push(DeepFinding {
                                                 finding_type: "JSON Secret",
                                                 description: format!("JSON contains secret-like value (entropy {:.2})", ent),
                                                 severity: if ent > 4.5 { "Critical" } else { "High" },
-                                                span: None,
+                                                span: Some((abs, abs + val.len())),
                                             });
                                         }
                                     }
@@ -963,11 +983,11 @@ fn string_value_re() -> &'static regex::Regex {
     })
 }
 
-fn extract_string_values(text: &str) -> Vec<String> {
+fn extract_string_values(text: &str) -> Vec<(String, usize)> {
     let mut values = Vec::new();
     for cap in string_value_re().captures_iter(text) {
         if let Some(m) = cap.get(1) {
-            values.push(m.as_str().to_string());
+            values.push((m.as_str().to_string(), m.start()));
         }
     }
     values
@@ -1017,6 +1037,11 @@ fn scan_proximity_analysis(text: &str) -> Vec<DeepFinding> {
                 let ent = entropy::shannon_entropy(token);
                 if ent > 3.8 {
                     let preview: String = token.chars().take(30).collect();
+                    // Both `text` and `token` live in the same allocation
+                    // (`token` is a &str from split_whitespace on a &str from
+                    // text.lines()), so the pointer difference is the byte
+                    // offset of the token within text.
+                    let abs = (token.as_ptr() as usize) - (text.as_ptr() as usize);
                     findings.push(DeepFinding {
                         finding_type: "Proximity Secret",
                         description: format!(
@@ -1025,7 +1050,7 @@ fn scan_proximity_analysis(text: &str) -> Vec<DeepFinding> {
                             i + 1
                         ),
                         severity: if ent > 4.5 { "Critical" } else { "High" },
-                        span: None,
+                        span: Some((abs, abs + token.len())),
                     });
                 }
             }
