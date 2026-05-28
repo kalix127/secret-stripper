@@ -29,7 +29,6 @@ Other recipes:
 | `just lint` | `cargo clippy --all-targets --all-features -- -D warnings` |
 | `just fmt` | `cargo fmt --all` |
 | `just fmt-check` | `cargo fmt --all -- --check` |
-| `just bench` | Release build + the hidden preset-latency benchmark |
 | `just release` | Interactive version bump + commit + tag |
 | `just patterns-doc` | Regenerate `DETECTION_COVERAGE.md` from the live catalog |
 | `just clean` | `cargo clean` |

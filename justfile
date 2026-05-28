@@ -27,10 +27,6 @@ fmt:
 fmt-check:
     cargo fmt --all -- --check
 
-# Build release binary then run the hidden preset-latency benchmark
-bench: build-release
-    ./target/release/secret-stripper bench
-
 release:
     bash scripts/release.sh
 
