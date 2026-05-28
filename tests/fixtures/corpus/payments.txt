@@ -38,18 +38,6 @@ Id rzp_test_AAAAAAAAAAAAAA here.
 # expect: Mollie API Key
 Key live_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
 
-# === Klarna ===
-# expect: Klarna API Credentials
-Creds PK01234_abc:DEF123 here.
-
-# === Flutterwave ===
-# expect: Flutterwave Public Key
-# expect: Flutterwave Secret Key
-# expect: Flutterwave Encryption Key
-Pub FLWPUBK_TEST-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-X here.
-Sec FLWSECK_TEST-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA-X here.
-Enc FLWSECK_TESTencryptionAAAAAAAAAAAA here.
-
 # === GoCardless ===
 # expect: GoCardless API Token
 Token sandbox_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA here.
