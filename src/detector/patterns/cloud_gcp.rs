@@ -51,24 +51,6 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"\b6L[A-Za-z0-9_-]{38}\b"),
         },
         SecretPattern {
-            name: "GCP GA4 Measurement ID",
-            category: "Cloud / GCP",
-            severity: Severity::Low,
-            regex: re(r"\bG-[A-Z0-9]{10}\b"),
-        },
-        SecretPattern {
-            name: "GCP UA Legacy Property ID",
-            category: "Cloud / GCP",
-            severity: Severity::Low,
-            regex: re(r"\bUA-\d{4,10}-\d{1,4}\b"),
-        },
-        SecretPattern {
-            name: "GCP Tag Manager Container ID",
-            category: "Cloud / GCP",
-            severity: Severity::Low,
-            regex: re(r"\bGTM-[A-Z0-9]{6,8}\b"),
-        },
-        SecretPattern {
             name: "GCP Cloud Run Service URL",
             category: "Cloud / GCP",
             severity: Severity::Medium,
