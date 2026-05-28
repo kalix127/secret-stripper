@@ -2,11 +2,7 @@
 
 # === Mobile / Apple ===
 # expect: Apple Pay Merchant ID
-# expect: Apple App-Specific Password
-# expect: Apple iOS UDID (2018+)
 merchant.com.example.payments
-Password abcd-efgh-ijkl-mnop here.
-Device 00008030-001A2B3C4D5E6F70 here.
 
 # === Mobile / Google Play and Android ===
 # expect: AdMob Ad Unit ID

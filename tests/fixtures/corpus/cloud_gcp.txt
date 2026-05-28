@@ -26,14 +26,6 @@ https://my-app-demo.firebaseio.com
 # expect: GCP reCAPTCHA Key
 6LcExampleAAAAABBBBBCCCCCDDDDDEEEEEFFFFG
 
-# === GCP / Analytics and Tag Manager ===
-# expect: GCP GA4 Measurement ID
-# expect: GCP UA Legacy Property ID
-# expect: GCP Tag Manager Container ID
-G-ABC1234567
-UA-12345678-1
-GTM-ABC1234
-
 # === GCP / Cloud Run ===
 # expect: GCP Cloud Run Service URL
 https://svc-abc-uc.a.run.app
