@@ -25,6 +25,18 @@ pub fn write_failed_notification(timeout: u64, lang: Lang, cleared: bool) {
     ));
 }
 
+/// Fires when Drop style triggers the deep-scan-no-span fallback: a secret was
+/// detected but no byte range was known, so the clipboard was cleared rather
+/// than left intact. Bypasses `Config.silent` because an emptied clipboard
+/// otherwise looks like silent breakage.
+pub fn drop_fallback_notification(timeout: u64, lang: Lang) {
+    show(make_notification(
+        lang.notify_drop_fallback_title(),
+        lang.notify_drop_fallback_body(),
+        timeout,
+    ));
+}
+
 pub fn update_available_notification(timeout: u64, lang: Lang, current: &str, latest: &str) {
     let body = lang.update_available_body(current, latest);
     show(make_notification(

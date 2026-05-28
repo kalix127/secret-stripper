@@ -1,6 +1,6 @@
 use std::io::{self, Read, Write};
 
-use crate::config::Config;
+use crate::config::{Config, RedactStyle};
 use crate::detector::{self, Detector};
 
 /// One-shot redaction pass over a string. Shared between the `redact`
@@ -18,8 +18,11 @@ pub fn redact_with(detector: &Detector, cfg: &Config, text: &str) -> (String, Ve
         .iter()
         .map(|(t, _)| t.as_str())
         .collect();
-    let mut deep_spans: Vec<(usize, usize)> =
-        result.deep_findings.iter().filter_map(|f| f.span).collect();
+    let mut deep_spans: Vec<(usize, usize, &'static str)> = result
+        .deep_findings
+        .iter()
+        .filter_map(|f| f.span.map(|(s, e)| (s, e, f.finding_type)))
+        .collect();
     deep_spans.extend(result.extra_spans.iter().copied());
 
     let redacted = detector::redact::redact_with_spans(
@@ -28,6 +31,7 @@ pub fn redact_with(detector: &Detector, cfg: &Config, text: &str) -> (String, Ve
         &entropy_tokens,
         &deep_spans,
         detector.allowlist(),
+        cfg.redact_style,
         &cfg.redact_pattern,
     );
 
@@ -47,11 +51,16 @@ pub fn redact_with(detector: &Detector, cfg: &Config, text: &str) -> (String, Ve
     }
 
     // Fallback: deep-scan caught it but the redactor produced an identical
-    // string (no span info). Replace the whole input with the configured
-    // marker so the secret cannot survive the round-trip. Mirrors the
-    // trigger flow in main.rs::run_trigger.
+    // string (no span info). Replace the whole input so the secret cannot
+    // survive the round-trip. Style-aware: Marker uses the configured marker,
+    // Typed uses [SECRET] (the originating name is unrecoverable here), Drop
+    // empties the output. Mirrors the trigger flow in main.rs::run_trigger.
     let final_text = if redacted == text {
-        cfg.redact_pattern.clone()
+        match cfg.redact_style {
+            RedactStyle::Marker => cfg.redact_pattern.clone(),
+            RedactStyle::Typed => "[SECRET]".to_string(),
+            RedactStyle::Drop => String::new(),
+        }
     } else {
         redacted
     };

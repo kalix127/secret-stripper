@@ -5,12 +5,21 @@ use std::path::{Path, PathBuf};
 
 use crate::lang::Lang;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RedactStyle {
+    Marker,
+    Drop,
+    Typed,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub lang: Lang,
     pub notification_timeout_secs: u64,
     pub onboarding_done: bool,
     pub redact_pattern: String,
+    #[serde(default = "default_redact_style")]
+    pub redact_style: RedactStyle,
     pub sensitivity: usize,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub entropy_threshold: Option<f64>,
@@ -150,6 +159,10 @@ fn default_enable_entropy() -> bool {
     false
 }
 
+fn default_redact_style() -> RedactStyle {
+    RedactStyle::Marker
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -157,6 +170,7 @@ impl Default for Config {
             notification_timeout_secs: 5,
             onboarding_done: false,
             redact_pattern: "[REDACTED]".to_string(),
+            redact_style: RedactStyle::Marker,
             sensitivity: 3,
             entropy_threshold: None,
             entropy_min_len: None,
