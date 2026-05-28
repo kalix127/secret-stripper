@@ -21,6 +21,12 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"\bsk-None-[A-Za-z0-9_-]{40,}\b"),
         },
         SecretPattern {
+            name: "OpenAI Project API Key",
+            category: "AI / ML",
+            severity: Severity::Critical,
+            regex: re(r"\bsk-proj-[A-Za-z0-9_-]{40,}\b"),
+        },
+        SecretPattern {
             name: "OpenAI Organization ID",
             category: "AI / ML",
             severity: Severity::Medium,
