@@ -17,10 +17,15 @@ pub fn patterns() -> Vec<SecretPattern> {
             ),
         },
         SecretPattern {
+            // `DI<18 upper/digit>` collides with any UPPER_SNAKE constant of
+            // that shape. Real IKs always appear paired with a duo / ikey /
+            // integration_key label in Duo's own docs and SDK examples.
             name: "Duo Security Integration Key",
             category: "SaaS / IAM",
             severity: Severity::High,
-            regex: re(r"\bDI[A-Z0-9]{18}\b"),
+            regex: re(
+                r#"(?i)(?:duo[^\n]{0,50}|integration[_-]?key\s*[:=]\s*['"]?|\bikey\b\s*[:=]?\s*['"]?)\bDI[A-Z0-9]{18}\b"#,
+            ),
         },
         SecretPattern {
             name: "Duo Security API Hostname",
@@ -53,12 +58,6 @@ pub fn patterns() -> Vec<SecretPattern> {
             category: "SaaS / IAM",
             severity: Severity::Critical,
             regex: re(r"\b0\.[A-Za-z0-9_-]{200,}"),
-        },
-        SecretPattern {
-            name: "YubiKey OTP",
-            category: "SaaS / IAM",
-            severity: Severity::High,
-            regex: re(r"\b[cbdefghijklnrtuv]{44}\b"),
         },
         SecretPattern {
             name: "SAML Certificate (PEM)",
