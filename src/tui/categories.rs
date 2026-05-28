@@ -2,7 +2,7 @@ use crate::config::Config;
 use crate::detector::{custom, patterns};
 use crate::tui::chrome::scaffold;
 use crate::tui::theme;
-use crate::tui::widgets::visible_window;
+use crate::tui::widgets::scrolled_window;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::{
     style::{Modifier, Style},
@@ -95,9 +95,17 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
                 return;
             }
             let rows = body.height as usize;
-            let (off, end) = visible_window(buckets.len(), selected, rows);
+            // Treat 3 trailing blank rows as virtual items so the cursor can
+            // approach them as the list ends, giving the user a visible
+            // "end of list" buffer beneath the last bucket.
+            const TAIL_BLANK: usize = 3;
+            let virtual_total = buckets.len() + TAIL_BLANK;
+            // Keep ~5 rows of context below the cursor so the user does not
+            // have to land on the bottom-most visible row to see what is next.
+            let (off, end) = scrolled_window(virtual_total, selected, rows, 5);
             let mut lines: Vec<Line> = Vec::with_capacity(end - off);
-            for (i, (stem, count)) in buckets[off..end].iter().enumerate() {
+            let real_end = end.min(buckets.len());
+            for (i, (stem, count)) in buckets[off..real_end].iter().enumerate() {
                 let idx = off + i;
                 let enabled = !config.disabled_categories.iter().any(|d| d == stem);
                 let mark = if enabled { "[x]" } else { "[ ]" };
@@ -131,6 +139,9 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
                     ),
                 ]));
             }
+            for _ in real_end..end {
+                lines.push(Line::from(""));
+            }
             f.render_widget(Paragraph::new(lines), body);
         })?;
 
@@ -145,7 +156,13 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
             }
             match key.code {
                 KeyCode::Esc | KeyCode::Char('q') => break changed,
-                KeyCode::Up => selected = selected.saturating_sub(1),
+                KeyCode::Up if !buckets.is_empty() => {
+                    selected = if selected == 0 {
+                        buckets.len() - 1
+                    } else {
+                        selected - 1
+                    };
+                }
                 KeyCode::Down if !buckets.is_empty() => {
                     selected = (selected + 1) % buckets.len();
                 }

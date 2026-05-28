@@ -70,13 +70,20 @@ impl StatusSnapshot {
             Some(tag) if crate::updater::is_newer(tag) => Some(tag.to_string()),
             _ => None,
         };
+        let redact_style = match config.redact_style {
+            crate::config::RedactStyle::Marker => {
+                format!("{}: {}", lang.rs_style_marker(), config.redact_pattern)
+            }
+            crate::config::RedactStyle::Drop => lang.rs_style_drop().to_string(),
+            crate::config::RedactStyle::Typed => lang.rs_style_typed().to_string(),
+        };
         Self {
             hotkey: config.hotkey.clone(),
             lang_endonym: lang.endonym().to_string(),
             sensitivity_label,
             notif,
             deep,
-            redact_style: config.redact_pattern.clone(),
+            redact_style,
             buckets_label,
             update,
             stats: crate::stats::read_buckets(),
