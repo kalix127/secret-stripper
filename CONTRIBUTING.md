@@ -30,7 +30,7 @@ Other recipes:
 | `just fmt` | `cargo fmt --all` |
 | `just fmt-check` | `cargo fmt --all -- --check` |
 | `just bench` | Release build + the hidden preset-latency benchmark |
-| `just release` | Interactive version bump + CHANGELOG + commit + tag |
+| `just release` | Interactive version bump + commit + tag |
 | `just patterns-doc` | Regenerate `DETECTION_COVERAGE.md` from the live catalog |
 | `just clean` | `cargo clean` |
 | `just` (no args) | List every recipe |
