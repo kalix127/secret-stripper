@@ -44,12 +44,10 @@ pub fn select_language(
             }
             lines.push(Line::from(""));
             let is_back_sel = selected == back_idx;
+            let back_arrow = if is_back_sel { " \u{25B6} " } else { "   " };
             lines.push(Line::from(vec![
-                Span::styled("   ", Style::new().fg(theme::select_arrow())),
-                Span::styled(
-                    format!("{}  ", "\u{2190} "),
-                    Style::new().fg(theme::icon_blue()),
-                ),
+                Span::styled(back_arrow, Style::new().fg(theme::select_arrow())),
+                Span::styled("\u{2190} ", Style::new().fg(theme::icon_blue())),
                 Span::styled(
                     config.lang.lbl_back().to_string(),
                     crate::tui::chrome::list_label_style(is_back_sel),

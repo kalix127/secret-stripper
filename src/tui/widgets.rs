@@ -60,6 +60,25 @@ pub fn render_menu(
     f.render_widget(Paragraph::new(lines), area);
 }
 
+/// Scroll window with vim-style scroll-off: keeps `scrolloff` rows of context
+/// below the cursor when possible, so the user can see what is coming without
+/// having to land on the bottom-most visible row first. Clamped so the window
+/// never overruns the end of the list.
+pub fn scrolled_window(
+    total: usize,
+    selected: usize,
+    rows: usize,
+    scrolloff: usize,
+) -> (usize, usize) {
+    if total == 0 || rows == 0 {
+        return (0, 0);
+    }
+    let rows = rows.min(total);
+    let scrolloff = scrolloff.min(rows.saturating_sub(1));
+    let start = selected.saturating_sub(scrolloff).min(total - rows);
+    (start, start + rows)
+}
+
 /// Scroll window: returns the `[start, end)` slice of `total` items that keeps
 /// `selected` visible within `rows` visible lines.
 pub fn visible_window(total: usize, selected: usize, rows: usize) -> (usize, usize) {
