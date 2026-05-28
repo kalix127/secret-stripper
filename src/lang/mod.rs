@@ -327,6 +327,20 @@ lang_strings! {
         ES => "Fallo al escribir en el portapapeles",
     }
 
+    notify_drop_fallback_title {
+        EN => "Clipboard cleared",
+        FR => "Presse-papiers vidé",
+        IT => "Appunti svuotati",
+        ES => "Portapapeles vaciado",
+    }
+
+    notify_drop_fallback_body {
+        EN => "A secret was detected without an exact location. The clipboard was cleared to avoid leaking it.",
+        FR => "Un secret a été détecté sans emplacement exact. Le presse-papiers a été vidé pour éviter toute fuite.",
+        IT => "È stato rilevato un segreto senza una posizione esatta. Gli appunti sono stati svuotati per evitare fughe.",
+        ES => "Se detectó un secreto sin una ubicación exacta. Se vació el portapapeles para evitar filtraciones.",
+    }
+
     update_available_title {
         EN => "Secret Stripper update available",
         FR => "Mise à jour de Secret Stripper disponible",
@@ -1149,16 +1163,52 @@ lang_strings! {
         ES => "Estilo de redacción",
     }
     help_dm_redact_style {
-        EN => "Choose the text that replaces a detected secret",
-        FR => "Choisir le texte qui remplace un secret détecté",
-        IT => "Scegli il testo che sostituisce un segreto rilevato",
-        ES => "Elige el texto que reemplaza un secreto detectado",
+        EN => "Choose how detected secrets are replaced",
+        FR => "Choisir comment les secrets détectés sont remplacés",
+        IT => "Scegli come sostituire i segreti rilevati",
+        ES => "Elige cómo se reemplazan los secretos detectados",
     }
     rs_title {
         EN => "Redaction Style",
         FR => "Style d'expurgation",
         IT => "Stile di oscuramento",
         ES => "Estilo de redacción",
+    }
+    rs_style_marker {
+        EN => "Marker",
+        FR => "Marqueur",
+        IT => "Marcatore",
+        ES => "Marcador",
+    }
+    rs_style_drop {
+        EN => "Drop",
+        FR => "Supprimer",
+        IT => "Rimuovi",
+        ES => "Eliminar",
+    }
+    rs_style_typed {
+        EN => "Type tag",
+        FR => "Étiquette typée",
+        IT => "Etichetta tipizzata",
+        ES => "Etiqueta tipada",
+    }
+    help_rs_style_marker {
+        EN => "Replace each secret with a configurable marker (e.g. [REDACTED])",
+        FR => "Remplacer chaque secret par un marqueur configurable (ex : [REDACTED])",
+        IT => "Sostituisci ogni segreto con un marcatore configurabile (es. [REDACTED])",
+        ES => "Reemplaza cada secreto con un marcador configurable (p. ej. [REDACTED])",
+    }
+    help_rs_style_drop {
+        EN => "Remove the secret entirely; surrounding text stays unchanged",
+        FR => "Supprimer entièrement le secret ; le texte autour reste inchangé",
+        IT => "Rimuovi del tutto il segreto; il testo circostante resta invariato",
+        ES => "Elimina el secreto por completo; el texto alrededor no cambia",
+    }
+    help_rs_style_typed {
+        EN => "Replace each secret with a typed tag (e.g. [EMAIL_ADDRESS], [AWS_ACCESS_KEY_ID])",
+        FR => "Remplacer chaque secret par une étiquette typée (ex : [EMAIL_ADDRESS], [AWS_ACCESS_KEY_ID])",
+        IT => "Sostituisci ogni segreto con un'etichetta tipizzata (es. [EMAIL_ADDRESS], [AWS_ACCESS_KEY_ID])",
+        ES => "Reemplaza cada secreto con una etiqueta tipada (p. ej. [EMAIL_ADDRESS], [AWS_ACCESS_KEY_ID])",
     }
     help_rs_preset {
         EN => "Use this marker to redact detected secrets",

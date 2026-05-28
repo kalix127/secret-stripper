@@ -8,7 +8,7 @@
 
 use std::path::PathBuf;
 
-use secret_stripper::config::Config;
+use secret_stripper::config::{Config, RedactStyle};
 use secret_stripper::detector::redact::redact_with_spans;
 use secret_stripper::Detector;
 
@@ -143,8 +143,11 @@ pub fn run_bucket_roundtrip(file: &str) {
             .iter()
             .map(|(t, _)| t.as_str())
             .collect();
-        let mut deep_spans: Vec<(usize, usize)> =
-            r.deep_findings.iter().filter_map(|f| f.span).collect();
+        let mut deep_spans: Vec<(usize, usize, &'static str)> = r
+            .deep_findings
+            .iter()
+            .filter_map(|f| f.span.map(|(s, e)| (s, e, f.finding_type)))
+            .collect();
         deep_spans.extend(r.extra_spans.iter().copied());
         let redacted = redact_with_spans(
             &sec.body,
@@ -152,6 +155,7 @@ pub fn run_bucket_roundtrip(file: &str) {
             &entropy_tokens,
             &deep_spans,
             &[],
+            RedactStyle::Marker,
             &cfg.redact_pattern,
         );
         let r2 = d.scan(&redacted);

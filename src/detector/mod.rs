@@ -16,15 +16,19 @@ pub struct DetectionResult {
     pub matched_patterns: Vec<(&'static str, &'static str, Severity)>,
     /// Byte spans (in the original text) of every pattern hit that survived
     /// allowlist + validator, so the redactor never has to re-run the
-    /// catalog. Soft-wrap-only hits travel via `extra_spans` as before.
-    pub matched_spans: Vec<(usize, usize)>,
+    /// catalog. The third tuple element carries the originating pattern's
+    /// name so the redactor can emit a typed marker per span. Soft-wrap-only
+    /// hits travel via `extra_spans` as before.
+    pub matched_spans: Vec<(usize, usize, &'static str)>,
     pub high_entropy_tokens: Vec<(String, f64)>,
     pub deep_findings: Vec<deep_scan::DeepFinding>,
     /// Byte spans (in the original text) for secrets only found once their
     /// soft-wrapped newline was removed. They carry no regex of their own, so
     /// the redactor cannot re-derive them; callers must pass these through to
-    /// the redaction span list the same way deep-scan spans are.
-    pub extra_spans: Vec<(usize, usize)>,
+    /// the redaction span list the same way deep-scan spans are. The third
+    /// tuple element is the originating name (pattern name, or `"High Entropy"`
+    /// for the entropy-across-wrap case).
+    pub extra_spans: Vec<(usize, usize, &'static str)>,
     pub has_secrets: bool,
 }
 
@@ -334,7 +338,7 @@ impl Detector {
 
     pub fn scan(&self, text: &str) -> DetectionResult {
         let mut matched = Vec::new();
-        let mut matched_spans: Vec<(usize, usize)> = Vec::new();
+        let mut matched_spans: Vec<(usize, usize, &'static str)> = Vec::new();
         let mut seen: HashSet<(usize, usize)> = HashSet::new();
 
         // One combined-automaton pass picks the patterns that can match;
@@ -357,7 +361,7 @@ impl Detector {
                 }
                 if seen.insert((pi, m.start())) {
                     matched.push((pattern.name, pattern.category, pattern.severity.clone()));
-                    matched_spans.push((m.start(), m.end()));
+                    matched_spans.push((m.start(), m.end(), pattern.name));
                 }
             }
         }
@@ -390,7 +394,7 @@ impl Detector {
         // one newline that no single pattern spans. Additive and gated on the
         // span actually containing a '\n', so input with no soft-wrap is
         // unaffected; the joined value is what validators (Luhn/IBAN/...) see.
-        let mut extra_spans: Vec<(usize, usize)> = Vec::new();
+        let mut extra_spans: Vec<(usize, usize, &'static str)> = Vec::new();
         let (dw, map) = build_dewrapped(text);
         if dw.len() != text.len() {
             for &pi in &self.single_line_patterns {
@@ -416,7 +420,7 @@ impl Detector {
                     if seen.insert((pi, os)) {
                         matched.push((pattern.name, pattern.category, pattern.severity.clone()));
                     }
-                    extra_spans.push((os, oe));
+                    extra_spans.push((os, oe, pattern.name));
                 }
             }
 
@@ -468,7 +472,7 @@ impl Detector {
                     if seen.insert((usize::MAX, os)) {
                         high_entropy_tokens.push((tok.clone(), ent));
                     }
-                    extra_spans.push((os, oe));
+                    extra_spans.push((os, oe, "High Entropy"));
                 }
             }
         }
@@ -626,8 +630,9 @@ mod tests {
         let d = Detector::from_config(&test_config());
         let r = d.scan("AKIAIOSFODNN7EXAMPLE");
         assert!(!r.matched_spans.is_empty());
-        let (s, e) = r.matched_spans[0];
+        let (s, e, name) = r.matched_spans[0];
         assert_eq!(&"AKIAIOSFODNN7EXAMPLE"[s..e], "AKIAIOSFODNN7EXAMPLE");
+        assert_eq!(name, "AWS Access Key ID");
     }
 
     #[test]
