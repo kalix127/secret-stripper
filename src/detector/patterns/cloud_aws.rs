@@ -17,37 +17,37 @@ pub fn patterns() -> Vec<SecretPattern> {
         SecretPattern {
             name: "AWS Context-Specific Credential ID",
             category: "Cloud / AWS",
-            severity: Severity::Medium,
+            severity: Severity::Low,
             regex: re(r"\bACCA[0-9A-Z]{16}\b"),
         },
         SecretPattern {
             name: "AWS IAM User Unique ID",
             category: "Cloud / AWS",
-            severity: Severity::Medium,
+            severity: Severity::Low,
             regex: re(r"\bAIDA[0-9A-Z]{16}\b"),
         },
         SecretPattern {
             name: "AWS EC2 Instance Profile ID",
             category: "Cloud / AWS",
-            severity: Severity::Medium,
+            severity: Severity::Low,
             regex: re(r"\bAIPA[0-9A-Z]{16}\b"),
         },
         SecretPattern {
             name: "AWS IAM Role Unique ID",
             category: "Cloud / AWS",
-            severity: Severity::Medium,
+            severity: Severity::Low,
             regex: re(r"\bAROA[0-9A-Z]{16}\b"),
         },
         SecretPattern {
             name: "AWS Server Certificate ID",
             category: "Cloud / AWS",
-            severity: Severity::Medium,
+            severity: Severity::Low,
             regex: re(r"\bASCA[0-9A-Z]{16}\b"),
         },
         SecretPattern {
             name: "AWS Public Key ID",
             category: "Cloud / AWS",
-            severity: Severity::Medium,
+            severity: Severity::Low,
             regex: re(r"\bAPKA[0-9A-Z]{16}\b"),
         },
         SecretPattern {

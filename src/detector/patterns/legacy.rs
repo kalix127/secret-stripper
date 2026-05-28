@@ -121,7 +121,11 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "Docker Registry Auth",
             category: "Cloud Secret",
             severity: Severity::High,
-            regex: re(r"(?i)auth\s*=\s*[A-Za-z0-9+/=]{40,200}"),
+            // Was a bare `auth=` keyword which fired on any OAuth callback URL
+            // or config line. Real Docker registry auths leak as the `"auth"`
+            // JSON field inside `~/.docker/config.json` dumps, so anchor on
+            // that JSON-key form.
+            regex: re(r#"(?i)"auth"\s*:\s*"[A-Za-z0-9+/=]{40,200}""#),
         },
         SecretPattern {
             name: "Social Security Number",
