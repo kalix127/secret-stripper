@@ -17,11 +17,12 @@ pub struct Config {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub entropy_min_len: Option<usize>,
     pub enable_deep_scan: bool,
-    /// Shannon-entropy scanner. On by default; the safety net for secrets no
-    /// named pattern knows. Runs on the whole text independently of which
-    /// pattern buckets are enabled, so turning it off is the only way to get
-    /// strictly pattern-only behavior. `serde(default)` keeps configs written
-    /// before this field existed loading as enabled.
+    /// Shannon-entropy scanner. Off by default - the named-pattern catalogue
+    /// covers the high-precision cases; entropy is a safety net for unknown
+    /// secret shapes that costs a moderate false-positive rate. Users can
+    /// flip it on from the menu or by setting `enable_entropy = true` in
+    /// `config.toml`. `serde(default)` matches the new-install default so a
+    /// config.toml missing the field also loads as off.
     #[serde(default = "default_enable_entropy")]
     pub enable_entropy: bool,
     pub silent: bool,
@@ -146,7 +147,7 @@ fn default_check_for_updates() -> bool {
 }
 
 fn default_enable_entropy() -> bool {
-    true
+    false
 }
 
 impl Default for Config {
@@ -159,8 +160,8 @@ impl Default for Config {
             sensitivity: 3,
             entropy_threshold: None,
             entropy_min_len: None,
-            enable_deep_scan: true,
-            enable_entropy: true,
+            enable_deep_scan: false,
+            enable_entropy: false,
             silent: true,
             hotkey: default_hotkey(),
             check_for_updates: true,

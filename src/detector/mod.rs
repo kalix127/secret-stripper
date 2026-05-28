@@ -499,6 +499,7 @@ mod tests {
             entropy_threshold: Some(3.8),
             entropy_min_len: Some(20),
             enable_deep_scan: true,
+            enable_entropy: true,
             ..crate::config::Config::default()
         }
     }
@@ -706,6 +707,7 @@ mod tests {
             entropy_threshold: None,
             entropy_min_len: None,
             enable_deep_scan: true,
+            enable_entropy: true,
             ..crate::config::Config::default()
         };
         let d = Detector::from_config(&cfg);

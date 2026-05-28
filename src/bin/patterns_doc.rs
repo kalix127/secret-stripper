@@ -290,8 +290,8 @@ fn main() {
     )
     .unwrap();
     writeln!(out).unwrap();
-    writeln!(out, "- **Entropy scan** - a Shannon-entropy catch-all that flags long, random-looking strings even when no named pattern recognizes them. Runs on the whole clipboard text independently of which buckets are enabled, so disabling a category does not stop an entropy-looking value in that category from being redacted. Toggle off by setting `enable_entropy = false` in `config.toml` for strictly pattern-only behavior.").unwrap();
-    writeln!(out, "- **Deep scan** - heuristic scanners for key=value pairs, dotenv blocks, base64-encoded blobs, JSON `password` / `secret` / `token` fields, SSH-key blobs, connection strings, BIP39 mnemonics, and vendor-host proximity. Recursive with `MAX_DEPTH = 3`. Toggle off by setting `enable_deep_scan = false` in `config.toml`.").unwrap();
+    writeln!(out, "- **Entropy scan** - a Shannon-entropy catch-all that flags long, random-looking strings even when no named pattern recognizes them. Off by default: the named-pattern catalogue covers the high-precision cases at zero false-positive cost, and entropy trades precision for unknown-shape coverage. When on it runs across the whole clipboard text independently of which buckets are enabled, so disabling a category does not stop an entropy-looking value in that category from being redacted. Toggle from the menu or by setting `enable_entropy = true` in `config.toml`.").unwrap();
+    writeln!(out, "- **Deep scan** - heuristic scanners for key=value pairs, dotenv blocks, base64-encoded blobs, JSON `password` / `secret` / `token` fields, SSH-key blobs, connection strings, BIP39 mnemonics, and vendor-host proximity. Recursive with `MAX_DEPTH = 3`. Off by default for the same precision/coverage trade-off; toggle from the menu or by setting `enable_deep_scan = true` in `config.toml`.").unwrap();
     writeln!(out).unwrap();
     writeln!(out, "Both scanners are tuned by `Config.sensitivity` (1 = strict, 5 = loose). The dial maps to concrete entropy and length thresholds in `Detector::from_config`.").unwrap();
     writeln!(out).unwrap();

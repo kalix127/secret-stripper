@@ -27,9 +27,14 @@ pub fn corpus_dir() -> PathBuf {
 }
 
 pub fn default_test_config() -> Config {
-    // Default is sensitivity 3 with deep-scan enabled, which is the profile
-    // the corpus is calibrated against.
-    Config::default()
+    // The corpus is calibrated against sensitivity 3 with deep-scan and
+    // entropy enabled. New-install defaults are off; override here so the
+    // expectation files keep covering every detection surface.
+    Config {
+        enable_deep_scan: true,
+        enable_entropy: true,
+        ..Config::default()
+    }
 }
 
 fn load(file: &str) -> String {
