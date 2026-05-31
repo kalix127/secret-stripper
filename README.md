@@ -164,6 +164,7 @@ Pick how detected secrets are replaced from `secret-stripper menu` -> **Redactio
 | **Marker** (default) | `aws=[REDACTED]` - uses a configurable marker string (eight presets + custom) |
 | **Drop** | `aws=` - removes the matched bytes entirely |
 | **Typed** | `aws=[AWS_ACCESS_KEY_ID]` - replaces each span with a tag derived from the matched pattern name |
+| **Placeholder** | `aws=AKIAIOSFODNN7EXAMPLE` - swaps in a realistic but fake sample value for the matched pattern (an email becomes `user@example.com`, a Stripe key `sk_test_4eC39HqLyjWDarjtT1zdp7dc`) |
 
 The same setting applies to the hotkey trigger, the `redact` pipeline subcommand, and the `paste-guard` AI-TUI wrapper.
 
