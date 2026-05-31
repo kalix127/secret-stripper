@@ -1192,6 +1192,12 @@ lang_strings! {
         IT => "Etichetta tipizzata",
         ES => "Etiqueta tipada",
     }
+    rs_style_placeholder {
+        EN => "Placeholder",
+        FR => "Valeur fictive",
+        IT => "Valore fittizio",
+        ES => "Valor ficticio",
+    }
     help_rs_style_marker {
         EN => "Replace each secret with a configurable marker (e.g. [REDACTED])",
         FR => "Remplacer chaque secret par un marqueur configurable (ex : [REDACTED])",
@@ -1209,6 +1215,12 @@ lang_strings! {
         FR => "Remplacer chaque secret par une étiquette typée (ex : [EMAIL_ADDRESS], [AWS_ACCESS_KEY_ID])",
         IT => "Sostituisci ogni segreto con un'etichetta tipizzata (es. [EMAIL_ADDRESS], [AWS_ACCESS_KEY_ID])",
         ES => "Reemplaza cada secreto con una etiqueta tipada (p. ej. [EMAIL_ADDRESS], [AWS_ACCESS_KEY_ID])",
+    }
+    help_rs_style_placeholder {
+        EN => "Replace each secret with a realistic but fake sample value (e.g. user@example.com, AKIAIOSFODNN7EXAMPLE)",
+        FR => "Remplacer chaque secret par une valeur d'exemple réaliste mais fictive (ex : user@example.com, AKIAIOSFODNN7EXAMPLE)",
+        IT => "Sostituisci ogni segreto con un valore di esempio realistico ma falso (es. user@example.com, AKIAIOSFODNN7EXAMPLE)",
+        ES => "Reemplaza cada secreto con un valor de ejemplo realista pero falso (p. ej. user@example.com, AKIAIOSFODNN7EXAMPLE)",
     }
     help_rs_preset {
         EN => "Use this marker to redact detected secrets",

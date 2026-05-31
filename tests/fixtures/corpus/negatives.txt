@@ -261,3 +261,9 @@ A plain 16-digit order number 1234567890123456 is not a card.
 # The separator-less 12-hex MAC form was removed - it redacted git short
 # SHAs / hex ids. A bare 12-hex run must now stay quiet.
 Build commit a1b2c3d4e5f6 deployed; blob id 0e02b2c3d479 cached.
+
+# === FP lock: Placeholder-style sample values stay inert ===
+# The Placeholder redaction style emits these as fake examples. Each is
+# format-valid but fails its checksum (Amex Mod-10, IBAN Mod-97), so a
+# re-scan of redacted output must not detect them.
+Amex sample 3782 822463 10006 and IBAN sample DE00370400440532013000 here.

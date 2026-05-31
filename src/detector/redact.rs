@@ -109,10 +109,18 @@ pub fn redact_with_spans(
     let mut merged: Vec<(usize, usize, &str)> = Vec::with_capacity(spans.len());
     for (s, e, name) in spans {
         match merged.last_mut() {
-            // Typed mode keeps spans with different names distinct so each
-            // gets its own marker; Marker / Drop merge unconditionally as
-            // before.
-            Some(last) if s <= last.1 && (style != RedactStyle::Typed || last.2 == name) => {
+            // A true byte overlap (s < last.1) can never become two separate
+            // markers, so it always fuses and the earlier span's name wins; this
+            // also stops the emit loop below from slicing backwards. Adjacent
+            // spans (s == last.1) fuse unconditionally for Marker / Drop, and for
+            // Typed / Placeholder only when the name matches, so distinct
+            // neighbouring secrets each keep their own marker.
+            Some(last)
+                if s < last.1
+                    || (s == last.1
+                        && (!matches!(style, RedactStyle::Typed | RedactStyle::Placeholder)
+                            || last.2 == name)) =>
+            {
                 if e > last.1 {
                     last.1 = e;
                 }
@@ -129,6 +137,7 @@ pub fn redact_with_spans(
             RedactStyle::Marker => marker.to_string(),
             RedactStyle::Drop => String::new(),
             RedactStyle::Typed => name_to_tag(name),
+            RedactStyle::Placeholder => super::placeholders::placeholder_for(name),
         };
         // Preserve line structure: if the span straddles newlines (a token a
         // human soft-wrapped, or a multi-line block pattern), emit one marker
@@ -587,5 +596,154 @@ mod tests {
         assert_eq!(name_to_tag("---"), "[SECRET]");
         assert_eq!(name_to_tag("__hello__"), "[HELLO]");
         assert_eq!(name_to_tag("a"), "[A]");
+    }
+
+    fn redact_via_detector(
+        det: &crate::detector::Detector,
+        cfg: &crate::config::Config,
+        text: &str,
+    ) -> String {
+        let r = det.scan(text);
+        let entropy: Vec<&str> = r
+            .high_entropy_tokens
+            .iter()
+            .map(|(t, _)| t.as_str())
+            .collect();
+        let mut deep: Vec<(usize, usize, &str)> = r
+            .deep_findings
+            .iter()
+            .filter_map(|f| f.span.map(|(s, e)| (s, e, f.finding_type)))
+            .collect();
+        deep.extend(r.extra_spans.iter().copied());
+        redact_with_spans(
+            text,
+            &r.matched_spans,
+            &entropy,
+            &deep,
+            det.allowlist(),
+            RedactStyle::Placeholder,
+            &cfg.redact_pattern,
+        )
+    }
+
+    #[test]
+    fn placeholder_style_uses_curated_value() {
+        let p = pat("Email Address", r"john\.doe@corp\.com");
+        let result = redact_text(
+            "contact john.doe@corp.com now",
+            &[&p],
+            &[],
+            &[],
+            RedactStyle::Placeholder,
+            "",
+        );
+        assert_eq!(result, "contact user@example.com now");
+    }
+
+    #[test]
+    fn placeholder_style_no_merge_different_names() {
+        let p1 = pat("Email Address", "EMAIL");
+        let p2 = pat("AWS Access Key ID", "AWS");
+        let result = redact_text(
+            "EMAILAWS tail",
+            &[&p1, &p2],
+            &[],
+            &[],
+            RedactStyle::Placeholder,
+            "",
+        );
+        // Adjacent spans of different names must not merge: each secret gets its
+        // own sample value.
+        assert_eq!(result, "user@example.comAKIAIOSFODNN7EXAMPLE tail");
+    }
+
+    #[test]
+    fn placeholder_style_merges_same_name() {
+        let p1 = pat("Email Address", "abc");
+        let p2 = pat("Email Address", "bc");
+        let result = redact_text(
+            "xx abc yy",
+            &[&p1, &p2],
+            &[],
+            &[],
+            RedactStyle::Placeholder,
+            "",
+        );
+        assert_eq!(result, "xx user@example.com yy");
+        assert_eq!(result.matches("user@example.com").count(), 1);
+    }
+
+    #[test]
+    fn placeholder_validator_fakes_do_not_self_match() {
+        // The card and IBAN samples are format-valid but fail their checksum
+        // validator, so a re-scan does not detect them at all.
+        let cfg = crate::config::Config::default();
+        let det = crate::detector::Detector::from_config(&cfg);
+        for name in [
+            "Visa Card",
+            "Mastercard Card",
+            "American Express Card",
+            "IBAN",
+            "IBAN (Germany)",
+        ] {
+            let value = crate::detector::placeholders::placeholder_for(name);
+            let r = det.scan(&value);
+            assert!(
+                !r.has_secrets,
+                "{name} sample '{value}' was re-detected: {:?}",
+                r.matched_patterns
+            );
+        }
+    }
+
+    #[test]
+    fn placeholder_style_idempotent_fixed_point() {
+        // Every curated and category sample value must be a redaction fixed
+        // point: redacting it again yields the same text. This fails the build
+        // if a value cross-matches a different pattern or grows on re-scan.
+        // Checked under both the install default (deep scan / entropy off) and
+        // the stricter superset (both on), since a user may run either and
+        // idempotency must not depend on those toggles.
+        let strict = crate::config::Config {
+            enable_deep_scan: true,
+            enable_entropy: true,
+            ..crate::config::Config::default()
+        };
+        for cfg in [crate::config::Config::default(), strict] {
+            let det = crate::detector::Detector::from_config(&cfg);
+            let entries = crate::detector::placeholders::CURATED
+                .iter()
+                .chain(crate::detector::placeholders::CATEGORY.iter());
+            for &(key, value) in entries {
+                let once = redact_via_detector(&det, &cfg, value);
+                assert_eq!(once, value, "sample for '{key}' is not a fixed point");
+                let twice = redact_via_detector(&det, &cfg, &once);
+                assert_eq!(twice, once, "sample for '{key}' changed on second pass");
+            }
+        }
+    }
+
+    #[test]
+    fn generic_placeholder_scans_clean() {
+        let cfg = crate::config::Config::default();
+        let det = crate::detector::Detector::from_config(&cfg);
+        assert!(!det.scan(crate::detector::placeholders::GENERIC).has_secrets);
+    }
+
+    #[test]
+    fn placeholder_style_overlapping_spans_fuse() {
+        // Different-name spans that truly overlap must fuse into one (the first
+        // name wins) instead of slicing backwards in the emit loop.
+        let p1 = pat("Email Address", "abcdef");
+        let p2 = pat("AWS Access Key ID", "cde");
+        let result = redact_text(
+            "xx abcdef yy",
+            &[&p1, &p2],
+            &[],
+            &[],
+            RedactStyle::Placeholder,
+            "",
+        );
+        assert_eq!(result, "xx user@example.com yy");
     }
 }

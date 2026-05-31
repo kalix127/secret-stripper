@@ -35,9 +35,10 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
         RedactStyle::Marker => 0usize,
         RedactStyle::Drop => 1usize,
         RedactStyle::Typed => 2usize,
+        RedactStyle::Placeholder => 3usize,
     };
-    let style_total = 4usize;
-    let style_back = 3usize;
+    let style_total = 5usize;
+    let style_back = 4usize;
 
     let custom_idx = PRESETS.len();
     let back_idx = custom_idx + 1;
@@ -56,6 +57,7 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
                     0 => config.lang.help_rs_style_marker(),
                     1 => config.lang.help_rs_style_drop(),
                     2 => config.lang.help_rs_style_typed(),
+                    3 => config.lang.help_rs_style_placeholder(),
                     _ => config.lang.help_back(),
                 };
                 terminal.draw(|f| {
@@ -78,7 +80,7 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
                         Line::from(spans)
                     };
                     let cur = config.redact_style;
-                    let mut lines: Vec<Line> = Vec::with_capacity(5);
+                    let mut lines: Vec<Line> = Vec::with_capacity(6);
                     lines.push(style_row(
                         0,
                         config.lang.rs_style_marker(),
@@ -93,6 +95,11 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
                         2,
                         config.lang.rs_style_typed(),
                         cur == RedactStyle::Typed,
+                    ));
+                    lines.push(style_row(
+                        3,
+                        config.lang.rs_style_placeholder(),
+                        cur == RedactStyle::Placeholder,
                     ));
                     lines.push(Line::from(""));
                     let is_back_sel = style_selected == style_back;
@@ -145,6 +152,14 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
                             2 => {
                                 if config.redact_style != RedactStyle::Typed {
                                     config.redact_style = RedactStyle::Typed;
+                                    config.save()?;
+                                    changed = true;
+                                }
+                                break;
+                            }
+                            3 => {
+                                if config.redact_style != RedactStyle::Placeholder {
+                                    config.redact_style = RedactStyle::Placeholder;
                                     config.save()?;
                                     changed = true;
                                 }
