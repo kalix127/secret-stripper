@@ -76,6 +76,7 @@ impl StatusSnapshot {
             }
             crate::config::RedactStyle::Drop => lang.rs_style_drop().to_string(),
             crate::config::RedactStyle::Typed => lang.rs_style_typed().to_string(),
+            crate::config::RedactStyle::Placeholder => lang.rs_style_placeholder().to_string(),
         };
         Self {
             hotkey: config.hotkey.clone(),

@@ -10,6 +10,7 @@ pub enum RedactStyle {
     Marker,
     Drop,
     Typed,
+    Placeholder,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -249,18 +249,24 @@ fn run_trigger() -> anyhow::Result<()> {
         + result.high_entropy_tokens.len();
 
     // Fallback: detection found something but the redactor produced an
-    // identical string. This happens when only deep-scan caught the secret
-    // (DeepFinding does not carry the matched span). Fail-closed per style:
-    // Marker writes the configured marker; Typed writes [SECRET]; Drop empties
-    // the clipboard and force-notifies regardless of `silent` so an empty
-    // clipboard does not look like silent breakage.
+    // identical string. For Marker/Typed/Drop that only happens when no span was
+    // located (a deep-scan-only hit, since DeepFinding may carry no span), so
+    // fail closed. Placeholder sample values can legitimately equal the original
+    // secret (a fixed point), so for that style only fail closed when there was
+    // genuinely no span to redact. Drop empties the clipboard and force-notifies
+    // regardless of `silent` so an empty clipboard does not look like breakage.
+    let had_spans =
+        !result.matched_spans.is_empty() || !entropy_tokens.is_empty() || !deep_spans.is_empty();
+    let redaction_noop = *redacted == *text
+        && !(matches!(config.redact_style, config::RedactStyle::Placeholder) && had_spans);
     let drop_fallback_fired =
-        *redacted == *text && matches!(config.redact_style, config::RedactStyle::Drop);
-    let to_write: zeroize::Zeroizing<String> = if *redacted == *text {
+        redaction_noop && matches!(config.redact_style, config::RedactStyle::Drop);
+    let to_write: zeroize::Zeroizing<String> = if redaction_noop {
         let fallback = match config.redact_style {
             config::RedactStyle::Marker => config.redact_pattern.clone(),
             config::RedactStyle::Typed => "[SECRET]".to_string(),
             config::RedactStyle::Drop => String::new(),
+            config::RedactStyle::Placeholder => detector::placeholders::GENERIC.to_string(),
         };
         zeroize::Zeroizing::new(fallback)
     } else {

@@ -51,15 +51,20 @@ pub fn redact_with(detector: &Detector, cfg: &Config, text: &str) -> (String, Ve
     }
 
     // Fallback: deep-scan caught it but the redactor produced an identical
-    // string (no span info). Replace the whole input so the secret cannot
-    // survive the round-trip. Style-aware: Marker uses the configured marker,
-    // Typed uses [SECRET] (the originating name is unrecoverable here), Drop
-    // empties the output. Mirrors the trigger flow in main.rs::run_trigger.
-    let final_text = if redacted == text {
+    // string. For Marker/Typed/Drop that means no span was located, so replace
+    // the whole input to fail closed. Placeholder sample values can equal the
+    // original secret (a fixed point), so for that style only fail closed when
+    // there was genuinely no span to redact. Mirrors main.rs::run_trigger.
+    let had_spans =
+        !result.matched_spans.is_empty() || !entropy_tokens.is_empty() || !deep_spans.is_empty();
+    let redaction_noop =
+        redacted == text && !(matches!(cfg.redact_style, RedactStyle::Placeholder) && had_spans);
+    let final_text = if redaction_noop {
         match cfg.redact_style {
             RedactStyle::Marker => cfg.redact_pattern.clone(),
             RedactStyle::Typed => "[SECRET]".to_string(),
             RedactStyle::Drop => String::new(),
+            RedactStyle::Placeholder => detector::placeholders::GENERIC.to_string(),
         }
     } else {
         redacted
@@ -80,4 +85,32 @@ pub fn run_redact() -> anyhow::Result<()> {
     let mut out = stdout.lock();
     out.write_all(redacted.as_bytes())?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn placeholder_detector() -> (Config, Detector) {
+        let cfg = Config {
+            redact_style: RedactStyle::Placeholder,
+            ..Config::default()
+        };
+        let det = Detector::from_config(&cfg);
+        (cfg, det)
+    }
+
+    #[test]
+    fn placeholder_round_trip_is_a_stable_fixed_point() {
+        // A Placeholder sample can equal the original secret, so the redactor
+        // returns text unchanged on a second pass. The fail-closed fallback must
+        // not mistake that for a no-op and clobber the whole input.
+        let (cfg, det) = placeholder_detector();
+        let input = "aws AKIA1234567890ABCDEF email jane.doe@corp.com";
+        let (once, _) = redact_with(&det, &cfg, input);
+        assert_eq!(once, "aws AKIAIOSFODNN7EXAMPLE email user@example.com");
+        let (twice, _) = redact_with(&det, &cfg, &once);
+        assert_eq!(twice, once);
+        assert_ne!(twice, detector::placeholders::GENERIC);
+    }
 }

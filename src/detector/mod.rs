@@ -2,6 +2,7 @@ pub mod custom;
 pub mod deep_scan;
 pub mod entropy;
 pub mod patterns;
+pub mod placeholders;
 pub mod presets;
 pub mod redact;
 pub mod validators;
