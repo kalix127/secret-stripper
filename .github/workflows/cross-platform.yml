@@ -39,7 +39,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-2025-vs2026]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # pull_request_review's default checkout is the base branch; pin to
           # the PR's HEAD so we test what the reviewer actually approved.
