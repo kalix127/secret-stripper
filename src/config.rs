@@ -35,6 +35,10 @@ pub struct Config {
     /// config.toml missing the field also loads as off.
     #[serde(default = "default_enable_entropy")]
     pub enable_entropy: bool,
+    /// Redact secrets visible in a clipboard image (screenshot) via OCR when the
+    /// clipboard holds no text. On by default; needs the `tesseract` CLI present.
+    #[serde(default = "default_enable_image_scan")]
+    pub enable_image_scan: bool,
     pub silent: bool,
     #[serde(default = "default_hotkey")]
     pub hotkey: String,
@@ -160,6 +164,10 @@ fn default_enable_entropy() -> bool {
     false
 }
 
+fn default_enable_image_scan() -> bool {
+    false
+}
+
 fn default_redact_style() -> RedactStyle {
     RedactStyle::Marker
 }
@@ -177,6 +185,7 @@ impl Default for Config {
             entropy_min_len: None,
             enable_deep_scan: false,
             enable_entropy: false,
+            enable_image_scan: false,
             silent: true,
             hotkey: default_hotkey(),
             check_for_updates: true,

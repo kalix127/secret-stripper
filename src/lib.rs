@@ -1,6 +1,7 @@
 pub mod ai_tui;
 pub mod config;
 pub mod detector;
+pub mod image_scan;
 pub mod lang;
 pub mod redact_cli;
 pub mod shell_rc;

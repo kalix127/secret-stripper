@@ -35,4 +35,25 @@ impl ClipboardMonitor {
         self.clipboard.set_text(text.to_string())?;
         Ok(())
     }
+
+    /// Read a bitmap from the clipboard as (width, height, RGBA8 bytes). None when
+    /// the clipboard holds no image.
+    pub fn read_image(&mut self) -> Option<(usize, usize, Vec<u8>)> {
+        let img = self.clipboard.get_image().ok()?;
+        Some((img.width, img.height, img.bytes.into_owned()))
+    }
+
+    pub fn replace_image(
+        &mut self,
+        width: usize,
+        height: usize,
+        bytes: Vec<u8>,
+    ) -> anyhow::Result<()> {
+        self.clipboard.set_image(arboard::ImageData {
+            width,
+            height,
+            bytes: std::borrow::Cow::Owned(bytes),
+        })?;
+        Ok(())
+    }
 }
