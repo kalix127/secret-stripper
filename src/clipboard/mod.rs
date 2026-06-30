@@ -43,6 +43,7 @@ impl ClipboardMonitor {
         Some((img.width, img.height, img.bytes.into_owned()))
     }
 
+    #[cfg(target_os = "linux")]
     pub fn replace_image(
         &mut self,
         width: usize,
