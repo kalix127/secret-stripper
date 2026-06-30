@@ -570,6 +570,21 @@ lang_strings! {
         IT => "Nessun segreto rilevato negli appunti.",
         ES => "No se detectaron secretos en el portapapeles.",
     }
+
+    cli_image_scan_failed {
+        EN => "Could not scan the clipboard image. Clipboard left untouched.",
+        FR => "Impossible d'analyser l'image du presse-papiers. Presse-papiers inchangé.",
+        IT => "Impossibile analizzare l'immagine degli appunti. Appunti invariati.",
+        ES => "No se pudo analizar la imagen del portapapeles. Portapapeles sin cambios.",
+    }
+
+    cli_image_detected_unmappable {
+        EN => "Detected a secret in the image but could not locate it to redact. Clipboard left untouched.",
+        FR => "Secret détecté dans l'image mais impossible de le localiser pour le masquer. Presse-papiers inchangé.",
+        IT => "Segreto rilevato nell'immagine ma impossibile localizzarlo per oscurarlo. Appunti invariati.",
+        ES => "Se detectó un secreto en la imagen pero no se pudo localizar para redactarlo. Portapapeles sin cambios.",
+    }
+
     cli_clipboard_write_failed(cleared: bool, err: &str,) {
         EN => format!("Clipboard write failed{}: {}", if cleared { " (clipboard cleared)" } else { " (and clipboard could NOT be cleared)" }, err),
         FR => format!("Échec d'écriture du presse-papiers{} : {}", if cleared { " (presse-papiers vidé)" } else { " (et le presse-papiers n'a PAS pu être vidé)" }, err),
@@ -1090,6 +1105,21 @@ lang_strings! {
         IT => "Indietro",
         ES => "Atrás",
     }
+    dm_image_scan(on: bool,) {
+        EN => format!("Screenshot redaction: {}", if on { "on" } else { "off" }),
+        FR => format!(
+            "Expurgation des captures d'écran : {}",
+            if on { "activée" } else { "désactivée" }
+        ),
+        IT => format!(
+            "Oscuramento screenshot: {}",
+            if on { "attivo" } else { "disattivo" }
+        ),
+        ES => format!(
+            "Redacción de capturas: {}",
+            if on { "activada" } else { "desactivada" }
+        ),
+    }
     help_dm_categories {
         EN => "Turn whole detection buckets on or off",
         FR => "Activer ou désactiver des groupes entiers de détection",
@@ -1119,6 +1149,12 @@ lang_strings! {
         FR => "Revenir au menu principal",
         IT => "Torna al menu principale",
         ES => "Volver al menú principal",
+    }
+    help_dm_image_scan {
+        EN => "Redact secrets in clipboard screenshots (needs tesseract)",
+        FR => "Expurger les secrets des captures du presse-papiers (requiert tesseract)",
+        IT => "Oscura i segreti negli screenshot degli appunti (richiede tesseract)",
+        ES => "Redacta secretos en capturas del portapapeles (requiere tesseract)",
     }
     dm_presets {
         EN => "Presets",

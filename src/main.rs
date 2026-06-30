@@ -177,6 +177,19 @@ fn run_trigger() -> anyhow::Result<()> {
         None => return Ok(()),
     };
 
+    // A clipboard image never goes through the text path below: reading it as text
+    // yields raw bytes that the detector can mistake for secrets, which would
+    // overwrite the screenshot. When an image is present we own the outcome here -
+    // redact it if the feature is on, otherwise leave it untouched.
+    if let Some((width, height, bytes)) = monitor.read_image() {
+        if config.enable_image_scan {
+            run_image_redaction(&mut monitor, &detector, &config, width, height, bytes)?;
+        } else {
+            eprintln!("{}", config.lang.cli_nothing_to_redact());
+        }
+        return Ok(());
+    }
+
     // Source order: prefer the PRIMARY selection (highlighted text). Most Linux apps
     // populate it automatically when the user selects text with the mouse, so no Ctrl+C
     // is needed. If PRIMARY is empty (some Electron apps skip it, or the user is on a
@@ -301,6 +314,65 @@ fn run_trigger() -> anyhow::Result<()> {
         notify::drop_fallback_notification(config.notification_timeout_secs, config.lang);
     } else if !config.silent {
         notify::redacted_notification(total, config.notification_timeout_secs, config.lang);
+    }
+    Ok(())
+}
+
+#[cfg(not(target_os = "linux"))]
+fn run_image_redaction(
+    _monitor: &mut clipboard::ClipboardMonitor,
+    _detector: &Detector,
+    _config: &Config,
+    _width: usize,
+    _height: usize,
+    _bytes: Vec<u8>,
+) -> anyhow::Result<()> {
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn run_image_redaction(
+    monitor: &mut clipboard::ClipboardMonitor,
+    detector: &Detector,
+    config: &Config,
+    width: usize,
+    height: usize,
+    bytes: Vec<u8>,
+) -> anyhow::Result<()> {
+    use secret_stripper::image_scan::{self, ImageResult, TesseractOcr};
+
+    match image_scan::redact_image(&bytes, width as u32, height as u32, &TesseractOcr, detector) {
+        ImageResult::Unavailable => {
+            eprintln!("{}", config.lang.cli_image_scan_failed());
+        }
+        ImageResult::NoSecrets => {
+            eprintln!("{}", config.lang.cli_no_secrets());
+        }
+        ImageResult::DetectedUnmappable => {
+            eprintln!("{}", config.lang.cli_image_detected_unmappable());
+        }
+        ImageResult::Redacted { bytes, w, h, count } => {
+            if let Err(e) = monitor.replace_image(w as usize, h as usize, bytes) {
+                log::error!("clipboard image write failed: {}", e);
+                notify::write_failed_notification(
+                    config.notification_timeout_secs,
+                    config.lang,
+                    false,
+                );
+                eprintln!(
+                    "{}",
+                    config
+                        .lang
+                        .cli_clipboard_write_failed(false, &e.to_string())
+                );
+                return Ok(());
+            }
+            stats::append(count as u64);
+            eprintln!("{}", config.lang.cli_redacted(count));
+            if !config.silent {
+                notify::redacted_notification(count, config.notification_timeout_secs, config.lang);
+            }
+        }
     }
     Ok(())
 }

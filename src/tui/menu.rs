@@ -19,6 +19,8 @@ enum MenuItem {
     Language,
     DetectionSettings,
     RedactStyle,
+    #[cfg(target_os = "linux")]
+    ImageScan,
     ManageInstallation,
     Exit,
     StarOnGitHub,
@@ -31,62 +33,78 @@ pub fn show_menu(config: &mut Config) -> anyhow::Result<Option<MenuAction>> {
     let mut selected = 0usize;
     let mut flash: Option<String> = None;
 
-    let items: [MenuItem; 8] = [
+    let mut items: Vec<MenuItem> = vec![
         MenuItem::ToggleNotifications,
         MenuItem::RebindHotkey,
         MenuItem::Language,
         MenuItem::DetectionSettings,
         MenuItem::RedactStyle,
-        MenuItem::ManageInstallation,
-        MenuItem::Exit,
-        MenuItem::StarOnGitHub,
     ];
-    // Indices that begin a new visual group (blank line before).
-    let group_starts = [6usize, 7];
+    #[cfg(target_os = "linux")]
+    items.push(MenuItem::ImageScan);
+    items.push(MenuItem::ManageInstallation);
+    items.push(MenuItem::Exit);
+    items.push(MenuItem::StarOnGitHub);
+
+    // Blank line before the Exit group and before Star, wherever they land.
+    let exit_idx = items
+        .iter()
+        .position(|i| matches!(i, MenuItem::Exit))
+        .unwrap_or(items.len() - 2);
+    let group_starts = [exit_idx, exit_idx + 1];
 
     let result = loop {
-        let rows = [
-            MenuRow {
-                icon: "\u{1F514}",
-                label: config.lang.lbl_menu_notifications().to_string(),
-                icon_color: theme::icon_yellow(),
-            },
-            MenuRow {
-                icon: "\u{1F3B9}",
-                label: config.lang.lbl_rebind_hotkey(&config.hotkey),
-                icon_color: theme::icon_blue(),
-            },
-            MenuRow {
-                icon: "\u{1F310}",
-                label: config.lang.lbl_menu_language(config.lang.endonym()),
-                icon_color: theme::icon_green(),
-            },
-            MenuRow {
-                icon: "\u{2699}\u{FE0F}",
-                label: config.lang.lbl_detection_settings().to_string(),
-                icon_color: theme::icon_green(),
-            },
-            MenuRow {
-                icon: "\u{270F}\u{FE0F}",
-                label: config.lang.dm_redact_style().to_string(),
-                icon_color: theme::icon_yellow(),
-            },
-            MenuRow {
-                icon: "\u{1F9F0}",
-                label: config.lang.lbl_manage_installation().to_string(),
-                icon_color: theme::icon_magenta(),
-            },
-            MenuRow {
-                icon: "\u{1F6AA}",
-                label: config.lang.lbl_exit().to_string(),
-                icon_color: theme::icon_blue(),
-            },
-            MenuRow {
-                icon: "\u{2B50}",
-                label: config.lang.lbl_star_github().to_string(),
-                icon_color: theme::icon_yellow(),
-            },
-        ];
+        let rows: Vec<MenuRow> = items
+            .iter()
+            .map(|item| match item {
+                MenuItem::ToggleNotifications => MenuRow {
+                    icon: "\u{1F514}",
+                    label: config.lang.lbl_menu_notifications().to_string(),
+                    icon_color: theme::icon_yellow(),
+                },
+                MenuItem::RebindHotkey => MenuRow {
+                    icon: "\u{1F3B9}",
+                    label: config.lang.lbl_rebind_hotkey(&config.hotkey),
+                    icon_color: theme::icon_blue(),
+                },
+                MenuItem::Language => MenuRow {
+                    icon: "\u{1F310}",
+                    label: config.lang.lbl_menu_language(config.lang.endonym()),
+                    icon_color: theme::icon_green(),
+                },
+                MenuItem::DetectionSettings => MenuRow {
+                    icon: "\u{2699}\u{FE0F}",
+                    label: config.lang.lbl_detection_settings().to_string(),
+                    icon_color: theme::icon_green(),
+                },
+                MenuItem::RedactStyle => MenuRow {
+                    icon: "\u{270F}\u{FE0F}",
+                    label: config.lang.dm_redact_style().to_string(),
+                    icon_color: theme::icon_yellow(),
+                },
+                #[cfg(target_os = "linux")]
+                MenuItem::ImageScan => MenuRow {
+                    icon: "\u{1F5BC}\u{FE0F}",
+                    label: config.lang.dm_image_scan(config.enable_image_scan),
+                    icon_color: theme::icon_green(),
+                },
+                MenuItem::ManageInstallation => MenuRow {
+                    icon: "\u{1F9F0}",
+                    label: config.lang.lbl_manage_installation().to_string(),
+                    icon_color: theme::icon_magenta(),
+                },
+                MenuItem::Exit => MenuRow {
+                    icon: "\u{1F6AA}",
+                    label: config.lang.lbl_exit().to_string(),
+                    icon_color: theme::icon_blue(),
+                },
+                MenuItem::StarOnGitHub => MenuRow {
+                    icon: "\u{2B50}",
+                    label: config.lang.lbl_star_github().to_string(),
+                    icon_color: theme::icon_yellow(),
+                },
+            })
+            .collect();
 
         let footer = if let Some(msg) = &flash {
             msg.clone()
@@ -97,6 +115,8 @@ pub fn show_menu(config: &mut Config) -> anyhow::Result<Option<MenuAction>> {
                 MenuItem::Language => config.lang.help_language().to_string(),
                 MenuItem::DetectionSettings => config.lang.help_detection_settings().to_string(),
                 MenuItem::RedactStyle => config.lang.help_dm_redact_style().to_string(),
+                #[cfg(target_os = "linux")]
+                MenuItem::ImageScan => config.lang.help_dm_image_scan().to_string(),
                 MenuItem::ManageInstallation => config.lang.help_manage_installation().to_string(),
                 MenuItem::Exit => config.lang.help_exit().to_string(),
                 MenuItem::StarOnGitHub => config.lang.help_star_github().to_string(),
@@ -150,6 +170,12 @@ pub fn show_menu(config: &mut Config) -> anyhow::Result<Option<MenuAction>> {
                         let _ = crate::tui::redact_style::show(&mut terminal, config);
                         terminal.clear()?;
                         let _ = crate::tui::drain_pending_events();
+                        continue;
+                    }
+                    #[cfg(target_os = "linux")]
+                    MenuItem::ImageScan => {
+                        config.enable_image_scan = !config.enable_image_scan;
+                        config.save()?;
                         continue;
                     }
                     MenuItem::ManageInstallation => {
