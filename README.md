@@ -14,6 +14,7 @@
   - [macOS setup](#macos-setup)
   - [Windows setup](#windows-setup)
 - [What It Detects](#what-it-detects)
+- [Redact screenshots](#redact-screenshots)
 - [Auto-redact paste into AI TUIs](#auto-redact-paste-into-ai-tuis)
 - [Contributing](#contributing)
 - [Star history](#star-history)
@@ -167,6 +168,28 @@ Pick how detected secrets are replaced from `secret-stripper menu` -> **Redactio
 | **Placeholder** | `aws=AKIAIOSFODNN7EXAMPLE` - swaps in a realistic but fake sample value for the matched pattern (an email becomes `user@example.com`, a Stripe key `sk_test_4eC39HqLyjWDarjtT1zdp7dc`) |
 
 The same setting applies to the hotkey trigger, the `redact` pipeline subcommand, and the `paste-guard` AI-TUI wrapper.
+
+---
+
+## Redact screenshots
+
+Secrets often live in screenshots, not just text - a terminal grab, a config pane, an API dashboard. When you trigger the hotkey and the clipboard holds an image instead of text, Secret Stripper OCRs the image, runs the same detector it uses for text, and paints a solid black box over only the words that contain a secret. The redacted image is written back to the clipboard. Clean parts of the image are left untouched - the whole screenshot is never blacked out.
+
+Supported on Linux only - both X11 and Wayland. On macOS and Windows the hotkey still does text redaction; a clipboard image is left untouched.
+
+When an image is on the clipboard, the hotkey redacts the image even if you have text highlighted - so `screenshot -> hotkey` just works.
+
+It needs the [`tesseract`](https://github.com/tesseract-ocr/tesseract) OCR CLI on your `PATH`. It is an optional runtime dependency: everything else works without it.
+
+```bash
+sudo pacman -S tesseract tesseract-data-eng    # Arch
+sudo apt install tesseract-ocr                  # Debian / Ubuntu
+sudo dnf install tesseract                      # Fedora
+```
+
+It fails closed: if `tesseract` is missing, the image cannot be read, or a detected secret cannot be located, the clipboard is left untouched and you get a notification - the original image is never silently passed through and never wiped. OCR makes this path slower than the instant text path (roughly half a second to a couple of seconds for a full screenshot), so wait for the notification before pasting.
+
+Image redaction is off by default. Turn it on from `secret-stripper menu` -> **Detection Settings** -> **Screenshot redaction**, or set `enable_image_scan = true` in `config.toml`.
 
 ---
 
