@@ -44,19 +44,19 @@ patterns-doc = []
 [dependencies]
 arboard = { version = "3.6.1", features = ["wayland-data-control"] }
 image = { version = "0.25.10", default-features = false, features = ["png"] }
-regex = "1.12.4"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
-toml = "1.1.2"
-clap = { version = "4.6.1", features = ["derive"] }
+regex = "1.13.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+toml = "1.1.4"
+clap = { version = "4.6.6", features = ["derive"] }
 ratatui = "0.30.2"
 crossterm = "0.29"
 notify-rust = "4.18.0"
 dirs = "6.0.0"
-log = "0.4.33"
-env_logger = { version = "0.11.10", default-features = false }
-anyhow = "1.0.102"
-ureq = { version = "3.3.0", default-features = false, features = ["rustls", "json"] }
+log = "0.4.34"
+env_logger = { version = "0.11.11", default-features = false }
+anyhow = "1.0.104"
+ureq = { version = "3.4.0", default-features = false, features = ["rustls", "json"] }
 zeroize = { version = "1.9.0", features = ["std"] }
 semver = "1.0.28"
 tempfile = "3.27.0"
