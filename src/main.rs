@@ -102,7 +102,6 @@ fn run_uninstall() -> anyhow::Result<()> {
         }
     }
 
-    paste::access::print_uninstall_hint(lang);
     let removed = config::purge_config_dir();
 
     println!("{}", lang.cli_uninstall_done());
@@ -112,6 +111,7 @@ fn run_uninstall() -> anyhow::Result<()> {
     } else {
         println!("{}", lang.cli_uninstall_files(&removed.join(", ")));
     }
+    paste::access::print_uninstall_hint(lang);
     println!();
     println!("{}", lang.cli_run_init_again());
     Ok(())
