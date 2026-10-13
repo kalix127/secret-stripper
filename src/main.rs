@@ -39,7 +39,6 @@ fn main() -> anyhow::Result<()> {
             let code = paste_guard::run(&argv, &cfg)?;
             std::process::exit(code);
         }
-        #[cfg(target_os = "linux")]
         cli::Command::ServeClipboard => clipboard::serve_from_stdin()?,
     }
 
@@ -320,19 +319,6 @@ fn run_trigger() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(not(target_os = "linux"))]
-fn run_image_redaction(
-    _monitor: &mut clipboard::ClipboardMonitor,
-    _detector: &Detector,
-    _config: &Config,
-    _width: usize,
-    _height: usize,
-    _bytes: Vec<u8>,
-) -> anyhow::Result<()> {
-    Ok(())
-}
-
-#[cfg(target_os = "linux")]
 fn run_image_redaction(
     monitor: &mut clipboard::ClipboardMonitor,
     detector: &Detector,

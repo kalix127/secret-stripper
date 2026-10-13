@@ -38,10 +38,6 @@ fn current_asset_suffix() -> Option<&'static str> {
     match (std::env::consts::OS, std::env::consts::ARCH) {
         ("linux", "x86_64") => Some("linux-x86_64"),
         ("linux", "aarch64") => Some("linux-aarch64"),
-        ("macos", "x86_64") => Some("macos-x86_64"),
-        ("macos", "aarch64") => Some("macos-aarch64"),
-        ("windows", "x86_64") => Some("windows-x86_64.exe"),
-        ("windows", "aarch64") => Some("windows-aarch64.exe"),
         _ => None,
     }
 }
@@ -158,21 +154,15 @@ fn download_and_swap(
     let tmp = current_exe.with_file_name("secret-stripper-upgrade");
     let old = current_exe.with_file_name("secret-stripper-old");
 
-    // A previous swap on Windows can't unlink its own running image, so it
-    // leaves the old binary behind for the next run to reap.
+    // Leftover from an interrupted swap.
     let _ = fs::remove_file(&old);
 
     fs::write(&tmp, &bytes)?;
-    #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(&tmp, PermissionsExt::from_mode(0o755))?;
     }
 
-    // Rename the running binary aside (required on Windows: a running .exe
-    // can't be overwritten, only renamed), put the new one in place, then
-    // delete the old. On Unix the unlink succeeds immediately; on Windows it
-    // fails while the process holds the image and is reaped on the next run.
     fs::rename(current_exe, &old)?;
     fs::rename(&tmp, current_exe)?;
     let _ = fs::remove_file(&old);
@@ -384,22 +374,15 @@ pub fn run_upgrade_check(auto_install_flag: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(target_os = "linux")]
 const TIMER_NAME: &str = "secret-stripper-update-check.timer";
-#[cfg(target_os = "linux")]
 const SERVICE_NAME: &str = "secret-stripper-update-check.service";
-
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-const BUNDLE_ID: &str = "com.kalix127.secret-stripper-update-check";
 
 /// Tests and CI runners set `SECRET_STRIPPER_NO_OS_SIDE_EFFECTS` so an
 /// `init`/`uninstall` cannot mutate the host's real scheduler.
-#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 fn os_side_effects_disabled() -> bool {
     std::env::var_os("SECRET_STRIPPER_NO_OS_SIDE_EFFECTS").is_some()
 }
 
-#[cfg(target_os = "linux")]
 pub fn install_update_check_timer() -> anyhow::Result<()> {
     use crate::proc;
 
@@ -453,94 +436,6 @@ WantedBy=timers.target
     Ok(())
 }
 
-#[cfg(target_os = "macos")]
-pub fn install_update_check_timer() -> anyhow::Result<()> {
-    use crate::proc;
-
-    if os_side_effects_disabled() {
-        return Ok(());
-    }
-
-    let exe = std::env::current_exe()?;
-    let exe_str = exe
-        .to_str()
-        .ok_or_else(|| anyhow!("non-UTF8 binary path"))?;
-    let home = dirs::home_dir().ok_or_else(|| anyhow!("no home dir"))?;
-    let agents = home.join("Library").join("LaunchAgents");
-    fs::create_dir_all(&agents)?;
-    let plist_path = agents.join(format!("{}.plist", BUNDLE_ID));
-
-    // launchd has no RandomizedDelaySec; a fixed off-peak hour is the closest
-    // equivalent to the Linux timer's load spreading.
-    let plist = format!(
-        r#"<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>{label}</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>{exe}</string>
-        <string>upgrade-check</string>
-    </array>
-    <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>11</integer>
-        <key>Minute</key>
-        <integer>0</integer>
-    </dict>
-    <key>RunAtLoad</key>
-    <false/>
-    <key>Nice</key>
-    <integer>10</integer>
-</dict>
-</plist>
-"#,
-        label = BUNDLE_ID,
-        exe = exe_str
-    );
-    fs::write(&plist_path, plist)?;
-
-    let plist_arg = plist_path
-        .to_str()
-        .ok_or_else(|| anyhow!("non-UTF8 plist path"))?;
-    // Unload first so a rewritten plist is picked up on re-install.
-    proc::run_optional("launchctl", &["unload", "-w", plist_arg]);
-    proc::run_optional("launchctl", &["load", "-w", plist_arg]);
-    Ok(())
-}
-
-#[cfg(target_os = "windows")]
-pub fn install_update_check_timer() -> anyhow::Result<()> {
-    use crate::proc;
-
-    if os_side_effects_disabled() {
-        return Ok(());
-    }
-
-    let exe = std::env::current_exe()?;
-    let exe_str = exe
-        .to_str()
-        .ok_or_else(|| anyhow!("non-UTF8 binary path"))?;
-    let tr = format!("\"{}\" upgrade-check", exe_str);
-    // /F overwrites an existing task so re-install is idempotent.
-    proc::run(
-        "schtasks",
-        &[
-            "/Create", "/F", "/SC", "DAILY", "/TN", BUNDLE_ID, "/TR", &tr, "/ST", "11:00",
-        ],
-        "schtasks /Create",
-    )
-}
-
-#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
-pub fn install_update_check_timer() -> anyhow::Result<()> {
-    Ok(())
-}
-
-#[cfg(target_os = "linux")]
 pub fn uninstall_update_check_timer() -> anyhow::Result<()> {
     use crate::proc;
 
@@ -557,44 +452,6 @@ pub fn uninstall_update_check_timer() -> anyhow::Result<()> {
     }
 
     proc::run_optional("systemctl", &["--user", "daemon-reload"]);
-    Ok(())
-}
-
-#[cfg(target_os = "macos")]
-pub fn uninstall_update_check_timer() -> anyhow::Result<()> {
-    use crate::proc;
-
-    if os_side_effects_disabled() {
-        return Ok(());
-    }
-
-    if let Some(home) = dirs::home_dir() {
-        let plist_path = home
-            .join("Library")
-            .join("LaunchAgents")
-            .join(format!("{}.plist", BUNDLE_ID));
-        if let Some(plist_arg) = plist_path.to_str() {
-            proc::run_optional("launchctl", &["unload", "-w", plist_arg]);
-        }
-        let _ = fs::remove_file(&plist_path);
-    }
-    Ok(())
-}
-
-#[cfg(target_os = "windows")]
-pub fn uninstall_update_check_timer() -> anyhow::Result<()> {
-    use crate::proc;
-
-    if os_side_effects_disabled() {
-        return Ok(());
-    }
-
-    proc::run_optional("schtasks", &["/Delete", "/F", "/TN", BUNDLE_ID]);
-    Ok(())
-}
-
-#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
-pub fn uninstall_update_check_timer() -> anyhow::Result<()> {
     Ok(())
 }
 
@@ -653,7 +510,7 @@ mod tests {
                 "tag_name": "v1.2.3",
                 "assets": [
                     {"name": "secret-stripper-linux-x86_64", "url": "https://api.github.com/asset/1"},
-                    {"name": "secret-stripper-macos-aarch64", "url": "https://api.github.com/asset/2"}
+                    {"name": "secret-stripper-linux-aarch64", "url": "https://api.github.com/asset/2"}
                 ]
             }"#,
         )

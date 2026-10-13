@@ -16,7 +16,7 @@ The single most useful recipe is:
 just ci
 ```
 
-That runs `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test --all-targets`. For every pull request CI runs `just ci` plus the secret corpus on Linux, and a Windows cross-compile check via mingw. The full 3-OS build + filesystem integration matrix (`just build` + `just test-fs` on Ubuntu / macOS / Windows) runs on `pull_request_review: approved`, post-merge to `main`, or manual `workflow_dispatch`. A green local `just ci` is the cheapest way to know your PR will pass the per-PR gates.
+That runs `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test --all-targets`. For every pull request CI runs `just ci` plus the secret corpus on Ubuntu. A green local `just ci` is the cheapest way to know your PR will pass the per-PR gates.
 
 Other recipes:
 
@@ -25,7 +25,6 @@ Other recipes:
 | `just build` | `cargo build` |
 | `just build-release` | `cargo build --release` |
 | `just test` | `cargo test --all-targets` |
-| `just test-fs` | `cargo test --test config_fs` (filesystem seam integration; what CI runs on macOS/Windows) |
 | `just lint` | `cargo clippy --all-targets --all-features -- -D warnings` |
 | `just fmt` | `cargo fmt --all` |
 | `just fmt-check` | `cargo fmt --all -- --check` |
@@ -41,8 +40,6 @@ sudo apt-get install -y \
     libxcb1-dev libxcb-shape0-dev libxcb-xfixes0-dev \
     libxkbcommon-dev libdbus-1-dev
 ```
-
-macOS and Windows need no extra system packages.
 
 The repo treats `clippy` warnings as bugs. `just lint` must pass before a PR is reviewable.
 

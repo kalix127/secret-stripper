@@ -24,7 +24,7 @@ pub enum Shell {
 }
 
 impl Shell {
-    /// Pick the shell from `$SHELL`. `None` on Windows, an unknown shell, or
+    /// Pick the shell from `$SHELL`. `None` on an unknown shell or
     /// when the variable is missing - the caller falls back to printing
     /// generic instructions in those cases.
     pub fn from_env() -> Option<Self> {

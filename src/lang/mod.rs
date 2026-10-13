@@ -22,9 +22,6 @@ pub enum ShortcutBackend {
     Mate,
     Xfce,
     Kde,
-    Skhd,
-    Hammerspoon,
-    WindowsAhk,
 }
 
 // Return type for a generated string method: no args => &'static str,
@@ -223,16 +220,6 @@ impl Lang {
                 "Custom shortcut bound to '{}' via kglobalshortcutsrc. You may need to log out and back in for the binding to take effect.",
                 chord
             ),
-            (Lang::EN, ShortcutBackend::Skhd) => {
-                format!("Custom shortcut bound to '{}' via skhd (~/.skhdrc).", chord)
-            }
-            (Lang::EN, ShortcutBackend::Hammerspoon) => {
-                format!("Custom shortcut bound to '{}' via Hammerspoon (~/.hammerspoon/init.lua).", chord)
-            }
-            (Lang::EN, ShortcutBackend::WindowsAhk) => format!(
-                "Custom shortcut bound to '{}' via AutoHotkey (secret-stripper.ahk). Press it from any app to redact.",
-                chord
-            ),
             (Lang::FR, ShortcutBackend::Gnome) => {
                 format!("Raccourci personnalisé lié à '{}' via le schéma GNOME (gsettings).", chord)
             }            (Lang::FR, ShortcutBackend::Cinnamon) => {
@@ -243,16 +230,6 @@ impl Lang {
                 format!("Raccourci personnalisé lié à '{}' via xfconf-query.", chord)
             }            (Lang::FR, ShortcutBackend::Kde) => format!(
                 "Raccourci personnalisé lié à '{}' via kglobalshortcutsrc. Vous devrez peut-être vous déconnecter et vous reconnecter pour que la liaison prenne effet.",
-                chord
-            ),
-            (Lang::FR, ShortcutBackend::Skhd) => {
-                format!("Raccourci personnalisé lié à '{}' via skhd (~/.skhdrc).", chord)
-            }
-            (Lang::FR, ShortcutBackend::Hammerspoon) => {
-                format!("Raccourci personnalisé lié à '{}' via Hammerspoon (~/.hammerspoon/init.lua).", chord)
-            }
-            (Lang::FR, ShortcutBackend::WindowsAhk) => format!(
-                "Raccourci personnalisé lié à '{}' via AutoHotkey (secret-stripper.ahk). Appuyez dessus depuis n'importe quelle application pour masquer.",
                 chord
             ),
             (Lang::IT, ShortcutBackend::Gnome) => {
@@ -267,16 +244,6 @@ impl Lang {
                 "Scorciatoia personalizzata associata a '{}' tramite kglobalshortcutsrc. Potrebbe essere necessario disconnettersi e riconnettersi affinché l'associazione abbia effetto.",
                 chord
             ),
-            (Lang::IT, ShortcutBackend::Skhd) => {
-                format!("Scorciatoia personalizzata associata a '{}' tramite skhd (~/.skhdrc).", chord)
-            }
-            (Lang::IT, ShortcutBackend::Hammerspoon) => {
-                format!("Scorciatoia personalizzata associata a '{}' tramite Hammerspoon (~/.hammerspoon/init.lua).", chord)
-            }
-            (Lang::IT, ShortcutBackend::WindowsAhk) => format!(
-                "Scorciatoia personalizzata associata a '{}' tramite AutoHotkey (secret-stripper.ahk). Premila da qualsiasi app per oscurare.",
-                chord
-            ),
             (Lang::ES, ShortcutBackend::Gnome) => {
                 format!("Atajo personalizado vinculado a '{}' mediante el esquema GNOME (gsettings).", chord)
             }            (Lang::ES, ShortcutBackend::Cinnamon) => {
@@ -287,16 +254,6 @@ impl Lang {
                 format!("Atajo personalizado vinculado a '{}' mediante xfconf-query.", chord)
             }            (Lang::ES, ShortcutBackend::Kde) => format!(
                 "Atajo personalizado vinculado a '{}' mediante kglobalshortcutsrc. Es posible que tengas que cerrar sesión y volver a entrar para que el vínculo surta efecto.",
-                chord
-            ),
-            (Lang::ES, ShortcutBackend::Skhd) => {
-                format!("Atajo personalizado vinculado a '{}' mediante skhd (~/.skhdrc).", chord)
-            }
-            (Lang::ES, ShortcutBackend::Hammerspoon) => {
-                format!("Atajo personalizado vinculado a '{}' mediante Hammerspoon (~/.hammerspoon/init.lua).", chord)
-            }
-            (Lang::ES, ShortcutBackend::WindowsAhk) => format!(
-                "Atajo personalizado vinculado a '{}' mediante AutoHotkey (secret-stripper.ahk). Púlsalo desde cualquier app para ocultar.",
                 chord
             ),
         }
@@ -1650,10 +1607,10 @@ lang_strings! {
         ES => format!("Añade las líneas siguientes a {} (después abre un nuevo shell o ejecuta 'source {}'):", path, path),
     }
     ai_tui_add_to_unknown_shell {
-        EN => "Could not detect your shell from $SHELL. Add the lines below to your shell's startup file (e.g. ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, or the PowerShell profile on Windows):",
-        FR => "Impossible de détecter votre shell via $SHELL. Ajoutez les lignes ci-dessous au fichier de démarrage de votre shell (par ex. ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, ou le profil PowerShell sous Windows) :",
-        IT => "Impossibile rilevare la shell da $SHELL. Aggiungi le righe sottostanti al file di avvio della tua shell (ad es. ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, oppure il profilo PowerShell su Windows):",
-        ES => "No se pudo detectar tu shell desde $SHELL. Añade las líneas siguientes al archivo de inicio de tu shell (por ejemplo ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, o el perfil de PowerShell en Windows):",
+        EN => "Could not detect your shell from $SHELL. Add the lines below to your shell's startup file (e.g. ~/.bashrc, ~/.zshrc, or ~/.config/fish/config.fish):",
+        FR => "Impossible de détecter votre shell via $SHELL. Ajoutez les lignes ci-dessous au fichier de démarrage de votre shell (par ex. ~/.bashrc, ~/.zshrc, ou ~/.config/fish/config.fish) :",
+        IT => "Impossibile rilevare la shell da $SHELL. Aggiungi le righe sottostanti al file di avvio della tua shell (ad es. ~/.bashrc, ~/.zshrc, oppure ~/.config/fish/config.fish):",
+        ES => "No se pudo detectar tu shell desde $SHELL. Añade las líneas siguientes al archivo de inicio de tu shell (por ejemplo ~/.bashrc, ~/.zshrc, o ~/.config/fish/config.fish):",
     }
     ai_tui_none_detected {
         EN => "No supported AI TUIs detected on PATH. If you install one later, re-run 'secret-stripper init' to see the alias snippet.",
@@ -1738,9 +1695,6 @@ mod tests {
             ShortcutBackend::Mate,
             ShortcutBackend::Xfce,
             ShortcutBackend::Kde,
-            ShortcutBackend::Skhd,
-            ShortcutBackend::Hammerspoon,
-            ShortcutBackend::WindowsAhk,
         ];
         for l in Lang::all() {
             for b in &backends {

@@ -15,8 +15,7 @@ pub fn parse_chord(s: &str) -> Result<()> {
             continue;
         }
         match part.to_ascii_lowercase().as_str() {
-            "ctrl" | "control" | "alt" | "option" | "opt" | "shift" | "cmd" | "command"
-            | "super" | "meta" | "win" | "windows" => {
+            "ctrl" | "control" | "alt" | "shift" | "super" | "meta" | "win" => {
                 found_modifier = true;
             }
             other => {
@@ -59,18 +58,7 @@ fn validate_key(s: &str) -> Result<()> {
 }
 
 pub fn fallback_chords() -> &'static [&'static str] {
-    #[cfg(target_os = "macos")]
-    {
-        &["Cmd+Shift+C", "Cmd+Shift+R", "Cmd+Alt+C"]
-    }
-    #[cfg(target_os = "windows")]
-    {
-        &["Ctrl+Alt+C", "Ctrl+Alt+R", "Ctrl+Alt+Shift+C"]
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    {
-        &["Ctrl+Alt+X", "Ctrl+Alt+R", "Ctrl+Alt+Shift+X"]
-    }
+    &["Ctrl+Alt+X", "Ctrl+Alt+R", "Ctrl+Alt+Shift+X"]
 }
 
 pub fn candidates_for(preferred: &str) -> Vec<String> {
@@ -130,8 +118,14 @@ mod tests {
     }
 
     #[test]
-    fn parses_cmd_shift_c() {
-        assert!(parse_chord("Cmd+Shift+C").is_ok());
+    fn parses_super_shift_c() {
+        assert!(parse_chord("Super+Shift+C").is_ok());
+    }
+
+    #[test]
+    fn rejects_unsupported_modifiers() {
+        assert!(parse_chord("Cmd+Shift+C").is_err());
+        assert!(parse_chord("Option+C").is_err());
     }
 
     #[test]
@@ -173,9 +167,9 @@ mod tests {
 
     #[test]
     fn rejects_shell_metachars_and_quotes() {
-        // Defense against migrated configs reaching skhd / Hammerspoon / .lnk
-        // sinks with a key containing characters that escape the surrounding
-        // string. parse_chord must hard-fail on anything that isn't an ASCII
+        // Defense against migrated configs reaching desktop config tools with
+        // a key containing characters that escape the surrounding string.
+        // parse_chord must hard-fail on anything that isn't an ASCII
         // alphanumeric / F-key / a few named keys.
         for bad in [
             "Ctrl+Alt+'",

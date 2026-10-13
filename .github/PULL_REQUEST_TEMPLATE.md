@@ -34,6 +34,5 @@ _e.g. `Closes #123`, or `None`._
 
 Verified on:
 
-- [ ] Linux
-- [ ] macOS
-- [ ] Windows
+- [ ] X11
+- [ ] Wayland

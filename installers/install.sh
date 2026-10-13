@@ -25,7 +25,6 @@ detect_os() {
             elif command -v zypper &>/dev/null; then echo "suse"
             else echo "linux-other"; fi
             ;;
-        Darwin*) echo "macos" ;;
         *) echo "unsupported" ;;
     esac
 }
@@ -100,9 +99,6 @@ check_deps() {
                     printf "  ${YELLOW}[~]${NC} Could not install system packages (run manually)\n"
                 fi
             fi
-            ;;
-        macos)
-            command -v pkg-config &>/dev/null || brew install pkg-config >> "$LOG_FILE" 2>&1
             ;;
     esac
 }

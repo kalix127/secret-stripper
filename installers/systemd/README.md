@@ -1,8 +1,6 @@
 # systemd update-check timer
 
-`secret-stripper init` installs and enables this timer automatically on Linux when `check_for_updates = true` (the default). The unit files in this directory are reference templates for users who want to install the timer manually or audit what will be deployed.
-
-The equivalent on macOS is a launchd LaunchAgent at `~/Library/LaunchAgents/com.kalix127.secret-stripper-update-check.plist`, and on Windows a daily `schtasks` task named `com.kalix127.secret-stripper-update-check` - both created and removed by `init` / `uninstall`. This directory documents only the Linux (systemd) path.
+`secret-stripper init` installs and enables this timer automatically when `check_for_updates = true` (the default). The unit files in this directory are reference templates for users who want to install the timer manually or audit what will be deployed.
 
 ## What it does
 

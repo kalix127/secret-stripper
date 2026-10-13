@@ -32,7 +32,6 @@ remove_config() {
 remove_service_files() {
     echo -e "  ${YELLOW}[~]${NC} Removing service files..."
     rm -f "${HOME}/.config/systemd/user/secret-stripper.service" 2>/dev/null || true
-    rm -f "${HOME}/Library/LaunchAgents/com.secret-stripper.daemon.plist" 2>/dev/null || true
 }
 
 cleanup() {

@@ -13,37 +13,23 @@ impl ClipboardMonitor {
     }
 
     /// Read the X11/Wayland PRIMARY selection (whatever the user currently has highlighted).
-    /// Linux only; returns None on other OSes. The PRIMARY selection is populated automatically
-    /// by most desktop apps when text is highlighted with the mouse - no Ctrl+C required.
+    /// The PRIMARY selection is populated automatically by most desktop apps when text is
+    /// highlighted with the mouse - no Ctrl+C required.
     pub fn read_primary(&mut self) -> Option<String> {
-        #[cfg(target_os = "linux")]
-        {
-            use arboard::GetExtLinux;
-            self.clipboard
-                .get()
-                .clipboard(arboard::LinuxClipboardKind::Primary)
-                .text()
-                .ok()
-        }
-        #[cfg(not(target_os = "linux"))]
-        {
-            None
-        }
+        use arboard::GetExtLinux;
+        self.clipboard
+            .get()
+            .clipboard(arboard::LinuxClipboardKind::Primary)
+            .text()
+            .ok()
     }
 
-    #[cfg(target_os = "linux")]
     pub fn replace_text(&mut self, text: &str) -> anyhow::Result<()> {
         let mut child = spawn_server("text", text.as_bytes())?;
         let clipboard = &mut self.clipboard;
         await_ownership(&mut child, || {
             clipboard.get_text().unwrap_or_default() == text
         })
-    }
-
-    #[cfg(not(target_os = "linux"))]
-    pub fn replace_text(&mut self, text: &str) -> anyhow::Result<()> {
-        self.clipboard.set_text(text.to_string())?;
-        Ok(())
     }
 
     /// Read a bitmap from the clipboard as (width, height, RGBA8 bytes). None when
@@ -53,7 +39,6 @@ impl ClipboardMonitor {
         Some((img.width, img.height, img.bytes.into_owned()))
     }
 
-    #[cfg(target_os = "linux")]
     pub fn replace_image(
         &mut self,
         width: usize,
@@ -70,9 +55,8 @@ impl ClipboardMonitor {
     }
 }
 
-// Linux clipboard contents vanish when the owning process exits (arboard
-// serves Wayland from a thread), so a detached child keeps serving them.
-#[cfg(target_os = "linux")]
+// Clipboard contents vanish when the owning process exits (arboard serves
+// Wayland from a thread), so a detached child keeps serving them.
 fn spawn_server(header: &str, body: &[u8]) -> anyhow::Result<std::process::Child> {
     use anyhow::Context;
     use std::io::Write;
@@ -101,7 +85,6 @@ fn spawn_server(header: &str, body: &[u8]) -> anyhow::Result<std::process::Child
     Ok(child)
 }
 
-#[cfg(target_os = "linux")]
 fn await_ownership(
     child: &mut std::process::Child,
     mut served: impl FnMut() -> bool,
@@ -127,7 +110,6 @@ fn await_ownership(
 
 /// Entry point of the `serve-clipboard` child: read `<header>\n<body>` from
 /// stdin, own the clipboard, and return once another program replaces it.
-#[cfg(target_os = "linux")]
 pub fn serve_from_stdin() -> anyhow::Result<()> {
     use anyhow::Context;
     use arboard::SetExtLinux;

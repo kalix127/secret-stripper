@@ -74,7 +74,6 @@ fn append_inner(count: u64) -> anyhow::Result<()> {
 
     let mut opts = OpenOptions::new();
     opts.create(true).append(true);
-    #[cfg(unix)]
     {
         use std::os::unix::fs::OpenOptionsExt;
         opts.mode(0o600);

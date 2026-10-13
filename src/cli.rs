@@ -43,7 +43,6 @@ pub enum Command {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true, num_args = 0..)]
         argv: Vec<String>,
     },
-    #[cfg(target_os = "linux")]
     #[command(hide = true)]
     ServeClipboard,
 }

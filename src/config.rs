@@ -113,7 +113,6 @@ pub fn atomic_write(dest: &Path, bytes: &[u8]) -> anyhow::Result<()> {
     };
     fs::create_dir_all(&parent)?;
     let mut tmp = tempfile::NamedTempFile::new_in(&parent)?;
-    #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(tmp.path(), fs::Permissions::from_mode(0o600))?;
@@ -142,18 +141,7 @@ pub fn purge_config_dir() -> Vec<String> {
 }
 
 fn default_hotkey() -> String {
-    #[cfg(target_os = "macos")]
-    {
-        "Cmd+Shift+C".to_string()
-    }
-    #[cfg(target_os = "windows")]
-    {
-        "Ctrl+Alt+C".to_string()
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    {
-        "Ctrl+Alt+X".to_string()
-    }
+    "Ctrl+Alt+X".to_string()
 }
 
 fn default_check_for_updates() -> bool {

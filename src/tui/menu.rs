@@ -19,7 +19,6 @@ enum MenuItem {
     Language,
     DetectionSettings,
     RedactStyle,
-    #[cfg(target_os = "linux")]
     ImageScan,
     ManageInstallation,
     Exit,
@@ -33,18 +32,17 @@ pub fn show_menu(config: &mut Config) -> anyhow::Result<Option<MenuAction>> {
     let mut selected = 0usize;
     let mut flash: Option<String> = None;
 
-    let mut items: Vec<MenuItem> = vec![
+    let items: Vec<MenuItem> = vec![
         MenuItem::ToggleNotifications,
         MenuItem::RebindHotkey,
         MenuItem::Language,
         MenuItem::DetectionSettings,
         MenuItem::RedactStyle,
+        MenuItem::ImageScan,
+        MenuItem::ManageInstallation,
+        MenuItem::Exit,
+        MenuItem::StarOnGitHub,
     ];
-    #[cfg(target_os = "linux")]
-    items.push(MenuItem::ImageScan);
-    items.push(MenuItem::ManageInstallation);
-    items.push(MenuItem::Exit);
-    items.push(MenuItem::StarOnGitHub);
 
     // Blank line before the Exit group and before Star, wherever they land.
     let exit_idx = items
@@ -82,7 +80,6 @@ pub fn show_menu(config: &mut Config) -> anyhow::Result<Option<MenuAction>> {
                     label: config.lang.dm_redact_style().to_string(),
                     icon_color: theme::icon_yellow(),
                 },
-                #[cfg(target_os = "linux")]
                 MenuItem::ImageScan => MenuRow {
                     icon: "\u{1F5BC}\u{FE0F}",
                     label: config.lang.dm_image_scan(config.enable_image_scan),
@@ -115,7 +112,6 @@ pub fn show_menu(config: &mut Config) -> anyhow::Result<Option<MenuAction>> {
                 MenuItem::Language => config.lang.help_language().to_string(),
                 MenuItem::DetectionSettings => config.lang.help_detection_settings().to_string(),
                 MenuItem::RedactStyle => config.lang.help_dm_redact_style().to_string(),
-                #[cfg(target_os = "linux")]
                 MenuItem::ImageScan => config.lang.help_dm_image_scan().to_string(),
                 MenuItem::ManageInstallation => config.lang.help_manage_installation().to_string(),
                 MenuItem::Exit => config.lang.help_exit().to_string(),
@@ -172,7 +168,6 @@ pub fn show_menu(config: &mut Config) -> anyhow::Result<Option<MenuAction>> {
                         let _ = crate::tui::drain_pending_events();
                         continue;
                     }
-                    #[cfg(target_os = "linux")]
                     MenuItem::ImageScan => {
                         config.enable_image_scan = !config.enable_image_scan;
                         config.save()?;

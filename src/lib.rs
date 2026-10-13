@@ -1,3 +1,6 @@
+#[cfg(not(target_os = "linux"))]
+compile_error!("secret-stripper supports Linux only");
+
 pub mod ai_tui;
 pub mod config;
 pub mod detector;

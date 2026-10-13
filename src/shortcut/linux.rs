@@ -435,9 +435,9 @@ fn chord_to_keysym_format(chord: &str, ctrl_modifier: &str) -> Result<String> {
         }
         match part.to_ascii_lowercase().as_str() {
             "ctrl" | "control" => out.push_str(ctrl_modifier),
-            "alt" | "option" | "opt" => out.push_str("<Alt>"),
+            "alt" => out.push_str("<Alt>"),
             "shift" => out.push_str("<Shift>"),
-            "cmd" | "command" | "super" | "meta" | "win" | "windows" => out.push_str("<Super>"),
+            "super" | "meta" | "win" => out.push_str("<Super>"),
             other => {
                 if key.is_some() {
                     return Err(anyhow!("chord '{}' has multiple non-modifier keys", chord));

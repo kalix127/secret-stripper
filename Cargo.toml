@@ -2,7 +2,7 @@
 name = "secret-stripper"
 version = "1.5.1"
 edition = "2021"
-description = "A small Rust CLI that strips secrets and PII from the clipboard on demand via a global hotkey"
+description = "A small Linux CLI that strips secrets and PII from the clipboard on demand via a global hotkey"
 authors = ["Gianluca Iavicoli <info@gianlucaiavicoli.dev>"]
 license = "MIT"
 repository = "https://github.com/kalix127/secret-stripper"

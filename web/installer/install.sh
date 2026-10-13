@@ -14,19 +14,21 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 detect() {
-    local os arch suffix=""
+    local arch
     case "$(uname -s)" in
-        Linux*)  os="linux" ;;
-        Darwin*) os="macos" ;;
-        CYGWIN*|MINGW*|MSYS*) os="windows"; suffix=".exe" ;;
-        *)       printf "Unsupported OS: %s\n" "$(uname -s)" >&2; exit 1 ;;
+        Linux*) ;;
+        *)
+            printf "Unsupported OS: %s. Secret Stripper supports Linux only.\n" \
+                "$(uname -s)" >&2
+            exit 1
+            ;;
     esac
     case "$(uname -m)" in
         x86_64|amd64) arch="x86_64" ;;
         aarch64|arm64) arch="aarch64" ;;
         *)            arch="x86_64" ;;
     esac
-    printf '%s-%s%s' "$os" "$arch" "$suffix"
+    printf 'linux-%s' "$arch"
 }
 
 verify_sha256() {
@@ -38,14 +40,11 @@ verify_sha256() {
         printf "  ${RED}[FAIL]${NC} No SHA256 for %s in SHA256SUMS.\n" "$name" >&2
         return 1
     fi
-    if command -v sha256sum >/dev/null 2>&1; then
-        actual=$(sha256sum "$file" | awk '{print $1}')
-    elif command -v shasum >/dev/null 2>&1; then
-        actual=$(shasum -a 256 "$file" | awk '{print $1}')
-    else
-        printf "  ${RED}[FAIL]${NC} Neither sha256sum nor shasum available; cannot verify binary.\n" >&2
+    if ! command -v sha256sum >/dev/null 2>&1; then
+        printf "  ${RED}[FAIL]${NC} sha256sum not available; cannot verify binary.\n" >&2
         return 1
     fi
+    actual=$(sha256sum "$file" | awk '{print $1}')
     if [ "$expected" != "$actual" ]; then
         printf "  ${RED}[FAIL]${NC} SHA256 mismatch for %s:\n  expected: %s\n  actual:   %s\n" \
             "$name" "$expected" "$actual" >&2

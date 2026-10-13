@@ -58,32 +58,16 @@ fn which_on_path(name: &str) -> Option<PathBuf> {
         if is_executable(&candidate) {
             return Some(candidate);
         }
-        #[cfg(target_os = "windows")]
-        {
-            for ext in ["exe", "cmd", "bat", "ps1"] {
-                let mut p = candidate.clone();
-                p.set_extension(ext);
-                if p.is_file() {
-                    return Some(p);
-                }
-            }
-        }
     }
     None
 }
 
-#[cfg(unix)]
 fn is_executable(path: &std::path::Path) -> bool {
     use std::os::unix::fs::PermissionsExt;
     match path.metadata() {
         Ok(m) => m.is_file() && (m.permissions().mode() & 0o111 != 0),
         Err(_) => false,
     }
-}
-
-#[cfg(not(unix))]
-fn is_executable(path: &std::path::Path) -> bool {
-    path.is_file()
 }
 
 #[cfg(test)]
@@ -104,7 +88,6 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let bin_path = dir.path().join("claude");
         std::fs::write(&bin_path, "#!/bin/sh\nexit 0\n").unwrap();
-        #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let mut perms = std::fs::metadata(&bin_path).unwrap().permissions();

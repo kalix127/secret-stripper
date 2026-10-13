@@ -1,4 +1,4 @@
-name: 🐞 Bug report
+name: Bug report
 description: Report a problem with Secret Stripper
 title: "fix: "
 labels: ["bug"]
@@ -18,11 +18,9 @@ body:
       value: |
         ## Environment
 
-        Expand the block for your OS, run it, and paste the output in the
-        Environment field below. It prints only versions, OS, arch, and
-        desktop/session - no usernames, hostnames, or paths.
-
-        <details><summary>Linux</summary>
+        Run this block and paste the output in the Environment field below.
+        It prints only versions, OS, arch, and desktop/session - no
+        usernames, hostnames, or paths.
 
         ```bash
         { secret-stripper --version
@@ -34,35 +32,11 @@ body:
           command -v cargo  >/dev/null && cargo --version
         } 2>&1
         ```
-
-        </details>
-
-        <details><summary>macOS</summary>
-
-        ```bash
-        { secret-stripper --version
-          echo "macOS $(sw_vers -productVersion)  arch: $(uname -m)"
-          command -v cargo >/dev/null && cargo --version
-        } 2>&1
-        ```
-
-        </details>
-
-        <details><summary>Windows (PowerShell)</summary>
-
-        ```powershell
-        secret-stripper --version
-        [System.Environment]::OSVersion.VersionString
-        $env:PROCESSOR_ARCHITECTURE
-        if (Get-Command cargo -ErrorAction SilentlyContinue) { cargo --version }
-        ```
-
-        </details>
   - type: textarea
     id: environment
     attributes:
       label: Environment
-      description: Paste the output of the block for your OS (no secrets, no personal info).
+      description: Paste the output of the block above (no secrets, no personal info).
       placeholder: Environment
       render: shell
     validations:

@@ -140,11 +140,7 @@ fn build_chord(mods: KeyModifiers, code: KeyCode) -> Option<String> {
         parts.push("Shift".to_string());
     }
     if mods.contains(KeyModifiers::SUPER) || mods.contains(KeyModifiers::META) {
-        parts.push(if cfg!(target_os = "macos") {
-            "Cmd".to_string()
-        } else {
-            "Super".to_string()
-        });
+        parts.push("Super".to_string());
     }
 
     if parts.is_empty() {
