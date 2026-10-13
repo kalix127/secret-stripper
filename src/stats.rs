@@ -1,6 +1,6 @@
 //! Append-only redaction-count log. Powers the TUI activity panel.
 //!
-//! One JSONL line per non-zero trigger: `{"ts":"<rfc3339>","count":N}`. No
+//! One JSONL line per non-zero redaction: `{"ts":"<rfc3339>","count":N}`. No
 //! text, no spans, no pattern names - just a counter so the user can see "X
 //! redactions in the last 24h" without us storing anything sensitive.
 //!

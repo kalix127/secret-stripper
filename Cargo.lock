@@ -2515,6 +2515,7 @@ dependencies = [
  "dirs",
  "env_logger",
  "image",
+ "libc",
  "log",
  "notify-rust",
  "portable-pty",
@@ -2529,6 +2530,10 @@ dependencies = [
  "tempfile",
  "toml",
  "ureq",
+ "wayland-client",
+ "wayland-protocols",
+ "wayland-protocols-wlr",
+ "x11rb",
  "zeroize",
 ]
 

@@ -187,19 +187,6 @@ impl Lang {
         }
     }
 
-    pub fn notify_write_failed_body(&self, cleared: bool) -> &'static str {
-        match (self, cleared) {
-            (Lang::EN, true) => "Original content was cleared from the clipboard.",
-            (Lang::EN, false) => "Original content may still be in the clipboard.",
-            (Lang::FR, true) => "Le contenu original a été effacé du presse-papiers.",
-            (Lang::FR, false) => "Le contenu original peut encore être dans le presse-papiers.",
-            (Lang::IT, true) => "Il contenuto originale è stato rimosso dagli appunti.",
-            (Lang::IT, false) => "Il contenuto originale potrebbe essere ancora negli appunti.",
-            (Lang::ES, true) => "El contenido original fue eliminado del portapapeles.",
-            (Lang::ES, false) => "El contenido original puede seguir en el portapapeles.",
-        }
-    }
-
     /// Localized confirmation that a hotkey was bound via a given DE backend.
     /// Exhaustive over (Lang, ShortcutBackend) with no wildcard.
     pub fn shortcut_bound(&self, backend: &ShortcutBackend, chord: &str) -> String {
@@ -269,33 +256,18 @@ lang_strings! {
         ES => if n == 1 { "1 elemento redactado".to_string() } else { format!("{} elementos redactados", n) },
     }
 
-
     notify_cleaned {
-        EN => "Clipboard has been cleaned",
-        FR => "Le presse-papiers a été nettoyé",
-        IT => "Gli appunti sono stati puliti",
-        ES => "El portapapeles ha sido limpiado",
+        EN => "Pasted a redacted copy",
+        FR => "Copie masquée collée",
+        IT => "Copia oscurata incollata",
+        ES => "Copia redactada pegada",
     }
 
-    notify_write_failed {
-        EN => "Clipboard write failed",
-        FR => "Échec d'écriture du presse-papiers",
-        IT => "Scrittura negli appunti fallita",
-        ES => "Fallo al escribir en el portapapeles",
-    }
-
-    notify_drop_fallback_title {
-        EN => "Clipboard cleared",
-        FR => "Presse-papiers vidé",
-        IT => "Appunti svuotati",
-        ES => "Portapapeles vaciado",
-    }
-
-    notify_drop_fallback_body {
-        EN => "A secret was detected without an exact location. The clipboard was cleared to avoid leaking it.",
-        FR => "Un secret a été détecté sans emplacement exact. Le presse-papiers a été vidé pour éviter toute fuite.",
-        IT => "È stato rilevato un segreto senza una posizione esatta. Gli appunti sono stati svuotati per evitare fughe.",
-        ES => "Se detectó un secreto sin una ubicación exacta. Se vació el portapapeles para evitar filtraciones.",
+    cli_secret_without_location {
+        EN => "A secret was detected without an exact location. Nothing was pasted to avoid leaking it.",
+        FR => "Un secret a été détecté sans emplacement exact. Rien n'a été collé pour éviter toute fuite.",
+        IT => "È stato rilevato un segreto senza una posizione esatta. Non è stato incollato nulla per evitare fughe.",
+        ES => "Se detectó un secreto sin una ubicación exacta. No se pegó nada para evitar filtraciones.",
     }
 
     update_available_title {
@@ -310,20 +282,6 @@ lang_strings! {
         FR => format!("La version {} est sortie (vous avez {}). Lancez 'secret-stripper upgrade' pour l'installer.", latest, current),
         IT => format!("È disponibile la versione {} (la tua è {}). Esegui 'secret-stripper upgrade' per installarla.", latest, current),
         ES => format!("La versión {} está disponible (tu versión es {}). Ejecuta 'secret-stripper upgrade' para instalarla.", latest, current),
-    }
-
-    update_installed_title {
-        EN => "Secret Stripper updated",
-        FR => "Secret Stripper mis à jour",
-        IT => "Secret Stripper aggiornato",
-        ES => "Secret Stripper actualizado",
-    }
-
-    update_installed_body(version: &str,) {
-        EN => format!("Successfully installed {}.", version),
-        FR => format!("Version {} installée avec succès.", version),
-        IT => format!("Versione {} installata con successo.", version),
-        ES => format!("Versión {} instalada correctamente.", version),
     }
 
     // ---- Shared field labels (init / menu) ----
@@ -477,11 +435,11 @@ lang_strings! {
         IT => "Nessuna scorciatoia configurata. Esegui prima 'secret-stripper init'.",
         ES => "No hay atajo configurado. Ejecuta primero 'secret-stripper init'.",
     }
-    cli_press_to_redact(hotkey: &str,) {
-        EN => format!("Press {} on selected text after copying it (Ctrl+C) to redact in place.", hotkey),
-        FR => format!("Appuyez sur {} sur le texte sélectionné après l'avoir copié (Ctrl+C) pour le masquer sur place.", hotkey),
-        IT => format!("Premi {} sul testo selezionato dopo averlo copiato (Ctrl+C) per oscurarlo sul posto.", hotkey),
-        ES => format!("Pulsa {} sobre el texto seleccionado tras copiarlo (Ctrl+C) para redactarlo en el sitio.", hotkey),
+    cli_press_to_paste(hotkey: &str,) {
+        EN => format!("Copy text as usual, then press {} to paste a redacted copy.", hotkey),
+        FR => format!("Copiez du texte comme d'habitude, puis appuyez sur {} pour coller une copie masquée.", hotkey),
+        IT => format!("Copia il testo come al solito, poi premi {} per incollarne una copia oscurata.", hotkey),
+        ES => format!("Copia texto como siempre y luego pulsa {} para pegar una copia redactada.", hotkey),
     }
     cli_register_failed(err: &str,) {
         EN => format!("Could not auto-register the shortcut: {}", err),
@@ -490,10 +448,10 @@ lang_strings! {
         ES => format!("No se pudo registrar automáticamente el atajo: {}", err),
     }
     cli_register_workaround(exe: &str, hotkey: &str,) {
-        EN => format!("Workaround: bind '{} trigger' manually to {} in your desktop's keyboard settings.", exe, hotkey),
-        FR => format!("Solution : liez '{} trigger' manuellement à {} dans les paramètres clavier de votre bureau.", exe, hotkey),
-        IT => format!("Soluzione: associa manualmente '{} trigger' a {} nelle impostazioni della tastiera del desktop.", exe, hotkey),
-        ES => format!("Solución: vincula '{} trigger' manualmente a {} en la configuración de teclado de tu escritorio.", exe, hotkey),
+        EN => format!("Workaround: bind '{} paste' manually to {} in your desktop's keyboard settings.", exe, hotkey),
+        FR => format!("Solution : liez '{} paste' manuellement à {} dans les paramètres clavier de votre bureau.", exe, hotkey),
+        IT => format!("Soluzione: associa manualmente '{} paste' a {} nelle impostazioni della tastiera del desktop.", exe, hotkey),
+        ES => format!("Solución: vincula '{} paste' manualmente a {} en la configuración de teclado de tu escritorio.", exe, hotkey),
     }
     cli_unregister_failed(err: &str,) {
         EN => format!("Could not auto-unregister the shortcut: {}", err),
@@ -508,45 +466,51 @@ lang_strings! {
         ES => "Atajo personalizado eliminado.",
     }
 
-    // ---- CLI: trigger ----
-    cli_nothing_to_redact {
-        EN => "Nothing to redact: no selection and clipboard is empty.",
-        FR => "Rien à masquer : aucune sélection et le presse-papiers est vide.",
-        IT => "Niente da oscurare: nessuna selezione e appunti vuoti.",
-        ES => "Nada que redactar: sin selección y el portapapeles está vacío.",
-    }
+    // ---- CLI: paste ----
     cli_clipboard_too_large(len: usize, cap: usize,) {
-        EN => format!("Clipboard too large to scan: {} bytes (cap {} bytes). Skipping.", len, cap),
-        FR => format!("Presse-papiers trop volumineux à analyser : {} octets (limite {} octets). Ignoré.", len, cap),
-        IT => format!("Appunti troppo grandi da analizzare: {} byte (limite {} byte). Saltato.", len, cap),
-        ES => format!("Portapapeles demasiado grande para analizar: {} bytes (límite {} bytes). Omitido.", len, cap),
+        EN => format!("Clipboard too large to scan: {} bytes (cap {} bytes). Nothing was pasted.", len, cap),
+        FR => format!("Presse-papiers trop volumineux à analyser : {} octets (limite {} octets). Rien n'a été collé.", len, cap),
+        IT => format!("Appunti troppo grandi da analizzare: {} byte (limite {} byte). Non è stato incollato nulla.", len, cap),
+        ES => format!("Portapapeles demasiado grande para analizar: {} bytes (límite {} bytes). No se pegó nada.", len, cap),
     }
     cli_no_secrets {
-        EN => "No secrets detected in clipboard.",
-        FR => "Aucun secret détecté dans le presse-papiers.",
-        IT => "Nessun segreto rilevato negli appunti.",
-        ES => "No se detectaron secretos en el portapapeles.",
+        EN => "No secrets detected; pasted the clipboard as is.",
+        FR => "Aucun secret détecté ; presse-papiers collé tel quel.",
+        IT => "Nessun segreto rilevato; appunti incollati così come sono.",
+        ES => "No se detectaron secretos; se pegó el portapapeles tal cual.",
     }
 
     cli_image_scan_failed {
-        EN => "Could not scan the clipboard image. Clipboard left untouched.",
-        FR => "Impossible d'analyser l'image du presse-papiers. Presse-papiers inchangé.",
-        IT => "Impossibile analizzare l'immagine degli appunti. Appunti invariati.",
-        ES => "No se pudo analizar la imagen del portapapeles. Portapapeles sin cambios.",
+        EN => "Could not scan the clipboard image. Nothing was pasted.",
+        FR => "Impossible d'analyser l'image du presse-papiers. Rien n'a été collé.",
+        IT => "Impossibile analizzare l'immagine degli appunti. Non è stato incollato nulla.",
+        ES => "No se pudo analizar la imagen del portapapeles. No se pegó nada.",
     }
 
     cli_image_detected_unmappable {
-        EN => "Detected a secret in the image but could not locate it to redact. Clipboard left untouched.",
-        FR => "Secret détecté dans l'image mais impossible de le localiser pour le masquer. Presse-papiers inchangé.",
-        IT => "Segreto rilevato nell'immagine ma impossibile localizzarlo per oscurarlo. Appunti invariati.",
-        ES => "Se detectó un secreto en la imagen pero no se pudo localizar para redactarlo. Portapapeles sin cambios.",
+        EN => "Detected a secret in the image but could not locate it to redact. Nothing was pasted.",
+        FR => "Secret détecté dans l'image mais impossible de le localiser pour le masquer. Rien n'a été collé.",
+        IT => "Segreto rilevato nell'immagine ma impossibile localizzarlo per oscurarlo. Non è stato incollato nulla.",
+        ES => "Se detectó un secreto en la imagen pero no se pudo localizar para redactarlo. No se pegó nada.",
     }
 
-    cli_clipboard_write_failed(cleared: bool, err: &str,) {
-        EN => format!("Clipboard write failed{}: {}", if cleared { " (clipboard cleared)" } else { " (and clipboard could NOT be cleared)" }, err),
-        FR => format!("Échec d'écriture du presse-papiers{} : {}", if cleared { " (presse-papiers vidé)" } else { " (et le presse-papiers n'a PAS pu être vidé)" }, err),
-        IT => format!("Scrittura negli appunti fallita{}: {}", if cleared { " (appunti svuotati)" } else { " (e gli appunti NON sono stati svuotati)" }, err),
-        ES => format!("Fallo al escribir en el portapapeles{}: {}", if cleared { " (portapapeles vaciado)" } else { " (y el portapapeles NO se pudo vaciar)" }, err),
+    cli_paste_failed(err: &str,) {
+        EN => format!("Redacted paste failed, nothing was pasted: {}", err),
+        FR => format!("Échec du collage masqué, rien n'a été collé : {}", err),
+        IT => format!("Incolla oscurato non riuscito, non è stato incollato nulla: {}", err),
+        ES => format!("Falló el pegado redactado, no se pegó nada: {}", err),
+    }
+    cli_input_unavailable(err: &str,) {
+        EN => format!("Cannot simulate the paste keys: {}. On Wayland, run 'secret-stripper init' to set up /dev/uinput access.", err),
+        FR => format!("Impossible de simuler les touches de collage : {}. Sous Wayland, lancez 'secret-stripper init' pour configurer l'accès à /dev/uinput.", err),
+        IT => format!("Impossibile simulare i tasti di incolla: {}. Su Wayland, esegui 'secret-stripper init' per configurare l'accesso a /dev/uinput.", err),
+        ES => format!("No se pueden simular las teclas de pegado: {}. En Wayland, ejecuta 'secret-stripper init' para configurar el acceso a /dev/uinput.", err),
+    }
+    cli_restore_skipped {
+        EN => "No app read the redacted copy within 3s, so it stays on the clipboard.",
+        FR => "Aucune application n'a lu la copie masquée en 3 s ; elle reste dans le presse-papiers.",
+        IT => "Nessuna app ha letto la copia oscurata entro 3 s; resta negli appunti.",
+        ES => "Ninguna app leyó la copia redactada en 3 s; permanece en el portapapeles.",
     }
     cli_redacted(n: usize,) {
         EN => if n == 1 { "Redacted 1 item.".to_string() } else { format!("Redacted {} items.", n) },
@@ -617,10 +581,10 @@ lang_strings! {
         ES => "silencioso (alternar con 'secret-stripper menu')",
     }
     cli_init_usage(hotkey: &str,) {
-        EN => format!("Normal Ctrl+C / Ctrl+V are untouched. Press {} to copy a redacted version of the current selection.", hotkey),
-        FR => format!("Ctrl+C / Ctrl+V normaux ne sont pas modifiés. Appuyez sur {} pour copier une version masquée de la sélection actuelle.", hotkey),
-        IT => format!("I normali Ctrl+C / Ctrl+V non sono modificati. Premi {} per copiare una versione oscurata della selezione corrente.", hotkey),
-        ES => format!("Ctrl+C / Ctrl+V normales no se modifican. Pulsa {} para copiar una versión redactada de la selección actual.", hotkey),
+        EN => format!("Ctrl+C / Ctrl+V work as usual. Press {} to paste a redacted copy of the clipboard.", hotkey),
+        FR => format!("Ctrl+C / Ctrl+V fonctionnent comme d'habitude. Appuyez sur {} pour coller une copie masquée du presse-papiers.", hotkey),
+        IT => format!("Ctrl+C / Ctrl+V funzionano come al solito. Premi {} per incollare una copia oscurata degli appunti.", hotkey),
+        ES => format!("Ctrl+C / Ctrl+V funcionan como siempre. Pulsa {} para pegar una copia redactada del portapapeles.", hotkey),
     }
     cli_warn_no_hotkey {
         EN => "Warning: no hotkey could be registered. Run 'secret-stripper menu' and rebind the hotkey to capture a working chord.",
@@ -715,16 +679,16 @@ lang_strings! {
         ES => format!("Ya tienes la última versión ({}).", current),
     }
     svc_update_desc {
-        EN => "Secret Stripper daily update check",
-        FR => "Vérification quotidienne des mises à jour de Secret Stripper",
-        IT => "Controllo giornaliero degli aggiornamenti di Secret Stripper",
-        ES => "Comprobación diaria de actualizaciones de Secret Stripper",
+        EN => "Secret Stripper update check",
+        FR => "Vérification des mises à jour de Secret Stripper",
+        IT => "Controllo degli aggiornamenti di Secret Stripper",
+        ES => "Comprobación de actualizaciones de Secret Stripper",
     }
     svc_timer_desc {
-        EN => "Daily Secret Stripper update check",
-        FR => "Vérification quotidienne de Secret Stripper",
-        IT => "Controllo giornaliero di Secret Stripper",
-        ES => "Comprobación diaria de Secret Stripper",
+        EN => "Secret Stripper update check at login",
+        FR => "Vérification de Secret Stripper à la connexion",
+        IT => "Controllo di Secret Stripper all'accesso",
+        ES => "Comprobación de Secret Stripper al iniciar sesión",
     }
 
     // ---- TUI: menu ----
@@ -887,10 +851,10 @@ lang_strings! {
         ES => "Activa o desactiva las notificaciones al redactar un secreto",
     }
     help_rebind_hotkey {
-        EN => "Change the keyboard shortcut that triggers a clipboard scan",
-        FR => "Modifier le raccourci clavier qui déclenche une analyse",
-        IT => "Cambia la scorciatoia che avvia una scansione degli appunti",
-        ES => "Cambia el atajo que inicia un escaneo del portapapeles",
+        EN => "Change the keyboard shortcut that pastes a redacted copy",
+        FR => "Modifier le raccourci clavier qui colle une copie masquée",
+        IT => "Cambia la scorciatoia che incolla una copia oscurata",
+        ES => "Cambia el atajo que pega una copia redactada",
     }
     help_language {
         EN => "Choose the interface language",
@@ -1493,18 +1457,6 @@ lang_strings! {
         IT => format!("È disponibile la versione {}. Aggiornare ora?", latest),
         ES => format!("La versión {} está disponible. ¿Actualizar ahora?", latest),
     }
-    notify_uninstalled_title {
-        EN => "Secret Stripper removed",
-        FR => "Secret Stripper supprimé",
-        IT => "Secret Stripper rimosso",
-        ES => "Secret Stripper eliminado",
-    }
-    notify_uninstalled_body {
-        EN => "Everything about Secret Stripper has been removed from your system.",
-        FR => "Tout ce qui concerne Secret Stripper a été supprimé de votre système.",
-        IT => "Tutto ciò che riguarda Secret Stripper è stato rimosso dal sistema.",
-        ES => "Todo lo relacionado con Secret Stripper se ha eliminado del sistema.",
-    }
 
     // ---- TUI: hotkey capture ----
     hk_placeholder {
@@ -1654,8 +1606,6 @@ mod tests {
             assert!(!l.up_checking().is_empty());
             assert!(!l.svc_update_desc().is_empty());
             assert!(!l.endonym().is_empty());
-            assert!(!l.notify_write_failed_body(true).is_empty());
-            assert!(!l.notify_write_failed_body(false).is_empty());
         }
     }
 
@@ -1698,8 +1648,8 @@ mod tests {
         ];
         for l in Lang::all() {
             for b in &backends {
-                let s = l.shortcut_bound(b, "Ctrl+Alt+X");
-                assert!(s.contains("Ctrl+Alt+X"));
+                let s = l.shortcut_bound(b, "Ctrl+Alt+V");
+                assert!(s.contains("Ctrl+Alt+V"));
             }
         }
     }

@@ -58,7 +58,7 @@ fn validate_key(s: &str) -> Result<()> {
 }
 
 pub fn fallback_chords() -> &'static [&'static str] {
-    &["Ctrl+Alt+X", "Ctrl+Alt+R", "Ctrl+Alt+Shift+X"]
+    &["Ctrl+Alt+V", "Ctrl+Alt+Shift+V", "Super+Alt+V"]
 }
 
 pub fn candidates_for(preferred: &str) -> Vec<String> {

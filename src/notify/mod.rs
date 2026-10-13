@@ -1,10 +1,27 @@
-use crate::lang::Lang;
+use crate::config::Config;
 
-pub fn redacted_notification(count: usize, timeout: u64, lang: Lang) {
+// Only two events ever notify: a redaction and an available update. With
+// `silent` set, nothing does.
+
+pub fn redacted(count: usize, config: &Config) {
+    if config.silent {
+        return;
+    }
     show(make_notification(
-        &lang.notify_redacted(count),
-        lang.notify_cleaned(),
-        timeout,
+        &config.lang.notify_redacted(count),
+        config.lang.notify_cleaned(),
+        config.notification_timeout_secs,
+    ));
+}
+
+pub fn update_available(config: &Config, current: &str, latest: &str) {
+    if config.silent {
+        return;
+    }
+    show(make_notification(
+        config.lang.update_available_title(),
+        &config.lang.update_available_body(current, latest),
+        config.notification_timeout_secs,
     ));
 }
 
@@ -15,52 +32,6 @@ fn show(n: notify_rust::Notification) {
     if let Err(e) = n.show() {
         log::warn!("desktop notification failed (is a notification daemon running?): {e}");
     }
-}
-
-pub fn write_failed_notification(timeout: u64, lang: Lang, cleared: bool) {
-    show(make_notification(
-        lang.notify_write_failed(),
-        lang.notify_write_failed_body(cleared),
-        timeout,
-    ));
-}
-
-/// Fires when Drop style triggers the deep-scan-no-span fallback: a secret was
-/// detected but no byte range was known, so the clipboard was cleared rather
-/// than left intact. Bypasses `Config.silent` because an emptied clipboard
-/// otherwise looks like silent breakage.
-pub fn drop_fallback_notification(timeout: u64, lang: Lang) {
-    show(make_notification(
-        lang.notify_drop_fallback_title(),
-        lang.notify_drop_fallback_body(),
-        timeout,
-    ));
-}
-
-pub fn update_available_notification(timeout: u64, lang: Lang, current: &str, latest: &str) {
-    let body = lang.update_available_body(current, latest);
-    show(make_notification(
-        lang.update_available_title(),
-        &body,
-        timeout,
-    ));
-}
-
-pub fn update_installed_notification(timeout: u64, lang: Lang, version: &str) {
-    let body = lang.update_installed_body(version);
-    show(make_notification(
-        lang.update_installed_title(),
-        &body,
-        timeout,
-    ));
-}
-
-pub fn uninstalled_notification(timeout: u64, lang: Lang) {
-    show(make_notification(
-        lang.notify_uninstalled_title(),
-        lang.notify_uninstalled_body(),
-        timeout,
-    ));
 }
 
 fn make_notification(summary: &str, body: &str, timeout: u64) -> notify_rust::Notification {

@@ -16,7 +16,9 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Command {
     Init,
-    Trigger,
+    /// Paste a redacted copy of the clipboard into the focused app, then
+    /// restore the original clipboard. Bound to the global hotkey.
+    Paste,
     Menu,
     Status,
     RegisterShortcut,

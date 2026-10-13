@@ -2,6 +2,7 @@ mod cli;
 mod clipboard;
 mod hotkey;
 mod notify;
+mod paste;
 mod paste_guard;
 mod proc;
 mod shortcut;
@@ -17,7 +18,6 @@ pub const APP_NAME: &str = "Secret Stripper";
 use anyhow::Context;
 use clap::Parser;
 use config::Config;
-use detector::Detector;
 
 fn main() -> anyhow::Result<()> {
     let args = cli::Cli::parse();
@@ -25,7 +25,7 @@ fn main() -> anyhow::Result<()> {
 
     match args.command {
         cli::Command::Init => run_init()?,
-        cli::Command::Trigger => run_trigger()?,
+        cli::Command::Paste => paste::run()?,
         cli::Command::Menu => run_menu()?,
         cli::Command::Status => print_status()?,
         cli::Command::RegisterShortcut => run_register_shortcut()?,
@@ -60,20 +60,6 @@ fn setup_logging(args: &cli::Cli) {
         .filter_level(level)
         .filter_module("arboard", log::LevelFilter::Error)
         .try_init();
-}
-
-fn init_monitor() -> Option<clipboard::ClipboardMonitor> {
-    match clipboard::ClipboardMonitor::new(0) {
-        Ok(m) => Some(m),
-        Err(e) => {
-            log::error!("Failed to access clipboard: {}", e);
-            eprintln!(
-                "{}",
-                lang::Lang::active().cli_clipboard_access_failed(&e.to_string())
-            );
-            None
-        }
-    }
 }
 
 fn run_menu() -> anyhow::Result<()> {
@@ -128,7 +114,6 @@ fn run_uninstall() -> anyhow::Result<()> {
     }
     println!();
     println!("{}", lang.cli_run_init_again());
-    notify::uninstalled_notification(5, lang);
     Ok(())
 }
 
@@ -142,7 +127,7 @@ fn run_register_shortcut() -> anyhow::Result<()> {
     match shortcut::register(&config.hotkey) {
         Ok(backend) => {
             println!("{}", lang.shortcut_bound(&backend, &config.hotkey));
-            println!("{}", lang.cli_press_to_redact(&config.hotkey));
+            println!("{}", lang.cli_press_to_paste(&config.hotkey));
         }
         Err(e) => {
             eprintln!("{}", lang.cli_register_failed(&e.to_string()));
@@ -161,206 +146,6 @@ fn run_unregister_shortcut() -> anyhow::Result<()> {
         eprintln!("{}", lang.cli_unregister_failed(&e.to_string()));
     } else {
         println!("{}", lang.cli_unregister_done());
-    }
-    Ok(())
-}
-
-fn run_trigger() -> anyhow::Result<()> {
-    let config = Config::load();
-    if !config.onboarding_done {
-        eprintln!("{}", lang::Lang::active().cli_run_init_first());
-        return Ok(());
-    }
-
-    let detector = Detector::from_config(&config);
-    let mut monitor = match init_monitor() {
-        Some(m) => m,
-        None => return Ok(()),
-    };
-
-    // A clipboard image never goes through the text path below: reading it as text
-    // yields raw bytes that the detector can mistake for secrets, which would
-    // overwrite the screenshot. When an image is present we own the outcome here -
-    // redact it if the feature is on, otherwise leave it untouched.
-    if let Some((width, height, bytes)) = monitor.read_image() {
-        if config.enable_image_scan {
-            run_image_redaction(&mut monitor, &detector, &config, width, height, bytes)?;
-        } else {
-            eprintln!("{}", config.lang.cli_nothing_to_redact());
-        }
-        return Ok(());
-    }
-
-    // Source order: prefer the PRIMARY selection (highlighted text). Most Linux apps
-    // populate it automatically when the user selects text with the mouse, so no Ctrl+C
-    // is needed. If PRIMARY is empty (some Electron apps skip it, or the user is on a
-    // platform without primary selection), fall back to the regular CLIPBOARD which
-    // assumes the user pre-copied with Ctrl+C.
-    let text = monitor
-        .read_primary()
-        .filter(|s| !s.is_empty())
-        .or_else(|| monitor.read_text())
-        .filter(|s| !s.is_empty());
-
-    let text = match text {
-        Some(t) => t,
-        None => {
-            eprintln!("{}", config.lang.cli_nothing_to_redact());
-            return Ok(());
-        }
-    };
-
-    // Hard size cap: a multi-MB clipboard runs every regex over the whole text
-    // and can stall the engine. Skip rather than truncate: truncating could
-    // split a multi-byte char or, worse, split a secret span and leave half of
-    // it in the clipboard.
-    const MAX_INPUT_BYTES: usize = 1024 * 1024;
-    if text.len() > MAX_INPUT_BYTES {
-        eprintln!(
-            "{}",
-            config
-                .lang
-                .cli_clipboard_too_large(text.len(), MAX_INPUT_BYTES)
-        );
-        return Ok(());
-    }
-
-    // Best-effort zeroization for buffers we own. arboard hands us a String we
-    // cannot zero from outside, so anything before this point may linger; from
-    // here on the local copy is wiped on drop.
-    let text: zeroize::Zeroizing<String> = zeroize::Zeroizing::new(text);
-
-    let result = detector.scan(&text);
-    if !result.has_secrets {
-        eprintln!("{}", config.lang.cli_no_secrets());
-        return Ok(());
-    }
-
-    let entropy_tokens: Vec<&str> = result
-        .high_entropy_tokens
-        .iter()
-        .map(|(t, _)| t.as_str())
-        .collect();
-    let mut deep_spans: Vec<(usize, usize, &'static str)> = result
-        .deep_findings
-        .iter()
-        .filter_map(|f| f.span.map(|(s, e)| (s, e, f.finding_type)))
-        .collect();
-    deep_spans.extend(result.extra_spans.iter().copied());
-    let redacted: zeroize::Zeroizing<String> =
-        zeroize::Zeroizing::new(detector::redact::redact_with_spans(
-            &text,
-            &result.matched_spans,
-            &entropy_tokens,
-            &deep_spans,
-            detector.allowlist(),
-            config.redact_style,
-            &config.redact_pattern,
-        ));
-
-    let total = result.matched_patterns.len()
-        + result.deep_findings.len()
-        + result.high_entropy_tokens.len();
-
-    // Fallback: detection found something but the redactor produced an
-    // identical string. For Marker/Typed/Drop that only happens when no span was
-    // located (a deep-scan-only hit, since DeepFinding may carry no span), so
-    // fail closed. Placeholder sample values can legitimately equal the original
-    // secret (a fixed point), so for that style only fail closed when there was
-    // genuinely no span to redact. Drop empties the clipboard and force-notifies
-    // regardless of `silent` so an empty clipboard does not look like breakage.
-    let had_spans =
-        !result.matched_spans.is_empty() || !entropy_tokens.is_empty() || !deep_spans.is_empty();
-    let redaction_noop = *redacted == *text
-        && !(matches!(config.redact_style, config::RedactStyle::Placeholder) && had_spans);
-    let drop_fallback_fired =
-        redaction_noop && matches!(config.redact_style, config::RedactStyle::Drop);
-    let to_write: zeroize::Zeroizing<String> = if redaction_noop {
-        let fallback = match config.redact_style {
-            config::RedactStyle::Marker => config.redact_pattern.clone(),
-            config::RedactStyle::Typed => "[SECRET]".to_string(),
-            config::RedactStyle::Drop => String::new(),
-            config::RedactStyle::Placeholder => detector::placeholders::GENERIC.to_string(),
-        };
-        zeroize::Zeroizing::new(fallback)
-    } else {
-        redacted
-    };
-
-    // The high-entropy token plaintext lives in `result` as a plain String;
-    // it is no longer needed past this point, so drop it before the clipboard
-    // round-trip rather than letting it linger to function end.
-    drop(entropy_tokens);
-    drop(result);
-
-    if let Err(e) = monitor.replace_text(&to_write) {
-        log::error!("clipboard write failed: {}", e);
-        let clear_ok = monitor.replace_text("").is_ok();
-        // Safety override: notify on write failure regardless of config.silent.
-        notify::write_failed_notification(config.notification_timeout_secs, config.lang, clear_ok);
-        eprintln!(
-            "{}",
-            config
-                .lang
-                .cli_clipboard_write_failed(clear_ok, &e.to_string())
-        );
-        return Ok(());
-    }
-
-    eprintln!("{}", config.lang.cli_redacted(total));
-
-    stats::append(total as u64);
-
-    if drop_fallback_fired {
-        notify::drop_fallback_notification(config.notification_timeout_secs, config.lang);
-    } else if !config.silent {
-        notify::redacted_notification(total, config.notification_timeout_secs, config.lang);
-    }
-    Ok(())
-}
-
-fn run_image_redaction(
-    monitor: &mut clipboard::ClipboardMonitor,
-    detector: &Detector,
-    config: &Config,
-    width: usize,
-    height: usize,
-    bytes: Vec<u8>,
-) -> anyhow::Result<()> {
-    use secret_stripper::image_scan::{self, ImageResult, TesseractOcr};
-
-    match image_scan::redact_image(&bytes, width as u32, height as u32, &TesseractOcr, detector) {
-        ImageResult::Unavailable => {
-            eprintln!("{}", config.lang.cli_image_scan_failed());
-        }
-        ImageResult::NoSecrets => {
-            eprintln!("{}", config.lang.cli_no_secrets());
-        }
-        ImageResult::DetectedUnmappable => {
-            eprintln!("{}", config.lang.cli_image_detected_unmappable());
-        }
-        ImageResult::Redacted { bytes, w, h, count } => {
-            if let Err(e) = monitor.replace_image(w as usize, h as usize, bytes) {
-                log::error!("clipboard image write failed: {}", e);
-                notify::write_failed_notification(
-                    config.notification_timeout_secs,
-                    config.lang,
-                    false,
-                );
-                eprintln!(
-                    "{}",
-                    config
-                        .lang
-                        .cli_clipboard_write_failed(false, &e.to_string())
-                );
-                return Ok(());
-            }
-            stats::append(count as u64);
-            eprintln!("{}", config.lang.cli_redacted(count));
-            if !config.silent {
-                notify::redacted_notification(count, config.notification_timeout_secs, config.lang);
-            }
-        }
     }
     Ok(())
 }

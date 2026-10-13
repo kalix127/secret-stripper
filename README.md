@@ -27,7 +27,7 @@ One command, no extra setup:
 curl -sSf https://secretstripper.download/install.sh | bash
 ```
 
-Default chord: `Ctrl+Alt+X`.
+Default chord: `Ctrl+Alt+V`.
 
 **From [crates.io](https://crates.io/crates/secret-stripper) (Rust):**
 
@@ -41,7 +41,7 @@ cargo install secret-stripper && secret-stripper init
 cargo install --git https://github.com/kalix127/secret-stripper.git --locked && secret-stripper init
 ```
 
-After install, highlight text and press your chord. The PRIMARY selection is read directly, so you can skip the `Ctrl+C`. Paste with `Ctrl+V`.
+After install, copy text as usual. `Ctrl+V` pastes the original; your chord pastes a redacted copy and then restores the original clipboard.
 
 Run `secret-stripper menu` to tune settings, or `secret-stripper --help` for all commands.
 
@@ -87,17 +87,15 @@ Pick how detected secrets are replaced from `secret-stripper menu` -> **Redactio
 | **Typed** | `aws=[AWS_ACCESS_KEY_ID]` - replaces each span with a tag derived from the matched pattern name |
 | **Placeholder** | `aws=AKIAIOSFODNN7EXAMPLE` - swaps in a realistic but fake sample value for the matched pattern (an email becomes `user@example.com`, a Stripe key `sk_test_4eC39HqLyjWDarjtT1zdp7dc`) |
 
-The same setting applies to the hotkey trigger, the `redact` pipeline subcommand, and the `paste-guard` AI-TUI wrapper.
+The same setting applies to the paste chord, the `redact` pipeline subcommand, and the `paste-guard` AI-TUI wrapper.
 
 ---
 
 ## Redact screenshots
 
-Secrets often live in screenshots, not just text - a terminal grab, a config pane, an API dashboard. When you trigger the hotkey and the clipboard holds an image instead of text, Secret Stripper OCRs the image, runs the same detector it uses for text, and paints a solid black box over only the words that contain a secret. The redacted image is written back to the clipboard. Clean parts of the image are left untouched - the whole screenshot is never blacked out.
+Secrets often live in screenshots, not just text - a terminal grab, a config pane, an API dashboard. When you press the paste chord and the clipboard holds an image instead of text, Secret Stripper OCRs the image, runs the same detector it uses for text, and paints a solid black box over only the words that contain a secret. The redacted image is what gets pasted. Clean parts of the image are left untouched - the whole screenshot is never blacked out.
 
 Works on both X11 and Wayland.
-
-When an image is on the clipboard, the hotkey redacts the image even if you have text highlighted - so `screenshot -> hotkey` just works.
 
 It needs the [`tesseract`](https://github.com/tesseract-ocr/tesseract) OCR CLI on your `PATH`. It is an optional runtime dependency: everything else works without it.
 
@@ -107,7 +105,7 @@ sudo apt install tesseract-ocr                  # Debian / Ubuntu
 sudo dnf install tesseract                      # Fedora
 ```
 
-It fails closed: if `tesseract` is missing, the image cannot be read, or a detected secret cannot be located, the clipboard is left untouched and you get a notification - the original image is never silently passed through and never wiped. OCR makes this path slower than the instant text path (roughly half a second to a couple of seconds for a full screenshot), so wait for the notification before pasting.
+It fails closed: if `tesseract` is missing, the image cannot be read, or a detected secret cannot be located, nothing is pasted and you get a notification - the original image is never silently passed through. OCR makes this path slower than the instant text path (roughly half a second to a couple of seconds for a full screenshot) before the paste happens.
 
 Image redaction is off by default. Turn it on from `secret-stripper menu` -> **Detection Settings** -> **Screenshot redaction**, or set `enable_image_scan = true` in `config.toml`.
 

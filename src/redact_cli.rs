@@ -54,7 +54,7 @@ pub fn redact_with(detector: &Detector, cfg: &Config, text: &str) -> (String, Ve
     // string. For Marker/Typed/Drop that means no span was located, so replace
     // the whole input to fail closed. Placeholder sample values can equal the
     // original secret (a fixed point), so for that style only fail closed when
-    // there was genuinely no span to redact. Mirrors main.rs::run_trigger.
+    // there was genuinely no span to redact. Mirrors paste::plan_text.
     let had_spans =
         !result.matched_spans.is_empty() || !entropy_tokens.is_empty() || !deep_spans.is_empty();
     let redaction_noop =

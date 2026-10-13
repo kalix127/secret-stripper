@@ -14,7 +14,7 @@ pub use parser::PasteParser;
 
 /// Limit on a single paste payload before we give up on in-flight redaction.
 /// Above this the parser falls back to passthrough so we never OOM on a
-/// pathological paste. 1 MiB matches the cap in `run_trigger`.
+/// pathological paste. 1 MiB matches the cap in `paste`.
 pub const MAX_PASTE_BYTES: usize = 1024 * 1024;
 
 pub const START_SEQ: &[u8] = b"\x1b[200~";
@@ -26,7 +26,7 @@ const ENV_NO_OS: &str = "SECRET_STRIPPER_NO_OS_SIDE_EFFECTS";
 /// redact them, and forward. Returns the child's exit code.
 ///
 /// Long-lived for the lifetime of the child - this is the second carve-out
-/// from the one-shot model documented in CLAUDE.md (the first is the daily
+/// from the one-shot model documented in CLAUDE.md (the first is the per-login
 /// update-check scheduler). Holds no global state, no PID file.
 pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
     if argv.is_empty() {
@@ -111,7 +111,7 @@ pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
     // Feedback policy: never write to the parent's stderr while the wrapped
     // child is rendering a TUI - it punches through the frame (see
     // CLAUDE.md::tui-no-stdout). Instead, fire a desktop notification per
-    // redaction event (gated on `!config.silent` to match the trigger
+    // redaction event (gated on `!config.silent` to match the paste
     // flow). The visible proof is the AI TUI rendering `[REDACTED]` in
     // place of the secret in its own input field.
     let detector_for_parser = Arc::clone(&detector);
@@ -140,12 +140,8 @@ pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
             // floor rather than corrupt the TUI frame. The fact that the
             // paste was not redacted is observable in the child itself.
             let _ = parser.take_overflow();
-            if redacted_total > 0 && !cfg_for_parser.silent {
-                crate::notify::redacted_notification(
-                    redacted_total,
-                    cfg_for_parser.notification_timeout_secs,
-                    cfg_for_parser.lang,
-                );
+            if redacted_total > 0 {
+                crate::notify::redacted(redacted_total, &cfg_for_parser);
             }
             if !out_bytes.is_empty() && pty_writer.write_all(&out_bytes).is_err() {
                 break;

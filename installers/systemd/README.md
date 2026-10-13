@@ -4,9 +4,9 @@
 
 ## What it does
 
-A oneshot service that runs `secret-stripper upgrade-check` and a daily timer that triggers it. The check fetches the latest GitHub release; if a newer version exists it posts a desktop notification (and, when `auto_install = true` in config, swaps the binary in place).
+A oneshot service that runs `secret-stripper upgrade-check` and a timer that triggers it once per login session. The check fetches the latest GitHub release; if a newer version exists it posts a desktop notification (and, when `auto_install = true` in config, swaps the binary in place).
 
-`Persistent=true` runs the check on boot if the machine was off when it would have fired, and `RandomizedDelaySec=1h` spreads the GitHub API load across users so we do not stampede the API at 00:00 UTC.
+`OnStartupSec=2min` counts from the start of your systemd user manager, which starts at login, so the check runs once, two minutes into each session. The notification itself is also limited to once per 24 hours and never shown when notifications are off.
 
 ## Manual install
 

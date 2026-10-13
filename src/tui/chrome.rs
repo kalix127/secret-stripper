@@ -32,7 +32,7 @@ struct StatusSnapshot {
     deep: String,
     redact_style: String,
     buckets_label: String,
-    /// `Some(tag)` when a newer release has been seen by the daily
+    /// `Some(tag)` when a newer release has been seen by the per-login
     /// update-check timer; `None` when up-to-date or unknown. The status
     /// panel omits the Update row entirely in the `None` case so the panel
     /// stays compact in the common case.

@@ -262,7 +262,7 @@ pub fn run_upgrade() -> anyhow::Result<()> {
 }
 
 /// Unattended update check. Silent on success-with-nothing-to-do AND on
-/// network failure: a daily cron / timer must never spam the user. Notifies
+/// network failure: a per-login timer must never spam the user. Notifies
 /// via desktop notification when a newer release is found, and optionally
 /// performs the swap when `auto_install` (CLI) or `config.auto_install` is
 /// set.
@@ -319,14 +319,18 @@ pub fn run_upgrade_check(auto_install_flag: bool) -> anyhow::Result<()> {
 
     let do_install = auto_install_flag || config.auto_install;
 
-    // Update notifications are independent of `config.silent`: that flag only
-    // mutes clipboard-redaction toasts, not "a new version is available".
-    notify::update_available_notification(
-        config.notification_timeout_secs,
-        config.lang,
-        env!("CARGO_PKG_VERSION"),
-        &tag,
-    );
+    // The timer fires once per login; this guard also covers repeated logins
+    // and manual runs, so at most one notice per 24h.
+    let now: chrono::DateTime<chrono::Utc> = std::time::SystemTime::now().into();
+    let due = config
+        .last_update_notice
+        .is_none_or(|last| now - last >= chrono::Duration::hours(24));
+    if due && !config.silent {
+        notify::update_available(&config, env!("CARGO_PKG_VERSION"), &tag);
+        let mut updated = Config::load();
+        updated.last_update_notice = Some(now);
+        let _ = updated.save();
+    }
 
     if !do_install {
         return Ok(());
@@ -361,13 +365,7 @@ pub fn run_upgrade_check(auto_install_flag: bool) -> anyhow::Result<()> {
     };
 
     match download_and_swap(&agent, &url, &asset_name, &release, &current_exe) {
-        Ok(_) => {
-            notify::update_installed_notification(
-                config.notification_timeout_secs,
-                config.lang,
-                &tag,
-            );
-        }
+        Ok(_) => log::debug!("upgrade-check: installed {}", tag),
         Err(e) => log::debug!("upgrade-check: install failed: {}", e),
     }
 
@@ -409,16 +407,14 @@ Nice=10
         exe.display()
     );
 
-    // RandomizedDelaySec spreads the GitHub API load across users instead of
-    // having every install fire at 00:00 UTC.
+    // OnStartupSec counts from the start of the user's systemd manager, i.e.
+    // the login session, so the check runs once per session.
     let timer = format!(
         r#"[Unit]
 Description={}
 
 [Timer]
-OnCalendar=daily
-Persistent=true
-RandomizedDelaySec=1h
+OnStartupSec=2min
 Unit=secret-stripper-update-check.service
 
 [Install]

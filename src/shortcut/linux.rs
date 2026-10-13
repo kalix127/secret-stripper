@@ -4,7 +4,11 @@ use std::process::Command;
 
 use crate::lang::ShortcutBackend;
 
-const KDE_DESKTOP_FILE_NAME: &str = "secret-stripper-trigger.desktop";
+const KDE_DESKTOP_FILE_NAME: &str = "secret-stripper-paste.desktop";
+const KDE_COMPONENT_PATH: &str = "/component/secret_stripper_paste_desktop";
+// 1.x bound `trigger` under this name; removed so an upgraded install does
+// not keep a second, dead shortcut.
+const KDE_LEGACY_DESKTOP_FILE_NAME: &str = "secret-stripper-trigger.desktop";
 
 // Per-DE binding spec for the gsettings-based desktops (GNOME, Cinnamon, MATE).
 // The schemas differ in subtle ways verified against each project's gschema.xml:
@@ -88,12 +92,12 @@ pub(super) fn register(chord: &str) -> Result<ShortcutBackend> {
         Ok(ShortcutBackend::Kde)
     } else if de.is_empty() {
         Err(anyhow!(
-            "No desktop environment detected ($XDG_CURRENT_DESKTOP is empty). Bind 'secret-stripper trigger' to {} via your window manager's config (sway, hyprland, i3, etc.).",
+            "No desktop environment detected ($XDG_CURRENT_DESKTOP is empty). Bind 'secret-stripper paste' to {} via your window manager's config (sway, hyprland, i3, etc.).",
             chord
         ))
     } else {
         Err(anyhow!(
-            "Auto-binding for '{}' is not implemented. Bind 'secret-stripper trigger' to {} via your desktop's shortcut settings.",
+            "Auto-binding for '{}' is not implemented. Bind 'secret-stripper paste' to {} via your desktop's shortcut settings.",
             de, chord
         ))
     }
@@ -138,7 +142,7 @@ fn register_gsettings(b: &GsettingsBinding, chord: &str) -> Result<()> {
     // reads these when the entry shows up in the list.
     let entries = [
         ("name", crate::APP_NAME.to_string()),
-        (b.command_field, format!("{} trigger", exe_str)),
+        (b.command_field, format!("{} paste", exe_str)),
         ("binding", binding_value),
     ];
 
@@ -261,7 +265,7 @@ fn register_xfce(chord: &str) -> Result<()> {
 
     let chord_keysym = chord_to_keysym_format(chord, "<Control>")?;
     let prop = format!("/commands/custom/{}", chord_keysym);
-    let value = format!("{} trigger", exe_str);
+    let value = format!("{} paste", exe_str);
 
     // -n creates the property, -t string sets type, -s sets value.
     let status = Command::new("xfconf-query")
@@ -330,6 +334,7 @@ fn register_kde(chord: &str) -> Result<()> {
         .ok_or_else(|| anyhow!("non-UTF8 binary path"))?;
 
     let kwc = pick_kwriteconfig()?;
+    remove_kde_entry(KDE_LEGACY_DESKTOP_FILE_NAME);
 
     let apps_dir = dirs::data_dir()
         .ok_or_else(|| anyhow!("no XDG data dir"))?
@@ -337,12 +342,12 @@ fn register_kde(chord: &str) -> Result<()> {
     fs::create_dir_all(&apps_dir)?;
     let desktop_path = apps_dir.join(KDE_DESKTOP_FILE_NAME);
     let desktop_content = format!(
-        "[Desktop Entry]\nName=Secret Stripper Trigger\nExec=\"{}\" trigger\nType=Application\nNoDisplay=true\nX-KDE-StartupNotify=false\n",
+        "[Desktop Entry]\nName=Secret Stripper Paste\nExec=\"{}\" paste\nType=Application\nNoDisplay=true\nX-KDE-StartupNotify=false\n",
         exe_str
     );
     fs::write(&desktop_path, desktop_content)?;
 
-    let value = format!("{},none,Run Secret Stripper Trigger", chord);
+    let value = format!("{},none,Paste redacted with Secret Stripper", chord);
     let status = Command::new(&kwc)
         .args([
             "--file",
@@ -363,7 +368,7 @@ fn register_kde(chord: &str) -> Result<()> {
         let r = Command::new(tool)
             .args([
                 "org.kde.kglobalaccel",
-                "/component/secret_stripper_trigger_desktop",
+                KDE_COMPONENT_PATH,
                 "org.kde.kglobalaccel.Component.cleanUp",
             ])
             .status();
@@ -378,8 +383,14 @@ fn register_kde(chord: &str) -> Result<()> {
 }
 
 fn unregister_kde() -> Result<()> {
-    if let Some(apps_dir) = dirs::data_dir().map(|p| p.join("applications")) {
-        let _ = fs::remove_file(apps_dir.join(KDE_DESKTOP_FILE_NAME));
+    remove_kde_entry(KDE_DESKTOP_FILE_NAME);
+    remove_kde_entry(KDE_LEGACY_DESKTOP_FILE_NAME);
+    Ok(())
+}
+
+fn remove_kde_entry(name: &str) {
+    if let Some(dir) = dirs::data_dir().map(|p| p.join("applications")) {
+        let _ = fs::remove_file(dir.join(name));
     }
     if let Ok(kwc) = pick_kwriteconfig() {
         let _ = Command::new(&kwc)
@@ -387,14 +398,13 @@ fn unregister_kde() -> Result<()> {
                 "--file",
                 "kglobalshortcutsrc",
                 "--group",
-                KDE_DESKTOP_FILE_NAME,
+                name,
                 "--key",
                 "_launch",
                 "--delete",
             ])
             .status();
     }
-    Ok(())
 }
 
 fn pick_kwriteconfig() -> Result<String> {

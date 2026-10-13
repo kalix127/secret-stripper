@@ -42,6 +42,13 @@ pub struct Config {
     pub silent: bool,
     #[serde(default = "default_hotkey")]
     pub hotkey: String,
+    /// Keys sent to the focused app to paste the redacted copy.
+    #[serde(default = "default_paste_keys")]
+    pub paste_keys: String,
+    /// Used instead of `paste_keys` when the focused window is a known
+    /// terminal. Only detectable on X11; Wayland always uses `paste_keys`.
+    #[serde(default = "default_terminal_paste_keys")]
+    pub terminal_paste_keys: String,
     #[serde(default = "default_check_for_updates")]
     pub check_for_updates: bool,
     #[serde(default)]
@@ -54,6 +61,9 @@ pub struct Config {
     /// successful swap (the running binary IS that version).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_seen_version: Option<String>,
+    /// When the last "update available" notification was shown.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_update_notice: Option<chrono::DateTime<chrono::Utc>>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disabled_categories: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -141,7 +151,15 @@ pub fn purge_config_dir() -> Vec<String> {
 }
 
 fn default_hotkey() -> String {
-    "Ctrl+Alt+X".to_string()
+    "Ctrl+Alt+V".to_string()
+}
+
+fn default_paste_keys() -> String {
+    "Ctrl+V".to_string()
+}
+
+fn default_terminal_paste_keys() -> String {
+    "Ctrl+Shift+V".to_string()
 }
 
 fn default_check_for_updates() -> bool {
@@ -174,12 +192,15 @@ impl Default for Config {
             enable_deep_scan: false,
             enable_entropy: false,
             enable_image_scan: false,
-            silent: true,
+            silent: false,
             hotkey: default_hotkey(),
+            paste_keys: default_paste_keys(),
+            terminal_paste_keys: default_terminal_paste_keys(),
             check_for_updates: true,
             auto_install: false,
             skip_version: None,
             last_seen_version: None,
+            last_update_notice: None,
             disabled_categories: Vec::new(),
             allowlist_regex: Vec::new(),
         }
