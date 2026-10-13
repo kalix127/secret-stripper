@@ -6,7 +6,7 @@ mod linux;
 
 /// Tests and CI runners set `SECRET_STRIPPER_NO_OS_SIDE_EFFECTS` so an
 /// `init`/`uninstall` cannot mutate the host's real desktop bindings.
-fn os_side_effects_disabled() -> bool {
+pub(crate) fn os_side_effects_disabled() -> bool {
     std::env::var_os("SECRET_STRIPPER_NO_OS_SIDE_EFFECTS").is_some()
 }
 
@@ -25,6 +25,11 @@ pub fn register(chord: &str) -> Result<ShortcutBackend> {
         return Ok(ShortcutBackend::Gnome);
     }
     linux::register(chord)
+}
+
+/// Config lines for window managers we cannot bind automatically.
+pub fn manual_examples(exe: &str, chord: &str) -> Vec<String> {
+    linux::manual_examples(exe, chord)
 }
 
 pub fn unregister() -> Result<()> {

@@ -52,11 +52,8 @@ impl X11Input {
     /// is not merged with the chord the user is still pressing.
     pub fn wait_modifiers_released(&self, timeout: Duration) -> Result<()> {
         let mapping = self.conn.get_modifier_mapping()?.reply()?;
-        let modifier_codes: Vec<Keycode> = mapping
-            .keycodes
-            .into_iter()
-            .filter(|&k| k != 0)
-            .collect();
+        let modifier_codes: Vec<Keycode> =
+            mapping.keycodes.into_iter().filter(|&k| k != 0).collect();
         let deadline = Instant::now() + timeout;
         loop {
             let keys = self.conn.query_keymap()?.reply()?.keys;
@@ -75,7 +72,11 @@ impl X11Input {
 
     pub fn focused_is_terminal(&self) -> bool {
         self.focused_class()
-            .map(|class| TERMINAL_CLASSES.iter().any(|t| class.eq_ignore_ascii_case(t)))
+            .map(|class| {
+                TERMINAL_CLASSES
+                    .iter()
+                    .any(|t| class.eq_ignore_ascii_case(t))
+            })
             .unwrap_or(false)
     }
 

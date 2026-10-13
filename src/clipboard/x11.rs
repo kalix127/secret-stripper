@@ -1,8 +1,8 @@
 use anyhow::Context;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::{
-    Atom, AtomEnum, ConnectionExt as _, CreateWindowAux, EventMask, PropMode,
-    SelectionNotifyEvent, SelectionRequestEvent, WindowClass, SELECTION_NOTIFY_EVENT,
+    Atom, AtomEnum, ConnectionExt as _, CreateWindowAux, EventMask, PropMode, SelectionNotifyEvent,
+    SelectionRequestEvent, WindowClass, SELECTION_NOTIFY_EVENT,
 };
 use x11rb::protocol::Event;
 use x11rb::rust_connection::RustConnection;
@@ -43,7 +43,10 @@ pub(super) fn serve(content: &Content) -> anyhow::Result<()> {
 
     conn.set_selection_owner(window, clipboard, CURRENT_TIME)?;
     let owner = conn.get_selection_owner(clipboard)?.reply()?.owner;
-    anyhow::ensure!(owner == window, "could not take ownership of the X11 clipboard");
+    anyhow::ensure!(
+        owner == window,
+        "could not take ownership of the X11 clipboard"
+    );
     report(READY);
 
     let mut target_list = offered.clone();

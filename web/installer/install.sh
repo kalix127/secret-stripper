@@ -107,12 +107,18 @@ main() {
     fi
     printf "  ${GREEN}[OK]${NC} Installed to ${bin_path}\n\n"
 
-    if ! "$bin_path" init; then
+    # init may ask before running sudo; under `curl | bash` stdin is the script.
+    local input=/dev/null
+    if (: </dev/tty) 2>/dev/null; then
+        input=/dev/tty
+    fi
+
+    if ! "$bin_path" init <"$input"; then
         printf "  ${YELLOW}[!]${NC} Init had warnings. Run '${bin_path} menu' to fix.\n"
     fi
 
     printf "\n  ${BOLD}Secret Stripper is ready.${NC}\n"
-    printf "  Copy text with Ctrl+C, then press your hotkey to redact it.\n"
+    printf "  Copy text as usual, then press your hotkey to paste a redacted copy.\n"
     printf "  ${CYAN}secret-stripper menu${NC}    - settings, hotkey, notifications\n"
     printf "  ${CYAN}secret-stripper status${NC}  - show current state\n\n"
 }

@@ -146,8 +146,14 @@ run_init() {
     local bin="${BUILD_DIR}/release/secret-stripper"
     [ -f "/usr/local/bin/secret-stripper" ] && bin="/usr/local/bin/secret-stripper"
 
-    if "$bin" init 2>>"$LOG_FILE"; then
-        printf "  ${GREEN}[OK]${NC} Configuration written and hotkey bound to your desktop\n"
+    # init may ask before running sudo; under `curl | sh` stdin is the script.
+    local input=/dev/null
+    if (: </dev/tty) 2>/dev/null; then
+        input=/dev/tty
+    fi
+
+    if "$bin" init 2>>"$LOG_FILE" <"$input"; then
+        printf "  ${GREEN}[OK]${NC} Configuration written\n"
     else
         printf "  ${YELLOW}[~]${NC} Init skipped (run '${bin} init' later)\n"
     fi

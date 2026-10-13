@@ -15,7 +15,6 @@ pub use secret_stripper::{ai_tui, config, detector, lang, redact_cli, shell_rc, 
 /// consistent; deliberately not localized (it is a proper noun).
 pub const APP_NAME: &str = "Secret Stripper";
 
-use anyhow::Context;
 use clap::Parser;
 use config::Config;
 
@@ -103,6 +102,7 @@ fn run_uninstall() -> anyhow::Result<()> {
         }
     }
 
+    paste::access::print_uninstall_hint(lang);
     let removed = config::purge_config_dir();
 
     println!("{}", lang.cli_uninstall_done());
@@ -131,13 +131,25 @@ fn run_register_shortcut() -> anyhow::Result<()> {
         }
         Err(e) => {
             eprintln!("{}", lang.cli_register_failed(&e.to_string()));
-            let exe = std::env::current_exe()
-                .map(|p| p.display().to_string())
-                .unwrap_or_else(|_| "secret-stripper".to_string());
-            eprintln!("{}", lang.cli_register_workaround(&exe, &config.hotkey));
+            print_manual_bind(lang, &config.hotkey);
         }
     }
     Ok(())
+}
+
+/// Tell the user how to bind the chord themselves when no backend could.
+fn print_manual_bind(lang: lang::Lang, chord: &str) {
+    let exe = std::env::current_exe()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|_| "secret-stripper".to_string());
+    println!("{}", lang.cli_register_workaround(&exe, chord));
+    let examples = shortcut::manual_examples(&exe, chord);
+    if !examples.is_empty() {
+        println!("{}", lang.cli_bind_examples());
+        for line in examples {
+            println!("  {line}");
+        }
+    }
 }
 
 fn run_unregister_shortcut() -> anyhow::Result<()> {
@@ -191,9 +203,11 @@ fn run_init() -> anyhow::Result<()> {
                 (lang.lbl_de_binding(), de_status),
             ]);
             println!();
-            if let Err(e) = register_result {
-                return Err(e).context(lang.err_rebind_failed(&existing.hotkey));
+            if register_result.is_err() {
+                print_manual_bind(lang, &existing.hotkey);
+                println!();
             }
+            paste::access::setup(lang);
             println!("{}", lang.cli_init_done_hint());
             return Ok(());
         }
@@ -249,7 +263,7 @@ fn run_init() -> anyhow::Result<()> {
         ),
         (
             lang.lbl_notifications(),
-            lang.notif_silent_hint().to_string(),
+            lang.notif_state_hint(config.silent),
         ),
         (
             lang.lbl_notif_timeout(),
@@ -257,9 +271,11 @@ fn run_init() -> anyhow::Result<()> {
         ),
     ]);
     println!();
-    if let Err(e) = register_result {
-        return Err(e).context(lang.err_autobind_failed(&config.hotkey));
+    if register_result.is_err() {
+        print_manual_bind(lang, &config.hotkey);
+        println!();
     }
+    paste::access::setup(lang);
     if outcome.active.is_some() {
         println!("{}", lang.cli_init_usage(&config.hotkey));
     } else {

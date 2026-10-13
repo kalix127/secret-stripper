@@ -1,5 +1,7 @@
 use anyhow::{anyhow, Result};
 use std::fs;
+use std::io::Write;
+use std::path::PathBuf;
 use std::process::Command;
 
 use crate::lang::ShortcutBackend;
@@ -9,6 +11,7 @@ const KDE_COMPONENT_PATH: &str = "/component/secret_stripper_paste_desktop";
 // 1.x bound `trigger` under this name; removed so an upgraded install does
 // not keep a second, dead shortcut.
 const KDE_LEGACY_DESKTOP_FILE_NAME: &str = "secret-stripper-trigger.desktop";
+const HYPRLAND_INCLUDE_NAME: &str = "secret-stripper.conf";
 
 // Per-DE binding spec for the gsettings-based desktops (GNOME, Cinnamon, MATE).
 // The schemas differ in subtle ways verified against each project's gschema.xml:
@@ -66,6 +69,10 @@ pub(super) fn detect_desktop() -> String {
     std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default()
 }
 
+fn is_hyprland(de_lower: &str) -> bool {
+    de_lower.contains("hyprland") || std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_some()
+}
+
 pub(super) fn register(chord: &str) -> Result<ShortcutBackend> {
     let de = detect_desktop();
     let de_lower = de.to_ascii_lowercase();
@@ -90,9 +97,12 @@ pub(super) fn register(chord: &str) -> Result<ShortcutBackend> {
     } else if de_lower.contains("kde") || de_lower.contains("plasma") {
         register_kde(chord)?;
         Ok(ShortcutBackend::Kde)
+    } else if is_hyprland(&de_lower) {
+        register_hyprland(chord)?;
+        Ok(ShortcutBackend::Hyprland)
     } else if de.is_empty() {
         Err(anyhow!(
-            "No desktop environment detected ($XDG_CURRENT_DESKTOP is empty). Bind 'secret-stripper paste' to {} via your window manager's config (sway, hyprland, i3, etc.).",
+            "No desktop environment detected ($XDG_CURRENT_DESKTOP is empty). Bind 'secret-stripper paste' to {} via your window manager's config.",
             chord
         ))
     } else {
@@ -120,6 +130,8 @@ pub(super) fn unregister() -> Result<()> {
         unregister_xfce()?;
     } else if de_lower.contains("kde") || de_lower.contains("plasma") {
         unregister_kde()?;
+    } else if is_hyprland(&de_lower) {
+        unregister_hyprland()?;
     }
     Ok(())
 }
@@ -407,6 +419,161 @@ fn remove_kde_entry(name: &str) {
     }
 }
 
+fn hyprland_dir() -> Result<PathBuf> {
+    Ok(dirs::config_dir()
+        .ok_or_else(|| anyhow!("no XDG config dir"))?
+        .join("hypr"))
+}
+
+fn hyprland_source_line(include: &std::path::Path) -> String {
+    format!("source = {}", include.display())
+}
+
+// The bind lives in its own sourced file so unregister never has to edit
+// lines the user wrote; hyprland.conf only gains one `source` line.
+fn register_hyprland(chord: &str) -> Result<()> {
+    let exe = std::env::current_exe()
+        .map_err(|e| anyhow!("could not resolve our own binary path: {}", e))?;
+    let exe_str = exe
+        .to_str()
+        .ok_or_else(|| anyhow!("non-UTF8 binary path"))?;
+    if exe_str.contains('\'') {
+        return Err(anyhow!("binary path contains a quote: {}", exe_str));
+    }
+
+    let dir = hyprland_dir()?;
+    let main = dir.join("hyprland.conf");
+    if !main.is_file() {
+        return Err(anyhow!("{} not found", main.display()));
+    }
+    let include = dir.join(HYPRLAND_INCLUDE_NAME);
+    fs::write(
+        &include,
+        format!(
+            "bind = {}, exec, '{}' paste\n",
+            hyprland_bind(chord)?,
+            exe_str
+        ),
+    )?;
+
+    let source = hyprland_source_line(&include);
+    let current = fs::read_to_string(&main)?;
+    if !current.lines().any(|l| l.trim() == source) {
+        let sep = if current.is_empty() || current.ends_with('\n') {
+            ""
+        } else {
+            "\n"
+        };
+        let mut f = fs::OpenOptions::new().append(true).open(&main)?;
+        writeln!(f, "{sep}{source}")?;
+    }
+
+    crate::proc::run_optional("hyprctl", &["reload"]);
+    Ok(())
+}
+
+fn unregister_hyprland() -> Result<()> {
+    let dir = hyprland_dir()?;
+    let main = dir.join("hyprland.conf");
+    let include = dir.join(HYPRLAND_INCLUDE_NAME);
+    let source = hyprland_source_line(&include);
+    if let Ok(current) = fs::read_to_string(&main) {
+        if current.lines().any(|l| l.trim() == source) {
+            let mut kept = String::with_capacity(current.len());
+            for line in current.lines().filter(|l| l.trim() != source) {
+                kept.push_str(line);
+                kept.push('\n');
+            }
+            fs::write(&main, kept)?;
+        }
+    }
+    let _ = fs::remove_file(&include);
+    crate::proc::run_optional("hyprctl", &["reload"]);
+    Ok(())
+}
+
+/// Split a validated chord into lowercase modifier names and the key.
+fn chord_parts(chord: &str) -> Result<(Vec<&'static str>, String)> {
+    let mut mods = Vec::new();
+    let mut key: Option<String> = None;
+    for part in chord.split('+').map(str::trim).filter(|p| !p.is_empty()) {
+        let m = match part.to_ascii_lowercase().as_str() {
+            "ctrl" | "control" => "ctrl",
+            "alt" => "alt",
+            "shift" => "shift",
+            "super" | "meta" | "win" => "super",
+            other => {
+                if key.is_some() {
+                    return Err(anyhow!("chord '{}' has multiple non-modifier keys", chord));
+                }
+                key = Some(other.to_string());
+                continue;
+            }
+        };
+        if !mods.contains(&m) {
+            mods.push(m);
+        }
+    }
+    let key = key.ok_or_else(|| anyhow!("chord '{}' has no key", chord))?;
+    Ok((mods, key))
+}
+
+// xkb keysym names shared by Hyprland and sway/i3; letters and digits are
+// used as is.
+fn xkb_key_name(key: &str) -> String {
+    match key {
+        "space" => "space".to_string(),
+        "enter" | "return" => "Return".to_string(),
+        "tab" => "Tab".to_string(),
+        "escape" | "esc" => "Escape".to_string(),
+        k if k.starts_with('f') && k.len() > 1 => k.to_ascii_uppercase(),
+        k => k.to_string(),
+    }
+}
+
+// "Ctrl+Alt+V" -> "CTRL ALT, V", the letter case Hyprland documents.
+fn hyprland_bind(chord: &str) -> Result<String> {
+    let (mods, key) = chord_parts(chord)?;
+    let mods: Vec<String> = mods.iter().map(|m| m.to_ascii_uppercase()).collect();
+    let key = if key.len() == 1 {
+        key.to_ascii_uppercase()
+    } else {
+        xkb_key_name(&key)
+    };
+    Ok(format!("{}, {}", mods.join(" "), key))
+}
+
+// "Ctrl+Alt+V" -> "Ctrl+Mod1+v"; an uppercase letter would be the shifted
+// keysym and never match.
+fn sway_bind(chord: &str) -> Result<String> {
+    let (mods, key) = chord_parts(chord)?;
+    let mut parts: Vec<String> = mods
+        .iter()
+        .map(|m| {
+            match *m {
+                "ctrl" => "Ctrl",
+                "alt" => "Mod1",
+                "shift" => "Shift",
+                _ => "Mod4",
+            }
+            .to_string()
+        })
+        .collect();
+    parts.push(xkb_key_name(&key));
+    Ok(parts.join("+"))
+}
+
+pub(super) fn manual_examples(exe: &str, chord: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    if let Ok(b) = sway_bind(chord) {
+        out.push(format!("sway / i3:  bindsym {b} exec '{exe}' paste"));
+    }
+    if let Ok(b) = hyprland_bind(chord) {
+        out.push(format!("Hyprland:   bind = {b}, exec, '{exe}' paste"));
+    }
+    out
+}
+
 fn pick_kwriteconfig() -> Result<String> {
     for tool in ["kwriteconfig6", "kwriteconfig5"] {
         if Command::new(tool).arg("--help").output().is_ok() {
@@ -496,6 +663,27 @@ mod tests {
             chord_to_keysym_format("ctrl+ALT+r", "<Control>").unwrap(),
             "<Control><Alt>r"
         );
+    }
+
+    #[test]
+    fn hyprland_bind_format() {
+        assert_eq!(hyprland_bind("Ctrl+Alt+V").unwrap(), "CTRL ALT, V");
+        assert_eq!(hyprland_bind("Super+Shift+F5").unwrap(), "SUPER SHIFT, F5");
+        assert_eq!(hyprland_bind("ctrl+alt+enter").unwrap(), "CTRL ALT, Return");
+    }
+
+    #[test]
+    fn sway_bind_format() {
+        assert_eq!(sway_bind("Ctrl+Alt+V").unwrap(), "Ctrl+Mod1+v");
+        assert_eq!(sway_bind("Super+Shift+Space").unwrap(), "Mod4+Shift+space");
+    }
+
+    #[test]
+    fn manual_examples_cover_sway_and_hyprland() {
+        let lines = manual_examples("/usr/local/bin/secret-stripper", "Ctrl+Alt+V");
+        assert_eq!(lines.len(), 2);
+        assert!(lines[0].contains("bindsym Ctrl+Mod1+v exec"));
+        assert!(lines[1].contains("bind = CTRL ALT, V, exec"));
     }
 
     #[test]

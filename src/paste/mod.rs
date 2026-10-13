@@ -1,4 +1,6 @@
+pub mod access;
 mod keys;
+mod reentry;
 mod uinput;
 mod x11;
 
@@ -20,9 +22,17 @@ const READ_TIMEOUT: Duration = Duration::from_secs(3);
 const READ_QUIET: Duration = Duration::from_millis(150);
 const MODIFIER_TIMEOUT: Duration = Duration::from_secs(2);
 const UINPUT_SETTLE: Duration = Duration::from_millis(250);
+// Without re-entry detection a held chord cannot be seen, so give the user
+// time to release it.
+const HELD_CHORD_DELAY: Duration = Duration::from_millis(600);
+const REENTRY_WINDOW: Duration = Duration::from_millis(500);
+const REENTRY_RETRY: Duration = Duration::from_millis(100);
+const REENTRY_CAP: Duration = Duration::from_secs(2);
 
 enum Plan {
-    AsIs { scanned_clean: bool },
+    AsIs {
+        scanned_clean: bool,
+    },
     Redacted {
         redacted: Payload,
         original: Payload,
@@ -44,15 +54,21 @@ enum Input {
     Uinput {
         keyboard: uinput::UinputKeyboard,
         created: Instant,
+        settle: Duration,
     },
 }
 
 impl Input {
-    fn open(keys: &[&PasteKeys]) -> anyhow::Result<Self> {
+    fn open(keys: &[&PasteKeys], reentrant: bool) -> anyhow::Result<Self> {
         if std::env::var_os("WAYLAND_DISPLAY").is_some() {
             Ok(Input::Uinput {
                 keyboard: uinput::UinputKeyboard::create(keys)?,
                 created: Instant::now(),
+                settle: if reentrant {
+                    UINPUT_SETTLE
+                } else {
+                    HELD_CHORD_DELAY
+                },
             })
         } else {
             Ok(Input::X11(Box::new(x11::X11Input::connect()?)))
@@ -65,8 +81,10 @@ impl Input {
     fn wait_until_ready(&self) -> anyhow::Result<()> {
         match self {
             Input::X11(x) => x.wait_modifiers_released(MODIFIER_TIMEOUT),
-            Input::Uinput { created, .. } => {
-                std::thread::sleep(UINPUT_SETTLE.saturating_sub(created.elapsed()));
+            Input::Uinput {
+                created, settle, ..
+            } => {
+                std::thread::sleep(settle.saturating_sub(created.elapsed()));
                 Ok(())
             }
         }
@@ -81,7 +99,29 @@ impl Input {
     }
 }
 
+/// Whether a held `chord` plus the paste keys fires the chord again, which
+/// the second `paste` it launches can report.
+pub fn chord_reenters(chord: &str, paste_keys: &str) -> bool {
+    match (PasteKeys::parse(chord), PasteKeys::parse(paste_keys)) {
+        (Ok(chord), Ok(paste)) => chord.key == paste.key,
+        _ => false,
+    }
+}
+
 pub fn run() -> anyhow::Result<()> {
+    // Taken first so a re-entrant launch reports itself as fast as possible.
+    let lock = match lock_file().map(|f| (f.try_lock(), f)) {
+        Ok((Ok(()), f)) => Some(f),
+        Ok((Err(std::fs::TryLockError::WouldBlock), _)) => {
+            reentry::notify();
+            return Ok(());
+        }
+        Ok((Err(std::fs::TryLockError::Error(e)), _)) | Err(e) => {
+            log::warn!("paste lock unavailable: {e}");
+            None
+        }
+    };
+
     let config = Config::load();
     let lang = config.lang;
     if !config.onboarding_done {
@@ -89,25 +129,30 @@ pub fn run() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let _lock = match lock_file().map(|f| (f.try_lock(), f)) {
-        Ok((Ok(()), f)) => Some(f),
-        Ok((Err(std::fs::TryLockError::WouldBlock), _)) => return Ok(()),
-        Ok((Err(std::fs::TryLockError::Error(e)), _)) | Err(e) => {
-            log::warn!("paste lock unavailable: {e}");
-            None
-        }
-    };
-
     let keys = PasteKeys::parse(&config.paste_keys)?;
     let terminal_keys = PasteKeys::parse(&config.terminal_paste_keys)?;
+    let reentrant = chord_reenters(&config.hotkey, &config.paste_keys);
 
     // Opened before scanning so the uinput settle time overlaps redaction.
-    let input = match Input::open(&[&keys, &terminal_keys]) {
+    let input = match Input::open(&[&keys, &terminal_keys], reentrant) {
         Ok(i) => i,
         Err(e) => {
             eprintln!("{}", lang.cli_input_unavailable(&format!("{e:#}")));
             return Ok(());
         }
+    };
+    // X11 waits for the real modifier release, so only uinput can re-enter.
+    let listener = match &input {
+        Input::Uinput { .. } if reentrant && lock.is_some() => reentry::Listener::bind()
+            .map_err(|e| log::warn!("re-entry socket unavailable: {e}"))
+            .ok(),
+        _ => None,
+    };
+    let sender = Sender {
+        input: &input,
+        keys: &keys,
+        terminal_keys: &terminal_keys,
+        listener: listener.as_ref(),
     };
 
     let plan = match ClipboardReader::new() {
@@ -132,11 +177,10 @@ pub fn run() -> anyhow::Result<()> {
             if scanned_clean {
                 eprintln!("{}", lang.cli_no_secrets());
             }
-            if let Err(e) = input
-                .wait_until_ready()
-                .and_then(|()| input.send(&keys, &terminal_keys))
-            {
+            if let Err(e) = input.wait_until_ready() {
                 eprintln!("{}", lang.cli_input_unavailable(&format!("{e:#}")));
+            } else if let Err(e) = sender.paste(lang) {
+                eprintln!("{e:#}");
             }
         }
         Plan::Redacted {
@@ -144,8 +188,7 @@ pub fn run() -> anyhow::Result<()> {
             original,
             count,
         } => {
-            if let Err(e) = paste_redacted(&input, &keys, &terminal_keys, &redacted, &original, lang)
-            {
+            if let Err(e) = paste_redacted(&sender, &redacted, &original, lang) {
                 eprintln!("{}", lang.cli_paste_failed(&format!("{e:#}")));
                 return Ok(());
             }
@@ -157,25 +200,59 @@ pub fn run() -> anyhow::Result<()> {
     Ok(())
 }
 
+struct Sender<'a> {
+    input: &'a Input,
+    keys: &'a PasteKeys,
+    terminal_keys: &'a PasteKeys,
+    listener: Option<&'a reentry::Listener>,
+}
+
+impl Sender<'_> {
+    /// Send the paste keys. A chord still held on Wayland merges with them;
+    /// when it ends in the same key the compositor fires it again instead of
+    /// passing the paste on, and the `paste` it launches signals us. Resend
+    /// until a send goes through without that signal.
+    fn paste(&self, lang: lang::Lang) -> anyhow::Result<()> {
+        let start = Instant::now();
+        loop {
+            if let Some(l) = self.listener {
+                l.drain();
+            }
+            self.input.send(self.keys, self.terminal_keys)?;
+            match self.listener {
+                Some(l) if l.wait(REENTRY_WINDOW) => {}
+                _ => return Ok(()),
+            }
+            if start.elapsed() >= REENTRY_CAP {
+                anyhow::bail!("{}", lang.cli_chord_held());
+            }
+            std::thread::sleep(REENTRY_RETRY);
+        }
+    }
+}
+
 /// Swap the redacted payload in, paste it, and restore the original only
 /// after the target app has read it. Restoring earlier would let a slow app
 /// paste the unredacted original, so without an observed read the redacted
 /// copy stays on the clipboard.
 fn paste_redacted(
-    input: &Input,
-    keys: &PasteKeys,
-    terminal_keys: &PasteKeys,
+    sender: &Sender,
     redacted: &Payload,
     original: &Payload,
     lang: lang::Lang,
 ) -> anyhow::Result<()> {
     let server = Server::start(redacted)?;
-    if let Err(e) = input.wait_until_ready() {
+    // Both failures mean no paste reached an app, so the original is safe to
+    // put back.
+    if let Err(e) = sender.input.wait_until_ready() {
         Server::start(original)?;
         return Err(e);
     }
     server.discard_reads();
-    input.send(keys, terminal_keys)?;
+    if let Err(e) = sender.paste(lang) {
+        Server::start(original)?;
+        return Err(e);
+    }
 
     if server.await_read(READ_TIMEOUT, READ_QUIET) {
         if let Err(e) = Server::start(original) {
@@ -223,7 +300,12 @@ fn plan_image(detector: &Detector, width: usize, height: usize, bytes: Vec<u8>) 
             scanned_clean: true,
         },
         ImageResult::DetectedUnmappable => Plan::Blocked(Blocked::ImageUnmappable),
-        ImageResult::Redacted { bytes: out, w, h, count } => {
+        ImageResult::Redacted {
+            bytes: out,
+            w,
+            h,
+            count,
+        } => {
             let encoded = Payload::png_from_rgba(w as usize, h as usize, out)
                 .and_then(|r| Ok((r, Payload::png_from_rgba(width, height, bytes)?)));
             match encoded {
@@ -300,9 +382,26 @@ fn plan_text(detector: &Detector, config: &Config, text: Zeroizing<String>) -> P
     }
 }
 
-fn lock_file() -> std::io::Result<File> {
-    let dir = std::env::var_os("XDG_RUNTIME_DIR")
+fn runtime_dir() -> std::path::PathBuf {
+    std::env::var_os("XDG_RUNTIME_DIR")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(config::ensure_base_dir);
-    File::create(dir.join("secret-stripper-paste.lock"))
+        .unwrap_or_else(config::ensure_base_dir)
+}
+
+fn lock_file() -> std::io::Result<File> {
+    File::create(runtime_dir().join("secret-stripper-paste.lock"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::chord_reenters;
+
+    #[test]
+    fn chord_reenters_only_on_the_paste_key() {
+        assert!(chord_reenters("Ctrl+Alt+V", "Ctrl+V"));
+        assert!(chord_reenters("super+alt+v", "Ctrl+Shift+V"));
+        assert!(!chord_reenters("Ctrl+Alt+P", "Ctrl+V"));
+        assert!(!chord_reenters("Ctrl+Alt+F5", "Ctrl+V"));
+        assert!(!chord_reenters("Ctrl+Alt+V", "Shift+Insert"));
+    }
 }

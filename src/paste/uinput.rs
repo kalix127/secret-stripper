@@ -60,7 +60,11 @@ impl UinputKeyboard {
             for code in codes {
                 check(libc::ioctl(fd, UI_SET_KEYBIT, libc::c_int::from(code)))?;
             }
-            check(libc::ioctl(fd, UI_DEV_SETUP, &setup as *const libc::uinput_setup))?;
+            check(libc::ioctl(
+                fd,
+                UI_DEV_SETUP,
+                &setup as *const libc::uinput_setup,
+            ))?;
             check(libc::ioctl(fd, UI_DEV_CREATE))?;
         }
         Ok(Self { file })

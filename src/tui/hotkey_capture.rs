@@ -48,6 +48,18 @@ pub fn capture_hotkey(
                 preview_style,
             )),
         ];
+        if let Some(chord) = &captured {
+            if std::env::var_os("WAYLAND_DISPLAY").is_some()
+                && !crate::paste::chord_reenters(chord, &config.paste_keys)
+            {
+                let key = config.paste_keys.rsplit('+').next().unwrap_or("V").trim();
+                body_lines.push(Line::from(""));
+                body_lines.push(Line::from(Span::styled(
+                    config.lang.hk_warn_slow_paste(key),
+                    Style::new().fg(warn()),
+                )));
+            }
+        }
         if let Some(err) = &error {
             body_lines.push(Line::from(""));
             body_lines.push(Line::from(Span::styled(

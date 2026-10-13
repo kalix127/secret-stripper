@@ -22,6 +22,7 @@ pub enum ShortcutBackend {
     Mate,
     Xfce,
     Kde,
+    Hyprland,
 }
 
 // Return type for a generated string method: no args => &'static str,
@@ -207,6 +208,9 @@ impl Lang {
                 "Custom shortcut bound to '{}' via kglobalshortcutsrc. You may need to log out and back in for the binding to take effect.",
                 chord
             ),
+            (Lang::EN, ShortcutBackend::Hyprland) => {
+                format!("Custom shortcut bound to '{}' via hyprland.conf.", chord)
+            }
             (Lang::FR, ShortcutBackend::Gnome) => {
                 format!("Raccourci personnalisé lié à '{}' via le schéma GNOME (gsettings).", chord)
             }            (Lang::FR, ShortcutBackend::Cinnamon) => {
@@ -219,6 +223,9 @@ impl Lang {
                 "Raccourci personnalisé lié à '{}' via kglobalshortcutsrc. Vous devrez peut-être vous déconnecter et vous reconnecter pour que la liaison prenne effet.",
                 chord
             ),
+            (Lang::FR, ShortcutBackend::Hyprland) => {
+                format!("Raccourci personnalisé lié à '{}' via hyprland.conf.", chord)
+            }
             (Lang::IT, ShortcutBackend::Gnome) => {
                 format!("Scorciatoia personalizzata associata a '{}' tramite schema GNOME (gsettings).", chord)
             }            (Lang::IT, ShortcutBackend::Cinnamon) => {
@@ -231,6 +238,9 @@ impl Lang {
                 "Scorciatoia personalizzata associata a '{}' tramite kglobalshortcutsrc. Potrebbe essere necessario disconnettersi e riconnettersi affinché l'associazione abbia effetto.",
                 chord
             ),
+            (Lang::IT, ShortcutBackend::Hyprland) => {
+                format!("Scorciatoia personalizzata associata a '{}' tramite hyprland.conf.", chord)
+            }
             (Lang::ES, ShortcutBackend::Gnome) => {
                 format!("Atajo personalizado vinculado a '{}' mediante el esquema GNOME (gsettings).", chord)
             }            (Lang::ES, ShortcutBackend::Cinnamon) => {
@@ -243,6 +253,9 @@ impl Lang {
                 "Atajo personalizado vinculado a '{}' mediante kglobalshortcutsrc. Es posible que tengas que cerrar sesión y volver a entrar para que el vínculo surta efecto.",
                 chord
             ),
+            (Lang::ES, ShortcutBackend::Hyprland) => {
+                format!("Atajo personalizado vinculado a '{}' mediante hyprland.conf.", chord)
+            }
         }
     }
 }
@@ -453,6 +466,12 @@ lang_strings! {
         IT => format!("Soluzione: associa manualmente '{} paste' a {} nelle impostazioni della tastiera del desktop.", exe, hotkey),
         ES => format!("Solución: vincula '{} paste' manualmente a {} en la configuración de teclado de tu escritorio.", exe, hotkey),
     }
+    cli_bind_examples {
+        EN => "Example config lines:",
+        FR => "Exemples de lignes de configuration :",
+        IT => "Esempi di righe di configurazione:",
+        ES => "Ejemplos de líneas de configuración:",
+    }
     cli_unregister_failed(err: &str,) {
         EN => format!("Could not auto-unregister the shortcut: {}", err),
         FR => format!("Impossible de désenregistrer automatiquement le raccourci : {}", err),
@@ -506,6 +525,12 @@ lang_strings! {
         IT => format!("Impossibile simulare i tasti di incolla: {}. Su Wayland, esegui 'secret-stripper init' per configurare l'accesso a /dev/uinput.", err),
         ES => format!("No se pueden simular las teclas de pegado: {}. En Wayland, ejecuta 'secret-stripper init' para configurar el acceso a /dev/uinput.", err),
     }
+    cli_chord_held {
+        EN => "The shortcut keys were still held, so the paste kept triggering the shortcut again. Release them right after pressing.",
+        FR => "Les touches du raccourci étaient encore enfoncées, le collage relançait donc le raccourci. Relâchez-les juste après l'appui.",
+        IT => "I tasti della scorciatoia erano ancora premuti, quindi l'incolla riattivava la scorciatoia. Rilasciali subito dopo averli premuti.",
+        ES => "Las teclas del atajo seguían pulsadas, así que el pegado volvía a activar el atajo. Suéltalas justo después de pulsarlas.",
+    }
     cli_restore_skipped {
         EN => "No app read the redacted copy within 3s, so it stays on the clipboard.",
         FR => "Aucune application n'a lu la copie masquée en 3 s ; elle reste dans le presse-papiers.",
@@ -520,6 +545,54 @@ lang_strings! {
     }
 
     // ---- CLI: init ----
+    uinput_intro {
+        EN => "On Wayland, Secret Stripper presses the paste keys through a virtual keyboard (/dev/uinput). Granting your login session access needs root once; these commands run through sudo:",
+        FR => "Sous Wayland, Secret Stripper appuie sur les touches de collage via un clavier virtuel (/dev/uinput). Donner l'accès à votre session nécessite root une seule fois ; ces commandes passent par sudo :",
+        IT => "Su Wayland, Secret Stripper preme i tasti di incolla tramite una tastiera virtuale (/dev/uinput). Dare l'accesso alla tua sessione richiede root una sola volta; questi comandi vengono eseguiti con sudo:",
+        ES => "En Wayland, Secret Stripper pulsa las teclas de pegado mediante un teclado virtual (/dev/uinput). Dar acceso a tu sesión requiere root una sola vez; estos comandos se ejecutan con sudo:",
+    }
+    uinput_confirm {
+        EN => "Run them now? [Y/n] ",
+        FR => "Les exécuter maintenant ? [O/n] ",
+        IT => "Eseguirli ora? [S/n] ",
+        ES => "¿Ejecutarlos ahora? [S/n] ",
+    }
+    uinput_done {
+        EN => "Virtual keyboard access granted.",
+        FR => "Accès au clavier virtuel accordé.",
+        IT => "Accesso alla tastiera virtuale concesso.",
+        ES => "Acceso al teclado virtual concedido.",
+    }
+    uinput_relogin {
+        EN => "Setup finished, but /dev/uinput is not writable yet. Log out and back in, then try the shortcut.",
+        FR => "Configuration terminée, mais /dev/uinput n'est pas encore accessible en écriture. Déconnectez-vous puis reconnectez-vous, puis essayez le raccourci.",
+        IT => "Configurazione completata, ma /dev/uinput non è ancora scrivibile. Esci e rientra nella sessione, poi prova la scorciatoia.",
+        ES => "Configuración terminada, pero /dev/uinput aún no tiene permiso de escritura. Cierra sesión y vuelve a entrar, luego prueba el atajo.",
+    }
+    uinput_failed(err: &str,) {
+        EN => format!("Virtual keyboard setup failed ({}). Run the commands above yourself, then rerun 'secret-stripper init'.", err),
+        FR => format!("Échec de la configuration du clavier virtuel ({}). Exécutez vous-même les commandes ci-dessus, puis relancez 'secret-stripper init'.", err),
+        IT => format!("Configurazione della tastiera virtuale non riuscita ({}). Esegui tu i comandi qui sopra, poi riesegui 'secret-stripper init'.", err),
+        ES => format!("Falló la configuración del teclado virtual ({}). Ejecuta tú los comandos de arriba y vuelve a ejecutar 'secret-stripper init'.", err),
+    }
+    uinput_declined {
+        EN => "Skipped. Pasting on Wayland will not work until you run the commands above or rerun 'secret-stripper init'.",
+        FR => "Ignoré. Le collage sous Wayland ne fonctionnera pas tant que vous n'aurez pas exécuté les commandes ci-dessus ou relancé 'secret-stripper init'.",
+        IT => "Saltato. L'incolla su Wayland non funzionerà finché non esegui i comandi qui sopra o riesegui 'secret-stripper init'.",
+        ES => "Omitido. El pegado en Wayland no funcionará hasta que ejecutes los comandos de arriba o vuelvas a ejecutar 'secret-stripper init'.",
+    }
+    uinput_no_tty {
+        EN => "Not running in a terminal, so nothing was run. Run the commands above yourself, or rerun 'secret-stripper init' in a terminal.",
+        FR => "Pas de terminal, rien n'a été exécuté. Exécutez vous-même les commandes ci-dessus, ou relancez 'secret-stripper init' dans un terminal.",
+        IT => "Nessun terminale, quindi non è stato eseguito nulla. Esegui tu i comandi qui sopra, o riesegui 'secret-stripper init' in un terminale.",
+        ES => "No hay terminal, así que no se ejecutó nada. Ejecuta tú los comandos de arriba, o vuelve a ejecutar 'secret-stripper init' en una terminal.",
+    }
+    uinput_uninstall_hint(cmd: &str,) {
+        EN => format!("Your session still has virtual keyboard access. To revoke it, run: {}", cmd),
+        FR => format!("Votre session a toujours accès au clavier virtuel. Pour le révoquer, lancez : {}", cmd),
+        IT => format!("La tua sessione ha ancora accesso alla tastiera virtuale. Per revocarlo, esegui: {}", cmd),
+        ES => format!("Tu sesión aún tiene acceso al teclado virtual. Para revocarlo, ejecuta: {}", cmd),
+    }
     cli_already_configured(path: &str,) {
         EN => format!("Secret Stripper is already configured at {}", path),
         FR => format!("Secret Stripper est déjà configuré dans {}", path),
@@ -574,11 +647,11 @@ lang_strings! {
             if on { "activado" } else { "desactivado" }
         ),
     }
-    notif_silent_hint {
-        EN => "silent (toggle via 'secret-stripper menu')",
-        FR => "silencieux (basculer via 'secret-stripper menu')",
-        IT => "silenzioso (commuta tramite 'secret-stripper menu')",
-        ES => "silencioso (alternar con 'secret-stripper menu')",
+    notif_state_hint(silent: bool,) {
+        EN => format!("{} (toggle via 'secret-stripper menu')", if silent { "silent" } else { "on, for redactions and updates" }),
+        FR => format!("{} (basculer via 'secret-stripper menu')", if silent { "silencieux" } else { "activées, pour les masquages et les mises à jour" }),
+        IT => format!("{} (commuta tramite 'secret-stripper menu')", if silent { "silenzioso" } else { "attive, per oscuramenti e aggiornamenti" }),
+        ES => format!("{} (alternar con 'secret-stripper menu')", if silent { "silencioso" } else { "activadas, para redacciones y actualizaciones" }),
     }
     cli_init_usage(hotkey: &str,) {
         EN => format!("Ctrl+C / Ctrl+V work as usual. Press {} to paste a redacted copy of the clipboard.", hotkey),
@@ -621,18 +694,6 @@ lang_strings! {
         FR => format!("aucun disponible (essayé {})", tried),
         IT => format!("nessuno disponibile (provato {})", tried),
         ES => format!("ninguno disponible (probado {})", tried),
-    }
-    err_rebind_failed(hotkey: &str,) {
-        EN => format!("re-binding '{}' failed: no desktop-environment backend accepted the binding. Fix the DE state and rerun 'secret-stripper init', or pick another chord via 'secret-stripper menu'.", hotkey),
-        FR => format!("la reliaison de '{}' a échoué : aucun backend d'environnement de bureau n'a accepté la liaison. Corrigez l'état du DE et relancez 'secret-stripper init', ou choisissez une autre combinaison via 'secret-stripper menu'.", hotkey),
-        IT => format!("la riassociazione di '{}' è fallita: nessun backend dell'ambiente desktop ha accettato l'associazione. Correggi lo stato del DE e riesegui 'secret-stripper init', o scegli un'altra combinazione tramite 'secret-stripper menu'.", hotkey),
-        ES => format!("la revinculación de '{}' falló: ningún backend del entorno de escritorio aceptó el vínculo. Corrige el estado del DE y vuelve a ejecutar 'secret-stripper init', o elige otra combinación con 'secret-stripper menu'.", hotkey),
-    }
-    err_autobind_failed(hotkey: &str,) {
-        EN => format!("auto-binding '{}' failed: no desktop-environment backend accepted the binding. Config has been saved; fix the DE state and rerun 'secret-stripper init', or pick another chord via 'secret-stripper menu'.", hotkey),
-        FR => format!("la liaison automatique de '{}' a échoué : aucun backend d'environnement de bureau n'a accepté la liaison. La configuration a été enregistrée ; corrigez l'état du DE et relancez 'secret-stripper init', ou choisissez une autre combinaison via 'secret-stripper menu'.", hotkey),
-        IT => format!("l'associazione automatica di '{}' è fallita: nessun backend dell'ambiente desktop ha accettato l'associazione. La configurazione è stata salvata; correggi lo stato del DE e riesegui 'secret-stripper init', o scegli un'altra combinazione tramite 'secret-stripper menu'.", hotkey),
-        ES => format!("el vínculo automático de '{}' falló: ningún backend del entorno de escritorio aceptó el vínculo. La configuración se guardó; corrige el estado del DE y vuelve a ejecutar 'secret-stripper init', o elige otra combinación con 'secret-stripper menu'.", hotkey),
     }
 
     // ---- updater: run_upgrade progress ----
@@ -1477,6 +1538,12 @@ lang_strings! {
         IT => "  Tieni premuti uno o più modificatori (Ctrl, Alt, Shift, Super) e premi un tasto.",
         ES => "  Mantén uno o más modificadores (Ctrl, Alt, Shift, Super) y pulsa una tecla.",
     }
+    hk_warn_slow_paste(key: &str,) {
+        EN => format!("  On Wayland, chords that do not end in {} paste after a short delay, so you can release the keys.", key),
+        FR => format!("  Sous Wayland, les combinaisons qui ne finissent pas par {} collent après un court délai, le temps de relâcher les touches.", key),
+        IT => format!("  Su Wayland, le combinazioni che non finiscono con {} incollano dopo una breve attesa, per darti il tempo di rilasciare i tasti.", key),
+        ES => format!("  En Wayland, las combinaciones que no terminan en {} pegan tras una breve espera, para que puedas soltar las teclas.", key),
+    }
     hk_current(value: &str,) {
         EN => format!("  Current: {}", value),
         FR => format!("  Actuel : {}", value),
@@ -1645,6 +1712,7 @@ mod tests {
             ShortcutBackend::Mate,
             ShortcutBackend::Xfce,
             ShortcutBackend::Kde,
+            ShortcutBackend::Hyprland,
         ];
         for l in Lang::all() {
             for b in &backends {
