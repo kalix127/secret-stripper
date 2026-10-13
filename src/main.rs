@@ -39,6 +39,8 @@ fn main() -> anyhow::Result<()> {
             let code = paste_guard::run(&argv, &cfg)?;
             std::process::exit(code);
         }
+        #[cfg(target_os = "linux")]
+        cli::Command::ServeClipboard => clipboard::serve_from_stdin()?,
     }
 
     Ok(())
