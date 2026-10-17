@@ -653,6 +653,12 @@ lang_strings! {
         IT => format!("{} (commuta tramite 'secret-stripper menu')", if silent { "silenzioso" } else { "attive, per oscuramenti e aggiornamenti" }),
         ES => format!("{} (alternar con 'secret-stripper menu')", if silent { "silencioso" } else { "activadas, para redacciones y actualizaciones" }),
     }
+    cli_terminal_hint(chord: &str,) {
+        EN => format!("In a terminal, press {} instead (it sends Ctrl+Shift+V).", chord),
+        FR => format!("Dans un terminal, appuyez plutôt sur {} (il envoie Ctrl+Shift+V).", chord),
+        IT => format!("In un terminale, premi invece {} (invia Ctrl+Shift+V).", chord),
+        ES => format!("En una terminal, pulsa {} en su lugar (envía Ctrl+Shift+V).", chord),
+    }
     cli_init_usage(hotkey: &str,) {
         EN => format!("Ctrl+C / Ctrl+V work as usual. Press {} to paste a redacted copy of the clipboard.", hotkey),
         FR => format!("Ctrl+C / Ctrl+V fonctionnent comme d'habitude. Appuyez sur {} pour coller une copie masquée du presse-papiers.", hotkey),
@@ -1543,6 +1549,12 @@ lang_strings! {
         FR => format!("  Sous Wayland, les combinaisons qui ne finissent pas par {} collent après un court délai, le temps de relâcher les touches.", key),
         IT => format!("  Su Wayland, le combinazioni che non finiscono con {} incollano dopo una breve attesa, per darti il tempo di rilasciare i tasti.", key),
         ES => format!("  En Wayland, las combinaciones que no terminan en {} pegan tras una breve espera, para que puedas soltar las teclas.", key),
+    }
+    hk_terminal(chord: &str,) {
+        EN => format!("  Terminals: {} (added automatically)", chord),
+        FR => format!("  Terminaux : {} (ajouté automatiquement)", chord),
+        IT => format!("  Terminali: {} (aggiunta automaticamente)", chord),
+        ES => format!("  Terminales: {} (añadido automáticamente)", chord),
     }
     hk_current(value: &str,) {
         EN => format!("  Current: {}", value),

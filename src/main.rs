@@ -24,7 +24,7 @@ fn main() -> anyhow::Result<()> {
 
     match args.command {
         cli::Command::Init => run_init()?,
-        cli::Command::Paste => paste::run()?,
+        cli::Command::Paste { terminal } => paste::run(terminal)?,
         cli::Command::Menu => run_menu()?,
         cli::Command::Status => print_status()?,
         cli::Command::RegisterShortcut => run_register_shortcut()?,
@@ -128,6 +128,7 @@ fn run_register_shortcut() -> anyhow::Result<()> {
         Ok(backend) => {
             println!("{}", lang.shortcut_bound(&backend, &config.hotkey));
             println!("{}", lang.cli_press_to_paste(&config.hotkey));
+            print_terminal_hint(lang, &config.hotkey);
         }
         Err(e) => {
             eprintln!("{}", lang.cli_register_failed(&e.to_string()));
@@ -135,6 +136,12 @@ fn run_register_shortcut() -> anyhow::Result<()> {
         }
     }
     Ok(())
+}
+
+fn print_terminal_hint(lang: lang::Lang, chord: &str) {
+    if let Some(terminal) = hotkey::terminal_chord(chord) {
+        println!("{}", lang.cli_terminal_hint(&terminal));
+    }
 }
 
 /// Tell the user how to bind the chord themselves when no backend could.
@@ -203,6 +210,10 @@ fn run_init() -> anyhow::Result<()> {
                 (lang.lbl_de_binding(), de_status),
             ]);
             println!();
+            if register_result.is_ok() {
+                print_terminal_hint(lang, &existing.hotkey);
+                println!();
+            }
             if register_result.is_err() {
                 print_manual_bind(lang, &existing.hotkey);
                 println!();
@@ -278,6 +289,7 @@ fn run_init() -> anyhow::Result<()> {
     paste::access::setup(lang);
     if outcome.active.is_some() {
         println!("{}", lang.cli_init_usage(&config.hotkey));
+        print_terminal_hint(lang, &config.hotkey);
     } else {
         eprintln!("{}", lang.cli_warn_no_hotkey());
         if let Some(err) = outcome.last_error {

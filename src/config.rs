@@ -45,8 +45,8 @@ pub struct Config {
     /// Keys sent to the focused app to paste the redacted copy.
     #[serde(default = "default_paste_keys")]
     pub paste_keys: String,
-    /// Used instead of `paste_keys` when the focused window is a known
-    /// terminal. Only detectable on X11; Wayland always uses `paste_keys`.
+    /// Used instead of `paste_keys` by `paste --terminal` (the hotkey plus
+    /// Shift), and on X11 when the focused window is a known terminal.
     #[serde(default = "default_terminal_paste_keys")]
     pub terminal_paste_keys: String,
     #[serde(default = "default_check_for_updates")]

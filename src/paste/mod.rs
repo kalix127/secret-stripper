@@ -90,6 +90,8 @@ impl Input {
         }
     }
 
+    /// `keys` are already the terminal keys for `paste --terminal`; X11 can
+    /// also spot a terminal from the focused window.
     fn send(&self, keys: &PasteKeys, terminal_keys: &PasteKeys) -> anyhow::Result<()> {
         match self {
             Input::X11(x) if x.focused_is_terminal() => x.send(terminal_keys),
@@ -108,7 +110,7 @@ pub fn chord_reenters(chord: &str, paste_keys: &str) -> bool {
     }
 }
 
-pub fn run() -> anyhow::Result<()> {
+pub fn run(terminal: bool) -> anyhow::Result<()> {
     // Taken first so a re-entrant launch reports itself as fast as possible.
     let lock = match lock_file().map(|f| (f.try_lock(), f)) {
         Ok((Ok(()), f)) => Some(f),
@@ -129,9 +131,19 @@ pub fn run() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let keys = PasteKeys::parse(&config.paste_keys)?;
     let terminal_keys = PasteKeys::parse(&config.terminal_paste_keys)?;
-    let reentrant = chord_reenters(&config.hotkey, &config.paste_keys);
+    let (keys, reentrant) = if terminal {
+        let chord = crate::hotkey::terminal_chord(&config.hotkey).unwrap_or_default();
+        (
+            terminal_keys.clone(),
+            chord_reenters(&chord, &config.terminal_paste_keys),
+        )
+    } else {
+        (
+            PasteKeys::parse(&config.paste_keys)?,
+            chord_reenters(&config.hotkey, &config.paste_keys),
+        )
+    };
 
     // Opened before scanning so the uinput settle time overlaps redaction.
     let input = match Input::open(&[&keys, &terminal_keys], reentrant) {

@@ -57,8 +57,27 @@ fn validate_key(s: &str) -> Result<()> {
     }
 }
 
+// No fallback uses Shift: the terminal chord is the chosen one plus Shift.
 pub fn fallback_chords() -> &'static [&'static str] {
-    &["Ctrl+Alt+V", "Ctrl+Alt+Shift+V", "Super+Alt+V"]
+    &["Ctrl+Alt+V", "Super+Alt+V"]
+}
+
+/// The chord for pasting into terminals: `chord` plus Shift, mirroring
+/// Ctrl+V vs Ctrl+Shift+V. None when `chord` already holds Shift.
+pub fn terminal_chord(chord: &str) -> Option<String> {
+    let parts: Vec<&str> = chord
+        .split('+')
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .collect();
+    if parts.iter().any(|p| p.eq_ignore_ascii_case("shift")) {
+        return None;
+    }
+    let (key, mods) = parts.split_last()?;
+    let mut out: Vec<&str> = mods.to_vec();
+    out.push("Shift");
+    out.push(key);
+    Some(out.join("+"))
 }
 
 pub fn candidates_for(preferred: &str) -> Vec<String> {
@@ -151,6 +170,20 @@ mod tests {
     #[test]
     fn rejects_two_keys() {
         assert!(parse_chord("Ctrl+A+B").is_err());
+    }
+
+    #[test]
+    fn terminal_chord_adds_shift() {
+        assert_eq!(
+            terminal_chord("Ctrl+Alt+V").as_deref(),
+            Some("Ctrl+Alt+Shift+V")
+        );
+        assert_eq!(
+            terminal_chord("Super+Alt+V").as_deref(),
+            Some("Super+Alt+Shift+V")
+        );
+        assert_eq!(terminal_chord("Ctrl+Shift+V"), None);
+        assert_eq!(terminal_chord(""), None);
     }
 
     #[test]

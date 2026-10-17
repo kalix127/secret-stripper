@@ -6,8 +6,32 @@ use std::process::Command;
 
 use crate::lang::ShortcutBackend;
 
-const KDE_DESKTOP_FILE_NAME: &str = "secret-stripper-paste.desktop";
-const KDE_COMPONENT_PATH: &str = "/component/secret_stripper_paste_desktop";
+/// One shortcut we register. Terminals paste with Ctrl+Shift+V and no
+/// Wayland compositor tells us the focused app, so they get their own chord.
+struct Entry {
+    /// gsettings item id, also Cinnamon's list entry.
+    id: &'static str,
+    name: &'static str,
+    args: &'static str,
+    kde_desktop_file: &'static str,
+}
+
+const PASTE: Entry = Entry {
+    id: "secret-stripper",
+    name: "Secret Stripper",
+    args: "paste",
+    kde_desktop_file: "secret-stripper-paste.desktop",
+};
+
+const PASTE_TERMINAL: Entry = Entry {
+    id: "secret-stripper-terminal",
+    name: "Secret Stripper (terminal)",
+    args: "paste --terminal",
+    kde_desktop_file: "secret-stripper-paste-terminal.desktop",
+};
+
+const ENTRIES: [&Entry; 2] = [&PASTE, &PASTE_TERMINAL];
+
 // 1.x bound `trigger` under this name; removed so an upgraded install does
 // not keep a second, dead shortcut.
 const KDE_LEGACY_DESKTOP_FILE_NAME: &str = "secret-stripper-trigger.desktop";
@@ -16,7 +40,7 @@ const HYPRLAND_INCLUDE_NAME: &str = "secret-stripper.conf";
 // Per-DE binding spec for the gsettings-based desktops (GNOME, Cinnamon, MATE).
 // The schemas differ in subtle ways verified against each project's gschema.xml:
 //   list_key            - key holding the array of custom keybindings
-//   list_entry_short_id - Cinnamon stores SHORT IDs ("secret-stripper");
+//   list_uses_short_id  - Cinnamon stores SHORT IDs ("secret-stripper");
 //                         GNOME and MATE store FULL DCONF PATHS
 //   command_field       - "command" on GNOME/Cinnamon, "action" on MATE
 //   chord_modifier_ctrl - "<Control>" everywhere except MATE which expects "<Ctrl>"
@@ -24,9 +48,9 @@ const HYPRLAND_INCLUDE_NAME: &str = "secret-stripper.conf";
 struct GsettingsBinding {
     list_schema: &'static str,
     list_key: &'static str,
-    list_entry_short_id: Option<&'static str>,
+    list_uses_short_id: bool,
     item_schema: &'static str,
-    item_path: &'static str,
+    item_dir: &'static str,
     command_field: &'static str,
     chord_modifier_ctrl: &'static str,
     binding_is_array: bool,
@@ -35,9 +59,9 @@ struct GsettingsBinding {
 const GNOME_BINDING: GsettingsBinding = GsettingsBinding {
     list_schema: "org.gnome.settings-daemon.plugins.media-keys",
     list_key: "custom-keybindings",
-    list_entry_short_id: None,
+    list_uses_short_id: false,
     item_schema: "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding",
-    item_path: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/secret-stripper/",
+    item_dir: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/",
     command_field: "command",
     chord_modifier_ctrl: "<Control>",
     binding_is_array: false,
@@ -46,9 +70,9 @@ const GNOME_BINDING: GsettingsBinding = GsettingsBinding {
 const CINNAMON_BINDING: GsettingsBinding = GsettingsBinding {
     list_schema: "org.cinnamon.desktop.keybindings",
     list_key: "custom-list",
-    list_entry_short_id: Some("secret-stripper"),
+    list_uses_short_id: true,
     item_schema: "org.cinnamon.desktop.keybindings.custom-keybinding",
-    item_path: "/org/cinnamon/desktop/keybindings/custom-keybindings/secret-stripper/",
+    item_dir: "/org/cinnamon/desktop/keybindings/custom-keybindings/",
     command_field: "command",
     chord_modifier_ctrl: "<Control>",
     binding_is_array: true,
@@ -57,9 +81,9 @@ const CINNAMON_BINDING: GsettingsBinding = GsettingsBinding {
 const MATE_BINDING: GsettingsBinding = GsettingsBinding {
     list_schema: "org.mate.SettingsDaemon.plugins.media-keys",
     list_key: "custom-keybindings",
-    list_entry_short_id: None,
+    list_uses_short_id: false,
     item_schema: "org.mate.SettingsDaemon.plugins.media-keys.custom-keybinding",
-    item_path: "/org/mate/desktop/keybindings/secret-stripper/",
+    item_dir: "/org/mate/desktop/keybindings/",
     command_field: "action",
     chord_modifier_ctrl: "<Ctrl>",
     binding_is_array: false,
@@ -71,6 +95,23 @@ pub(super) fn detect_desktop() -> String {
 
 fn is_hyprland(de_lower: &str) -> bool {
     de_lower.contains("hyprland") || std::env::var_os("HYPRLAND_INSTANCE_SIGNATURE").is_some()
+}
+
+/// Each entry with its chord; None means the entry must be removed (no
+/// terminal chord when the main chord already uses Shift).
+fn planned(chord: &str) -> [(&'static Entry, Option<String>); 2] {
+    [
+        (&PASTE, Some(chord.to_string())),
+        (&PASTE_TERMINAL, crate::hotkey::terminal_chord(chord)),
+    ]
+}
+
+fn own_exe() -> Result<String> {
+    let exe = std::env::current_exe()
+        .map_err(|e| anyhow!("could not resolve our own binary path: {}", e))?;
+    exe.to_str()
+        .map(str::to_string)
+        .ok_or_else(|| anyhow!("non-UTF8 binary path"))
 }
 
 pub(super) fn register(chord: &str) -> Result<ShortcutBackend> {
@@ -137,12 +178,22 @@ pub(super) fn unregister() -> Result<()> {
 }
 
 fn register_gsettings(b: &GsettingsBinding, chord: &str) -> Result<()> {
-    let exe = std::env::current_exe()
-        .map_err(|e| anyhow!("could not resolve our own binary path: {}", e))?;
-    let exe_str = exe
-        .to_str()
-        .ok_or_else(|| anyhow!("non-UTF8 binary path"))?;
+    let exe_str = own_exe()?;
+    for (entry, chord) in planned(chord) {
+        match chord {
+            Some(chord) => register_gsettings_entry(b, entry, &chord, &exe_str)?,
+            None => remove_from_list(b, entry)?,
+        }
+    }
+    Ok(())
+}
 
+fn register_gsettings_entry(
+    b: &GsettingsBinding,
+    entry: &Entry,
+    chord: &str,
+    exe_str: &str,
+) -> Result<()> {
     let chord_value = chord_to_keysym_format(chord, b.chord_modifier_ctrl)?;
     let binding_value = if b.binding_is_array {
         format!("['{}']", chord_value)
@@ -153,12 +204,12 @@ fn register_gsettings(b: &GsettingsBinding, chord: &str) -> Result<()> {
     // First: write the per-key properties (name, command, binding). gnome-settings-daemon
     // reads these when the entry shows up in the list.
     let entries = [
-        ("name", crate::APP_NAME.to_string()),
-        (b.command_field, format!("{} paste", exe_str)),
+        ("name", entry.name.to_string()),
+        (b.command_field, format!("{} {}", exe_str, entry.args)),
         ("binding", binding_value),
     ];
 
-    let schema_path = format!("{}:{}", b.item_schema, b.item_path);
+    let schema_path = format!("{}:{}", b.item_schema, item_path(b, entry));
     for (key, value) in &entries {
         let status = Command::new("gsettings")
             .args(["set", &schema_path, key, value])
@@ -179,78 +230,67 @@ fn register_gsettings(b: &GsettingsBinding, chord: &str) -> Result<()> {
     // grab; then re-adding the path makes it re-read the per-key properties (which now hold
     // the new chord). Without this toggle, the daemon caches the original binding and the
     // rebind silently no-ops at the OS level even though dconf is correct.
-    remove_from_list(b)?;
-    add_gsettings_list_entry(b)?;
+    remove_from_list(b, entry)?;
+    add_gsettings_list_entry(b, entry)?;
 
     Ok(())
 }
 
-fn remove_from_list(b: &GsettingsBinding) -> Result<()> {
+fn item_path(b: &GsettingsBinding, entry: &Entry) -> String {
+    format!("{}{}/", b.item_dir, entry.id)
+}
+
+fn list_entry_value(b: &GsettingsBinding, entry: &Entry) -> String {
+    if b.list_uses_short_id {
+        entry.id.to_string()
+    } else {
+        item_path(b, entry)
+    }
+}
+
+fn read_list(b: &GsettingsBinding) -> Result<String> {
     let output = Command::new("gsettings")
         .args(["get", b.list_schema, b.list_key])
         .output()
         .map_err(|e| anyhow!("gsettings get failed: {}", e))?;
-    let current = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    let entry = list_entry_value(b);
-    let target = format!("'{}'", entry);
-    if !current.contains(&target) {
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+fn remove_from_list(b: &GsettingsBinding, entry: &Entry) -> Result<()> {
+    let current = read_list(b)?;
+    let value = list_entry_value(b, entry);
+    if !current.contains(&format!("'{}'", value)) {
         return Ok(());
     }
-    let new_list = strip_path_from_list(&current, &entry);
+    let new_list = strip_path_from_list(&current, &value);
     let _ = Command::new("gsettings")
         .args(["set", b.list_schema, b.list_key, &new_list])
         .status();
     Ok(())
-}
-
-fn list_entry_value(b: &GsettingsBinding) -> String {
-    match b.list_entry_short_id {
-        Some(id) => id.to_string(),
-        None => b.item_path.to_string(),
-    }
 }
 
 fn unregister_gsettings(b: &GsettingsBinding) -> Result<()> {
-    let output = Command::new("gsettings")
-        .args(["get", b.list_schema, b.list_key])
-        .output()
-        .map_err(|e| anyhow!("gsettings get failed: {}", e))?;
-    let current = String::from_utf8_lossy(&output.stdout).trim().to_string();
-
-    let entry = list_entry_value(b);
-    let target = format!("'{}'", entry);
-    if !current.contains(&target) {
-        return Ok(());
+    for entry in ENTRIES {
+        remove_from_list(b, entry)?;
     }
-
-    let new_list = strip_path_from_list(&current, &entry);
-    let _ = Command::new("gsettings")
-        .args(["set", b.list_schema, b.list_key, &new_list])
-        .status();
     Ok(())
 }
 
-fn add_gsettings_list_entry(b: &GsettingsBinding) -> Result<()> {
-    let output = Command::new("gsettings")
-        .args(["get", b.list_schema, b.list_key])
-        .output()
-        .map_err(|e| anyhow!("gsettings get failed: {}", e))?;
-    let current = String::from_utf8_lossy(&output.stdout).trim().to_string();
-
-    let entry = list_entry_value(b);
-    let target = format!("'{}'", entry);
-    if current.contains(&target) {
+fn add_gsettings_list_entry(b: &GsettingsBinding, entry: &Entry) -> Result<()> {
+    let current = read_list(b)?;
+    let value = list_entry_value(b, entry);
+    if current.contains(&format!("'{}'", value)) {
         return Ok(());
     }
 
     let new_list = if current == "@as []" || current.is_empty() {
-        format!("['{}']", entry)
+        format!("['{}']", value)
     } else {
         let inner = current.trim_start_matches('[').trim_end_matches(']').trim();
         if inner.is_empty() {
-            format!("['{}']", entry)
+            format!("['{}']", value)
         } else {
-            format!("[{}, '{}']", inner, entry)
+            format!("[{}, '{}']", inner, value)
         }
     };
 
@@ -269,39 +309,24 @@ fn add_gsettings_list_entry(b: &GsettingsBinding) -> Result<()> {
 }
 
 fn register_xfce(chord: &str) -> Result<()> {
-    let exe = std::env::current_exe()
-        .map_err(|e| anyhow!("could not resolve our own binary path: {}", e))?;
-    let exe_str = exe
-        .to_str()
-        .ok_or_else(|| anyhow!("non-UTF8 binary path"))?;
+    let exe_str = own_exe()?;
+    // Properties are keyed by chord, so stale ones from an older chord would
+    // otherwise stay bound.
+    unregister_xfce()?;
+    for (entry, chord) in planned(chord) {
+        let Some(chord) = chord else { continue };
+        let chord_keysym = chord_to_keysym_format(&chord, "<Control>")?;
+        let prop = format!("/commands/custom/{}", chord_keysym);
+        let value = format!("{} {}", exe_str, entry.args);
 
-    let chord_keysym = chord_to_keysym_format(chord, "<Control>")?;
-    let prop = format!("/commands/custom/{}", chord_keysym);
-    let value = format!("{} paste", exe_str);
-
-    // -n creates the property, -t string sets type, -s sets value.
-    let status = Command::new("xfconf-query")
-        .args([
-            "-c",
-            "xfce4-keyboard-shortcuts",
-            "-p",
-            &prop,
-            "-n",
-            "-t",
-            "string",
-            "-s",
-            &value,
-        ])
-        .status()
-        .map_err(|e| anyhow!("xfconf-query invocation failed: {}", e))?;
-    if !status.success() {
-        // -n fails if the property already exists; retry without -n to update in place.
-        let status2 = Command::new("xfconf-query")
+        // -n creates the property, -t string sets type, -s sets value.
+        let status = Command::new("xfconf-query")
             .args([
                 "-c",
                 "xfce4-keyboard-shortcuts",
                 "-p",
                 &prop,
+                "-n",
                 "-t",
                 "string",
                 "-s",
@@ -309,17 +334,31 @@ fn register_xfce(chord: &str) -> Result<()> {
             ])
             .status()
             .map_err(|e| anyhow!("xfconf-query invocation failed: {}", e))?;
-        if !status2.success() {
-            return Err(anyhow!("xfconf-query exited with status {}", status2));
+        if !status.success() {
+            // -n fails if the property already exists; retry without -n to update in place.
+            let status2 = Command::new("xfconf-query")
+                .args([
+                    "-c",
+                    "xfce4-keyboard-shortcuts",
+                    "-p",
+                    &prop,
+                    "-t",
+                    "string",
+                    "-s",
+                    &value,
+                ])
+                .status()
+                .map_err(|e| anyhow!("xfconf-query invocation failed: {}", e))?;
+            if !status2.success() {
+                return Err(anyhow!("xfconf-query exited with status {}", status2));
+            }
         }
     }
     Ok(())
 }
 
 fn unregister_xfce() -> Result<()> {
-    // We do not know which chord we registered without reading config; iterate the common
-    // candidates plus the user's currently-configured chord (caller passes via env if needed).
-    // Simplest: scan all custom commands and remove ours.
+    // Scan all custom commands and remove every one that runs us.
     let output = Command::new("xfconf-query")
         .args(["-c", "xfce4-keyboard-shortcuts", "-l", "-v"])
         .output()
@@ -338,13 +377,12 @@ fn unregister_xfce() -> Result<()> {
     Ok(())
 }
 
-fn register_kde(chord: &str) -> Result<()> {
-    let exe = std::env::current_exe()
-        .map_err(|e| anyhow!("could not resolve our own binary path: {}", e))?;
-    let exe_str = exe
-        .to_str()
-        .ok_or_else(|| anyhow!("non-UTF8 binary path"))?;
+fn kde_component_path(desktop_file: &str) -> String {
+    format!("/component/{}", desktop_file.replace(['-', '.'], "_"))
+}
 
+fn register_kde(chord: &str) -> Result<()> {
+    let exe_str = own_exe()?;
     let kwc = pick_kwriteconfig()?;
     remove_kde_entry(KDE_LEGACY_DESKTOP_FILE_NAME);
 
@@ -352,41 +390,48 @@ fn register_kde(chord: &str) -> Result<()> {
         .ok_or_else(|| anyhow!("no XDG data dir"))?
         .join("applications");
     fs::create_dir_all(&apps_dir)?;
-    let desktop_path = apps_dir.join(KDE_DESKTOP_FILE_NAME);
-    let desktop_content = format!(
-        "[Desktop Entry]\nName=Secret Stripper Paste\nExec=\"{}\" paste\nType=Application\nNoDisplay=true\nX-KDE-StartupNotify=false\n",
-        exe_str
-    );
-    fs::write(&desktop_path, desktop_content)?;
 
-    let value = format!("{},none,Paste redacted with Secret Stripper", chord);
-    let status = Command::new(&kwc)
-        .args([
-            "--file",
-            "kglobalshortcutsrc",
-            "--group",
-            KDE_DESKTOP_FILE_NAME,
-            "--key",
-            "_launch",
-            &value,
-        ])
-        .status()
-        .map_err(|e| anyhow!("{} invocation failed: {}", kwc, e))?;
-    if !status.success() {
-        return Err(anyhow!("{} exited with status {}", kwc, status));
-    }
+    for (entry, chord) in planned(chord) {
+        let Some(chord) = chord else {
+            remove_kde_entry(entry.kde_desktop_file);
+            continue;
+        };
+        let desktop_content = format!(
+            "[Desktop Entry]\nName={}\nExec=\"{}\" {}\nType=Application\nNoDisplay=true\nX-KDE-StartupNotify=false\n",
+            entry.name, exe_str, entry.args
+        );
+        fs::write(apps_dir.join(entry.kde_desktop_file), desktop_content)?;
 
-    for tool in ["qdbus6", "qdbus-qt6", "qdbus"] {
-        let r = Command::new(tool)
+        let value = format!("{},none,{}", chord, entry.name);
+        let status = Command::new(&kwc)
             .args([
-                "org.kde.kglobalaccel",
-                KDE_COMPONENT_PATH,
-                "org.kde.kglobalaccel.Component.cleanUp",
+                "--file",
+                "kglobalshortcutsrc",
+                "--group",
+                entry.kde_desktop_file,
+                "--key",
+                "_launch",
+                &value,
             ])
-            .status();
-        if let Ok(s) = r {
-            if s.success() {
-                break;
+            .status()
+            .map_err(|e| anyhow!("{} invocation failed: {}", kwc, e))?;
+        if !status.success() {
+            return Err(anyhow!("{} exited with status {}", kwc, status));
+        }
+
+        let component = kde_component_path(entry.kde_desktop_file);
+        for tool in ["qdbus6", "qdbus-qt6", "qdbus"] {
+            let r = Command::new(tool)
+                .args([
+                    "org.kde.kglobalaccel",
+                    &component,
+                    "org.kde.kglobalaccel.Component.cleanUp",
+                ])
+                .status();
+            if let Ok(s) = r {
+                if s.success() {
+                    break;
+                }
             }
         }
     }
@@ -395,7 +440,9 @@ fn register_kde(chord: &str) -> Result<()> {
 }
 
 fn unregister_kde() -> Result<()> {
-    remove_kde_entry(KDE_DESKTOP_FILE_NAME);
+    for entry in ENTRIES {
+        remove_kde_entry(entry.kde_desktop_file);
+    }
     remove_kde_entry(KDE_LEGACY_DESKTOP_FILE_NAME);
     Ok(())
 }
@@ -429,14 +476,10 @@ fn hyprland_source_line(include: &std::path::Path) -> String {
     format!("source = {}", include.display())
 }
 
-// The bind lives in its own sourced file so unregister never has to edit
+// The binds live in their own sourced file so unregister never has to edit
 // lines the user wrote; hyprland.conf only gains one `source` line.
 fn register_hyprland(chord: &str) -> Result<()> {
-    let exe = std::env::current_exe()
-        .map_err(|e| anyhow!("could not resolve our own binary path: {}", e))?;
-    let exe_str = exe
-        .to_str()
-        .ok_or_else(|| anyhow!("non-UTF8 binary path"))?;
+    let exe_str = own_exe()?;
     if exe_str.contains('\'') {
         return Err(anyhow!("binary path contains a quote: {}", exe_str));
     }
@@ -447,14 +490,18 @@ fn register_hyprland(chord: &str) -> Result<()> {
         return Err(anyhow!("{} not found", main.display()));
     }
     let include = dir.join(HYPRLAND_INCLUDE_NAME);
-    fs::write(
-        &include,
-        format!(
-            "bind = {}, exec, '{}' paste\n",
-            hyprland_bind(chord)?,
-            exe_str
-        ),
-    )?;
+    let mut binds = String::new();
+    for (entry, chord) in planned(chord) {
+        if let Some(chord) = chord {
+            binds.push_str(&format!(
+                "bind = {}, exec, '{}' {}\n",
+                hyprland_bind(&chord)?,
+                exe_str,
+                entry.args
+            ));
+        }
+    }
+    fs::write(&include, binds)?;
 
     let source = hyprland_source_line(&include);
     let current = fs::read_to_string(&main)?;
@@ -565,11 +612,23 @@ fn sway_bind(chord: &str) -> Result<String> {
 
 pub(super) fn manual_examples(exe: &str, chord: &str) -> Vec<String> {
     let mut out = Vec::new();
-    if let Ok(b) = sway_bind(chord) {
-        out.push(format!("sway / i3:  bindsym {b} exec '{exe}' paste"));
+    for (entry, chord) in planned(chord) {
+        let Some(chord) = chord else { continue };
+        if let Ok(b) = sway_bind(&chord) {
+            out.push(format!(
+                "sway / i3:  bindsym {b} exec '{exe}' {}",
+                entry.args
+            ));
+        }
     }
-    if let Ok(b) = hyprland_bind(chord) {
-        out.push(format!("Hyprland:   bind = {b}, exec, '{exe}' paste"));
+    for (entry, chord) in planned(chord) {
+        let Some(chord) = chord else { continue };
+        if let Ok(b) = hyprland_bind(&chord) {
+            out.push(format!(
+                "Hyprland:   bind = {b}, exec, '{exe}' {}",
+                entry.args
+            ));
+        }
     }
     out
 }
@@ -681,9 +740,20 @@ mod tests {
     #[test]
     fn manual_examples_cover_sway_and_hyprland() {
         let lines = manual_examples("/usr/local/bin/secret-stripper", "Ctrl+Alt+V");
-        assert_eq!(lines.len(), 2);
+        assert_eq!(lines.len(), 4);
         assert!(lines[0].contains("bindsym Ctrl+Mod1+v exec"));
-        assert!(lines[1].contains("bind = CTRL ALT, V, exec"));
+        assert!(lines[1].contains("bindsym Ctrl+Mod1+Shift+v exec"));
+        assert!(lines[1].ends_with("paste --terminal"));
+        assert!(lines[2].contains("bind = CTRL ALT, V, exec"));
+        assert!(lines[3].contains("bind = CTRL ALT SHIFT, V, exec"));
+    }
+
+    #[test]
+    fn kde_component_matches_desktop_file() {
+        assert_eq!(
+            kde_component_path(PASTE.kde_desktop_file),
+            "/component/secret_stripper_paste_desktop"
+        );
     }
 
     #[test]
@@ -700,17 +770,31 @@ mod tests {
 
     #[test]
     fn cinnamon_uses_short_id_in_list() {
-        assert_eq!(list_entry_value(&CINNAMON_BINDING), "secret-stripper");
+        assert_eq!(
+            list_entry_value(&CINNAMON_BINDING, &PASTE),
+            "secret-stripper"
+        );
+        assert_eq!(
+            list_entry_value(&CINNAMON_BINDING, &PASTE_TERMINAL),
+            "secret-stripper-terminal"
+        );
     }
 
     #[test]
     fn gnome_uses_full_path_in_list() {
-        assert!(list_entry_value(&GNOME_BINDING).starts_with("/org/gnome/"));
+        // Same path 1.x used, so upgrades overwrite the old entry.
+        assert_eq!(
+            list_entry_value(&GNOME_BINDING, &PASTE),
+            "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/secret-stripper/"
+        );
     }
 
     #[test]
     fn mate_uses_full_path_in_list() {
-        assert!(list_entry_value(&MATE_BINDING).starts_with("/org/mate/"));
+        assert_eq!(
+            list_entry_value(&MATE_BINDING, &PASTE_TERMINAL),
+            "/org/mate/desktop/keybindings/secret-stripper-terminal/"
+        );
     }
 
     // Compile-time invariant: Cinnamon's `binding` schema is `as` (array) while

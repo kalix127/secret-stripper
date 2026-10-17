@@ -18,7 +18,11 @@ pub enum Command {
     Init,
     /// Paste a redacted copy of the clipboard into the focused app, then
     /// restore the original clipboard. Bound to the global hotkey.
-    Paste,
+    Paste {
+        /// Send the terminal paste keys (Ctrl+Shift+V by default).
+        #[arg(long)]
+        terminal: bool,
+    },
     Menu,
     Status,
     RegisterShortcut,

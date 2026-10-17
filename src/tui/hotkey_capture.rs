@@ -48,6 +48,12 @@ pub fn capture_hotkey(
                 preview_style,
             )),
         ];
+        if let Some(terminal) = captured.as_deref().and_then(hotkey::terminal_chord) {
+            body_lines.push(Line::from(Span::styled(
+                config.lang.hk_terminal(&terminal),
+                Style::new().fg(text_dim()),
+            )));
+        }
         if let Some(chord) = &captured {
             if std::env::var_os("WAYLAND_DISPLAY").is_some()
                 && !crate::paste::chord_reenters(chord, &config.paste_keys)
