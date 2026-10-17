@@ -22,13 +22,20 @@ impl ClipboardReader {
     }
 
     pub fn read_text(&mut self) -> Option<String> {
-        self.clipboard.get_text().ok()
+        self.clipboard
+            .get_text()
+            .map_err(|e| log::debug!("clipboard text unavailable: {e}"))
+            .ok()
     }
 
     /// Read a bitmap from the clipboard as (width, height, RGBA8 bytes). None when
     /// the clipboard holds no image.
     pub fn read_image(&mut self) -> Option<(usize, usize, Vec<u8>)> {
-        let img = self.clipboard.get_image().ok()?;
+        let img = self
+            .clipboard
+            .get_image()
+            .map_err(|e| log::debug!("clipboard image unavailable: {e}"))
+            .ok()?;
         Some((img.width, img.height, img.bytes.into_owned()))
     }
 }
@@ -75,6 +82,7 @@ enum ServerEvent {
 pub struct Server {
     child: Child,
     events: Receiver<ServerEvent>,
+    ready_at: Instant,
 }
 
 impl Server {
@@ -117,8 +125,13 @@ impl Server {
             }
         });
 
-        let mut server = Self { child, events };
+        let mut server = Self {
+            child,
+            events,
+            ready_at: Instant::now(),
+        };
         server.await_ready()?;
+        server.ready_at = Instant::now();
         Ok(server)
     }
 
@@ -138,9 +151,11 @@ impl Server {
         }
     }
 
-    /// Forget reads seen so far, e.g. clipboard managers that fetch every new
-    /// selection as soon as it appears.
-    pub fn discard_reads(&self) {
+    /// Forget the reads of clipboard managers, which fetch every new selection
+    /// as soon as it appears. Waits until `grace` after taking ownership so
+    /// a manager's read cannot be mistaken for the paste.
+    pub fn discard_reads(&self, grace: Duration) {
+        std::thread::sleep(grace.saturating_sub(self.ready_at.elapsed()));
         while self.events.try_recv().is_ok() {}
     }
 

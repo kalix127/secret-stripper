@@ -1,6 +1,7 @@
 use anyhow::Context;
 use std::io::Write;
 use std::os::fd::{AsRawFd, OwnedFd};
+use std::sync::Arc;
 use wayland_client::globals::{registry_queue_init, GlobalListContents};
 use wayland_client::protocol::{wl_registry::WlRegistry, wl_seat::WlSeat};
 use wayland_client::{
@@ -27,7 +28,7 @@ enum Manager {
 }
 
 struct State {
-    data: Vec<u8>,
+    data: Arc<Vec<u8>>,
     cancelled: bool,
 }
 
@@ -82,7 +83,7 @@ impl Owner {
         }
 
         let mut state = State {
-            data: content.data.clone(),
+            data: Arc::new(content.data.clone()),
             cancelled: false,
         };
         self.queue.roundtrip(&mut state)?;
@@ -97,6 +98,9 @@ impl Owner {
 }
 
 impl State {
+    /// Written on a thread: a reader that never drains the pipe would
+    /// otherwise block the event loop, and the process would never see the
+    /// cancel that tells it to exit.
     fn send(&self, mime_type: &str, fd: OwnedFd) {
         // The fd may arrive non-blocking; a short write would truncate the paste.
         unsafe {
@@ -105,9 +109,16 @@ impl State {
         }
         let mut file = std::fs::File::from(fd);
         if mime_type == PASSWORD_HINT_MIME {
-            let _ = file.write_all(PASSWORD_HINT_VALUE);
-        } else if file.write_all(&self.data).is_ok() {
-            report(READ);
+            std::thread::spawn(move || {
+                let _ = file.write_all(PASSWORD_HINT_VALUE);
+            });
+        } else {
+            let data = Arc::clone(&self.data);
+            std::thread::spawn(move || {
+                if file.write_all(&data).is_ok() {
+                    report(READ);
+                }
+            });
         }
     }
 }

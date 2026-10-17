@@ -7,7 +7,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::Style,
     text::{Line, Span},
-    widgets::Paragraph,
+    widgets::{Paragraph, Wrap},
 };
 
 const PRESETS: [&str; 8] = [
@@ -270,8 +270,7 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
                         .constraints([
                             Constraint::Length(3),
                             Constraint::Length(1),
-                            Constraint::Length(1),
-                            Constraint::Min(0),
+                            Constraint::Min(1),
                         ])
                         .split(body);
                     input.render(
@@ -286,7 +285,8 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
                             Paragraph::new(Span::styled(
                                 err.clone(),
                                 Style::new().fg(theme::warn()),
-                            )),
+                            ))
+                            .wrap(Wrap { trim: false }),
                             parts[2],
                         );
                     }

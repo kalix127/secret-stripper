@@ -23,10 +23,6 @@ fn writable() -> bool {
     OpenOptions::new().write(true).open(DEVICE_PATH).is_ok()
 }
 
-fn installed() -> bool {
-    Path::new(RULE_PATH).exists()
-}
-
 fn manual_commands() -> Vec<String> {
     FILES
         .iter()
@@ -49,7 +45,7 @@ fn root_script() -> String {
 pub fn setup(lang: Lang) {
     if crate::shortcut::os_side_effects_disabled()
         || std::env::var_os("WAYLAND_DISPLAY").is_none()
-        || (installed() && writable())
+        || writable()
     {
         return;
     }

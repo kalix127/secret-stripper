@@ -528,16 +528,22 @@ lang_strings! {
     }
 
     cli_paste_failed(err: &str,) {
-        EN => format!("Redacted paste failed, nothing was pasted: {}", err),
-        FR => format!("Échec du collage masqué, rien n'a été collé : {}", err),
-        IT => format!("Incolla oscurato non riuscito, non è stato incollato nulla: {}", err),
-        ES => format!("Falló el pegado redactado, no se pegó nada: {}", err),
+        EN => format!("Redacted paste failed: {}", err),
+        FR => format!("Échec du collage masqué : {}", err),
+        IT => format!("Incolla oscurato non riuscito: {}", err),
+        ES => format!("Falló el pegado redactado: {}", err),
     }
     cli_input_unavailable(err: &str,) {
         EN => format!("Cannot simulate the paste keys: {}. On Wayland, run 'secret-stripper init' to set up /dev/uinput access.", err),
         FR => format!("Impossible de simuler les touches de collage : {}. Sous Wayland, lancez 'secret-stripper init' pour configurer l'accès à /dev/uinput.", err),
         IT => format!("Impossibile simulare i tasti di incolla: {}. Su Wayland, esegui 'secret-stripper init' per configurare l'accesso a /dev/uinput.", err),
         ES => format!("No se pueden simular las teclas de pegado: {}. En Wayland, ejecuta 'secret-stripper init' para configurar el acceso a /dev/uinput.", err),
+    }
+    cli_lock_failed(err: &str,) {
+        EN => format!("Cannot create the paste lock file: {}", err),
+        FR => format!("Impossible de créer le fichier de verrou de collage : {}", err),
+        IT => format!("Impossibile creare il file di blocco per l'incolla: {}", err),
+        ES => format!("No se puede crear el archivo de bloqueo de pegado: {}", err),
     }
     cli_chord_held {
         EN => "The shortcut keys were still held, so the paste kept triggering the shortcut again. Release them right after pressing.",
@@ -1605,6 +1611,12 @@ lang_strings! {
         FR => format!("Combinaison invalide : {}", err),
         IT => format!("Combinazione non valida: {}", err),
         ES => format!("Combinación no válida: {}", err),
+    }
+    hk_err_paste_keys(chord: &str,) {
+        EN => format!("{} is also a paste shortcut, so every paste would trigger it again. Pick another hotkey in 'secret-stripper menu'.", chord),
+        FR => format!("{} est aussi un raccourci de collage : chaque collage le relancerait. Choisissez un autre raccourci dans 'secret-stripper menu'.", chord),
+        IT => format!("{} è anche una scorciatoia di incolla, quindi ogni incolla la riattiverebbe. Scegli un'altra scorciatoia in 'secret-stripper menu'.", chord),
+        ES => format!("{} también es un atajo de pegado, así que cada pegado lo volvería a activar. Elige otro atajo en 'secret-stripper menu'.", chord),
     }
     hk_err_press_first {
         EN => "Press a combination first.",

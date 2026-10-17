@@ -20,6 +20,7 @@ use crate::{lang, notify, stats};
 const MAX_INPUT_BYTES: usize = 1024 * 1024;
 const READ_TIMEOUT: Duration = Duration::from_secs(3);
 const READ_QUIET: Duration = Duration::from_millis(150);
+const MANAGER_GRACE: Duration = Duration::from_millis(150);
 const MODIFIER_TIMEOUT: Duration = Duration::from_secs(2);
 const UINPUT_SETTLE: Duration = Duration::from_millis(250);
 // Without re-entry detection a held chord cannot be seen, so give the user
@@ -110,24 +111,61 @@ pub fn chord_reenters(chord: &str, paste_keys: &str) -> bool {
     }
 }
 
+fn same_keys(a: &PasteKeys, b: &PasteKeys) -> bool {
+    a.key == b.key
+        && a.modifiers.len() == b.modifiers.len()
+        && a.modifiers.iter().all(|m| b.modifiers.contains(m))
+}
+
+/// Whether `chord` or its terminal variant is one of the paste key sets. Such
+/// a hotkey fires again on every synthetic paste.
+pub fn chord_is_paste_keys(chord: &str, config: &Config) -> bool {
+    let sent: Vec<PasteKeys> = [&config.paste_keys, &config.terminal_paste_keys]
+        .into_iter()
+        .filter_map(|k| PasteKeys::parse(k).ok())
+        .collect();
+    [
+        Some(chord.to_string()),
+        crate::hotkey::terminal_chord(chord),
+    ]
+    .into_iter()
+    .flatten()
+    .filter_map(|c| PasteKeys::parse(&c).ok())
+    .any(|c| sent.iter().any(|k| same_keys(&c, k)))
+}
+
 pub fn run(terminal: bool) -> anyhow::Result<()> {
     // Taken first so a re-entrant launch reports itself as fast as possible.
     let lock = match lock_file().map(|f| (f.try_lock(), f)) {
-        Ok((Ok(()), f)) => Some(f),
-        Ok((Err(std::fs::TryLockError::WouldBlock), _)) => {
-            reentry::notify();
-            return Ok(());
+        Ok((Ok(()), f)) => Ok(f),
+        // A launch during or right after the running paste's send came from
+        // its keys. Anything later is a second press: wait for the first
+        // paste to finish.
+        Ok((Err(std::fs::TryLockError::WouldBlock), f)) => {
+            if reentry::notify() || reentry::sent_within(REENTRY_WINDOW) {
+                return Ok(());
+            }
+            f.lock().map(|()| f)
         }
-        Ok((Err(std::fs::TryLockError::Error(e)), _)) | Err(e) => {
-            log::warn!("paste lock unavailable: {e}");
-            None
-        }
+        Ok((Err(std::fs::TryLockError::Error(e)), _)) | Err(e) => Err(e),
     };
 
     let config = Config::load();
     let lang = config.lang;
+    // Without the lock a held chord would chain full pastes.
+    let _lock = match lock {
+        Ok(f) => f,
+        Err(e) => {
+            not_pasted(&config, &lang.cli_lock_failed(&e.to_string()));
+            return Ok(());
+        }
+    };
     if !config.onboarding_done {
         not_pasted(&config, lang::Lang::active().cli_run_init_first());
+        return Ok(());
+    }
+    if chord_is_paste_keys(&config.hotkey, &config) {
+        not_pasted(&config, &lang.hk_err_paste_keys(&config.hotkey));
         return Ok(());
     }
 
@@ -147,18 +185,12 @@ pub fn run(terminal: bool) -> anyhow::Result<()> {
             return Ok(());
         }
     };
-    // X11 waits for the real modifier release, so only uinput can re-enter.
-    let listener = match &input {
-        Input::Uinput { .. } if reentrant && lock.is_some() => reentry::Listener::bind()
-            .map_err(|e| log::warn!("re-entry socket unavailable: {e}"))
-            .ok(),
-        _ => None,
-    };
     let sender = Sender {
         input: &input,
         keys: &keys,
         terminal_keys: &terminal_keys,
-        listener: listener.as_ref(),
+        // X11 waits for the real modifier release, so only uinput can re-enter.
+        reentrant: reentrant && matches!(input, Input::Uinput { .. }),
     };
 
     let plan = match ClipboardReader::new() {
@@ -230,7 +262,7 @@ struct Sender<'a> {
     input: &'a Input,
     keys: &'a PasteKeys,
     terminal_keys: &'a PasteKeys,
-    listener: Option<&'a reentry::Listener>,
+    reentrant: bool,
 }
 
 impl Sender<'_> {
@@ -239,13 +271,23 @@ impl Sender<'_> {
     /// passing the paste on, and the `paste` it launches signals us. Resend
     /// until a send goes through without that signal.
     fn paste(&self, lang: lang::Lang) -> anyhow::Result<()> {
+        let listener = if self.reentrant {
+            reentry::Listener::bind()
+                .map_err(|e| log::warn!("re-entry socket unavailable: {e}"))
+                .ok()
+        } else {
+            None
+        };
         let start = Instant::now();
         loop {
-            if let Some(l) = self.listener {
+            if let Some(l) = &listener {
                 l.drain();
             }
             self.input.send(self.keys, self.terminal_keys)?;
-            match self.listener {
+            if self.reentrant {
+                reentry::mark_sent();
+            }
+            match &listener {
                 Some(l) if l.wait(REENTRY_WINDOW) => {}
                 _ => return Ok(()),
             }
@@ -271,42 +313,42 @@ fn paste_redacted(
     // Both failures mean no paste reached an app, so the original is safe to
     // put back.
     if let Err(e) = sender.input.wait_until_ready() {
-        Server::start(original)?;
+        restore(original);
         return Err(e);
     }
-    server.discard_reads();
+    server.discard_reads(MANAGER_GRACE);
     if let Err(e) = sender.paste(lang) {
-        Server::start(original)?;
+        restore(original);
         return Err(e);
     }
 
     if server.await_read(READ_TIMEOUT, READ_QUIET) {
-        if let Err(e) = Server::start(original) {
-            log::warn!("restoring the original clipboard failed: {e:#}");
-        }
+        restore(original);
     } else {
         eprintln!("{}", lang.cli_restore_skipped());
     }
     Ok(())
 }
 
+fn restore(original: &Payload) {
+    if let Err(e) = Server::start(original) {
+        log::warn!("restoring the original clipboard failed: {e:#}");
+    }
+}
+
 fn plan(reader: &mut ClipboardReader, config: &Config) -> Plan {
     let detector = Detector::from_config(config);
 
-    // A clipboard image never goes through the text path: reading it as text
-    // yields raw bytes the detector can mistake for secrets.
-    if let Some((width, height, bytes)) = reader.read_image() {
-        if !config.enable_image_scan {
-            return Plan::AsIs {
-                scanned_clean: false,
-            };
-        }
-        return plan_image(&detector, width, height, bytes);
-    }
-
+    // Text first: apps such as spreadsheets offer a cell as both text and an
+    // image, and the text is what a text field pastes.
     let Some(text) = reader.read_text().filter(|t| !t.is_empty()) else {
-        return Plan::AsIs {
-            scanned_clean: false,
+        return match reader.read_image() {
+            Some((width, height, bytes)) if config.enable_image_scan => {
+                plan_image(&detector, width, height, bytes)
+            }
+            _ => Plan::AsIs {
+                scanned_clean: false,
+            },
         };
     };
     if text.len() > MAX_INPUT_BYTES {
@@ -420,7 +462,17 @@ fn lock_file() -> std::io::Result<File> {
 
 #[cfg(test)]
 mod tests {
-    use super::chord_reenters;
+    use super::{chord_is_paste_keys, chord_reenters};
+    use crate::config::Config;
+
+    #[test]
+    fn paste_keys_are_not_a_valid_hotkey() {
+        let c = Config::default();
+        assert!(chord_is_paste_keys("Ctrl+V", &c));
+        assert!(chord_is_paste_keys("shift+ctrl+v", &c));
+        assert!(!chord_is_paste_keys("Ctrl+Alt+V", &c));
+        assert!(!chord_is_paste_keys("Ctrl+Alt+F5", &c));
+    }
 
     #[test]
     fn chord_reenters_only_on_the_paste_key() {

@@ -7,7 +7,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::{
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::Paragraph,
+    widgets::{Paragraph, Wrap},
 };
 
 pub fn capture_hotkey(
@@ -76,7 +76,10 @@ pub fn capture_hotkey(
 
         terminal.draw(|f| {
             let body = scaffold(f, config.lang.hk_title(), config.lang.hk_hint(), config);
-            f.render_widget(Paragraph::new(body_lines.clone()), body);
+            f.render_widget(
+                Paragraph::new(body_lines.clone()).wrap(Wrap { trim: false }),
+                body,
+            );
         })?;
 
         if let Event::Key(key) = event::read()? {
@@ -89,6 +92,9 @@ pub fn capture_hotkey(
                     match &captured {
                         Some(chord) => {
                             match hotkey::parse_chord(chord) {
+                                Ok(_) if crate::paste::chord_is_paste_keys(chord, config) => {
+                                    error = Some(config.lang.hk_err_paste_keys(chord));
+                                }
                                 Ok(_) => {
                                     // Tear down the old DE binding before persisting the new
                                     // chord so the OS shortcut points at the right key after.

@@ -8,7 +8,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::Paragraph,
+    widgets::{Paragraph, Wrap},
 };
 
 enum Mode {
@@ -158,7 +158,7 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
                     );
                     let parts = Layout::default()
                         .direction(Direction::Vertical)
-                        .constraints([Constraint::Length(3), Constraint::Length(1)])
+                        .constraints([Constraint::Length(3), Constraint::Min(1)])
                         .split(body);
                     input.render(
                         f,
@@ -167,7 +167,10 @@ pub fn show(terminal: &mut ratatui::DefaultTerminal, config: &mut Config) -> any
                         true,
                         theme::accent(),
                     );
-                    f.render_widget(Paragraph::new(status.clone()), parts[1]);
+                    f.render_widget(
+                        Paragraph::new(status.clone()).wrap(Wrap { trim: false }),
+                        parts[1],
+                    );
                 })?;
 
                 if let Event::Key(key) = event::read()? {

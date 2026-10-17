@@ -2,8 +2,9 @@ use std::os::unix::net::UnixDatagram;
 use std::path::PathBuf;
 use std::time::Duration;
 
-/// Socket through which a second `paste`, launched while the first one holds
-/// the lock, tells the first that its synthetic keys fired the chord again.
+/// Socket through which a second `paste`, launched while the first one sends
+/// its keys, tells the first that those keys fired the chord again. It exists
+/// only during the send, which is how a second press is told apart.
 pub struct Listener {
     socket: UnixDatagram,
     path: PathBuf,
@@ -40,12 +41,34 @@ impl Drop for Listener {
     }
 }
 
-pub fn notify() {
-    if let Ok(socket) = UnixDatagram::unbound() {
-        let _ = socket.send_to(b"r", socket_path());
+/// True when a running paste was listening and got the signal.
+pub fn notify() -> bool {
+    UnixDatagram::unbound()
+        .and_then(|socket| socket.send_to(b"r", socket_path()))
+        .is_ok()
+}
+
+/// Record a synthetic send. A launch that misses the listener but starts
+/// shortly after a send still came from it, e.g. modifiers held after the
+/// running paste gave up.
+pub fn mark_sent() {
+    if let Err(e) = std::fs::File::create(sent_path()) {
+        log::warn!("recording the paste send failed: {e}");
     }
+}
+
+pub fn sent_within(window: Duration) -> bool {
+    std::fs::metadata(sent_path())
+        .and_then(|m| m.modified())
+        .ok()
+        .and_then(|t| t.elapsed().ok())
+        .is_some_and(|age| age < window)
 }
 
 fn socket_path() -> PathBuf {
     super::runtime_dir().join("secret-stripper-paste.sock")
+}
+
+fn sent_path() -> PathBuf {
+    super::runtime_dir().join("secret-stripper-paste.sent")
 }
