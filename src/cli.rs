@@ -18,6 +18,8 @@ pub enum Command {
     Init,
     /// Paste a redacted copy of the clipboard into the focused app, then
     /// restore the original clipboard. Bound to the global hotkey.
+    // 1.x shortcuts and manual binds run `trigger`.
+    #[command(alias = "trigger")]
     Paste {
         /// Send the terminal paste keys (Ctrl+Shift+V by default).
         #[arg(long)]

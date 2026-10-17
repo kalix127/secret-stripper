@@ -1,6 +1,7 @@
 mod cli;
 mod clipboard;
 mod hotkey;
+mod migrate;
 mod notify;
 mod paste;
 mod paste_guard;
@@ -21,6 +22,18 @@ use config::Config;
 fn main() -> anyhow::Result<()> {
     let args = cli::Cli::parse();
     setup_logging(&args);
+
+    if matches!(
+        args.command,
+        cli::Command::Init
+            | cli::Command::Paste { .. }
+            | cli::Command::Menu
+            | cli::Command::Status
+            | cli::Command::RegisterShortcut
+            | cli::Command::UpgradeCheck { .. }
+    ) {
+        migrate::run();
+    }
 
     match args.command {
         cli::Command::Init => run_init()?,

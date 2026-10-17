@@ -319,8 +319,8 @@ pub fn run_upgrade_check(auto_install_flag: bool) -> anyhow::Result<()> {
 
     let do_install = auto_install_flag || config.auto_install;
 
-    // The timer fires once per login; this guard also covers repeated logins
-    // and manual runs, so at most one notice per 24h.
+    // The timer fires on login and daily; this guard also covers repeated
+    // logins and manual runs, so at most one notice per 24h.
     let now: chrono::DateTime<chrono::Utc> = std::time::SystemTime::now().into();
     let due = config
         .last_update_notice
@@ -408,13 +408,15 @@ Nice=10
     );
 
     // OnStartupSec counts from the start of the user's systemd manager, i.e.
-    // the login session, so the check runs once per session.
+    // the login session; OnUnitActiveSec repeats it in sessions left open
+    // for days.
     let timer = format!(
         r#"[Unit]
 Description={}
 
 [Timer]
 OnStartupSec=2min
+OnUnitActiveSec=1d
 Unit=secret-stripper-update-check.service
 
 [Install]

@@ -276,6 +276,20 @@ lang_strings! {
         ES => "Copia redactada pegada",
     }
 
+    notify_not_pasted {
+        EN => "Nothing was pasted",
+        FR => "Rien n'a été collé",
+        IT => "Non è stato incollato nulla",
+        ES => "No se pegó nada",
+    }
+
+    notify_hotkey_moved(old: &str, new: &str,) {
+        EN => format!("Updated to 2.0: the hotkey moved from {} to {}. Change it with 'secret-stripper menu'.", old, new),
+        FR => format!("Mise à jour vers 2.0 : le raccourci passe de {} à {}. Modifiez-le avec 'secret-stripper menu'.", old, new),
+        IT => format!("Aggiornato alla 2.0: la scorciatoia è passata da {} a {}. Cambiala con 'secret-stripper menu'.", old, new),
+        ES => format!("Actualizado a 2.0: el atajo pasó de {} a {}. Cámbialo con 'secret-stripper menu'.", old, new),
+    }
+
     cli_secret_without_location {
         EN => "A secret was detected without an exact location. Nothing was pasted to avoid leaking it.",
         FR => "Un secret a été détecté sans emplacement exact. Rien n'a été collé pour éviter toute fuite.",

@@ -2,6 +2,7 @@
 name = "secret-stripper"
 version = "1.5.1"
 edition = "2021"
+rust-version = "1.89"
 description = "A small Linux CLI that strips secrets and PII from the clipboard on demand via a global hotkey"
 authors = ["Gianluca Iavicoli <info@gianlucaiavicoli.dev>"]
 license = "MIT"

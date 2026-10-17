@@ -1,7 +1,7 @@
 use crate::config::Config;
 
-// Only two events ever notify: a redaction and an available update. With
-// `silent` set, nothing does.
+// Notifies on a redaction, a paste that did not happen, an available update
+// and a hotkey moved by the 1.x upgrade. With `silent` set, nothing does.
 
 pub fn redacted(count: usize, config: &Config) {
     if config.silent {
@@ -10,6 +10,30 @@ pub fn redacted(count: usize, config: &Config) {
     show(make_notification(
         &config.lang.notify_redacted(count),
         config.lang.notify_cleaned(),
+        config.notification_timeout_secs,
+    ));
+}
+
+/// The hotkey runs in the background, so stderr is invisible: this is the only
+/// way the user learns why nothing was pasted.
+pub fn not_pasted(config: &Config, reason: &str) {
+    if config.silent {
+        return;
+    }
+    show(make_notification(
+        config.lang.notify_not_pasted(),
+        reason,
+        config.notification_timeout_secs,
+    ));
+}
+
+pub fn hotkey_moved(config: &Config, old: &str) {
+    if config.silent {
+        return;
+    }
+    show(make_notification(
+        crate::APP_NAME,
+        &config.lang.notify_hotkey_moved(old, &config.hotkey),
         config.notification_timeout_secs,
     ));
 }

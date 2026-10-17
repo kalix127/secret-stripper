@@ -13,8 +13,16 @@ pub enum RedactStyle {
     Placeholder,
 }
 
+/// Bumped when an upgrade has to change saved settings or OS integration.
+/// Configs written by 1.x have no version and load as 0.
+pub const CONFIG_VERSION: u32 = 2;
+
+const V1_DEFAULT_HOTKEY: &str = "Ctrl+Alt+X";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    #[serde(default)]
+    pub config_version: u32,
     pub lang: Lang,
     pub notification_timeout_secs: u64,
     pub onboarding_done: bool,
@@ -181,6 +189,7 @@ fn default_redact_style() -> RedactStyle {
 impl Default for Config {
     fn default() -> Self {
         Self {
+            config_version: CONFIG_VERSION,
             lang: Lang::EN,
             notification_timeout_secs: 5,
             onboarding_done: false,
@@ -271,8 +280,70 @@ impl Config {
         }
     }
 
+    pub fn needs_migration(&self) -> bool {
+        self.onboarding_done && self.config_version < CONFIG_VERSION
+    }
+
+    /// Settings half of the 1.x upgrade. 1.x defaulted to Ctrl+Alt+X and to
+    /// silent; 2.x defaults to Ctrl+Alt+V and shows the redaction notice.
+    /// Returns true when the hotkey changed.
+    pub fn migrate_from_v1(&mut self) -> bool {
+        let moved = self.hotkey == V1_DEFAULT_HOTKEY;
+        if moved {
+            self.hotkey = default_hotkey();
+        }
+        self.silent = false;
+        self.config_version = CONFIG_VERSION;
+        moved
+    }
+
     pub fn save(&self) -> anyhow::Result<()> {
         let data = toml::to_string_pretty(self)?;
         atomic_write(&Self::path(), data.as_bytes())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn v1_config(hotkey: &str) -> Config {
+        let toml = format!(
+            "lang = \"EN\"\nnotification_timeout_secs = 5\n\
+             onboarding_done = true\nredact_pattern = \"[REDACTED]\"\n\
+             sensitivity = 3\nenable_deep_scan = false\nsilent = true\n\
+             hotkey = \"{hotkey}\"\n"
+        );
+        toml::from_str(&toml).unwrap()
+    }
+
+    #[test]
+    fn v1_config_loads_as_version_zero() {
+        let c = v1_config("Ctrl+Alt+X");
+        assert_eq!(c.config_version, 0);
+        assert!(c.needs_migration());
+    }
+
+    #[test]
+    fn new_config_needs_no_migration() {
+        assert!(!Config::first_run(Lang::EN).needs_migration());
+        assert!(!Config::default().needs_migration());
+    }
+
+    #[test]
+    fn migration_moves_the_v1_default_hotkey() {
+        let mut c = v1_config("Ctrl+Alt+X");
+        assert!(c.migrate_from_v1());
+        assert_eq!(c.hotkey, "Ctrl+Alt+V");
+        assert!(!c.silent);
+        assert!(!c.needs_migration());
+    }
+
+    #[test]
+    fn migration_keeps_a_chosen_hotkey() {
+        let mut c = v1_config("Super+Shift+K");
+        assert!(!c.migrate_from_v1());
+        assert_eq!(c.hotkey, "Super+Shift+K");
+        assert!(!c.silent);
     }
 }

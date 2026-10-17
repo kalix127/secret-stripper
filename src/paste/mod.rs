@@ -127,29 +127,23 @@ pub fn run(terminal: bool) -> anyhow::Result<()> {
     let config = Config::load();
     let lang = config.lang;
     if !config.onboarding_done {
-        eprintln!("{}", lang::Lang::active().cli_run_init_first());
+        not_pasted(&config, lang::Lang::active().cli_run_init_first());
         return Ok(());
     }
 
-    let terminal_keys = PasteKeys::parse(&config.terminal_paste_keys)?;
-    let (keys, reentrant) = if terminal {
-        let chord = crate::hotkey::terminal_chord(&config.hotkey).unwrap_or_default();
-        (
-            terminal_keys.clone(),
-            chord_reenters(&chord, &config.terminal_paste_keys),
-        )
-    } else {
-        (
-            PasteKeys::parse(&config.paste_keys)?,
-            chord_reenters(&config.hotkey, &config.paste_keys),
-        )
+    let (keys, terminal_keys, reentrant) = match select_keys(&config, terminal) {
+        Ok(k) => k,
+        Err(e) => {
+            not_pasted(&config, &format!("{e:#}"));
+            return Ok(());
+        }
     };
 
     // Opened before scanning so the uinput settle time overlaps redaction.
     let input = match Input::open(&[&keys, &terminal_keys], reentrant) {
         Ok(i) => i,
         Err(e) => {
-            eprintln!("{}", lang.cli_input_unavailable(&format!("{e:#}")));
+            not_pasted(&config, &lang.cli_input_unavailable(&format!("{e:#}")));
             return Ok(());
         }
     };
@@ -170,7 +164,7 @@ pub fn run(terminal: bool) -> anyhow::Result<()> {
     let plan = match ClipboardReader::new() {
         Ok(mut reader) => plan(&mut reader, &config),
         Err(e) => {
-            eprintln!("{}", lang.cli_clipboard_access_failed(&e.to_string()));
+            not_pasted(&config, &lang.cli_clipboard_access_failed(&e.to_string()));
             return Ok(());
         }
     };
@@ -183,16 +177,16 @@ pub fn run(terminal: bool) -> anyhow::Result<()> {
                 Blocked::ImageUnmappable => lang.cli_image_detected_unmappable().to_string(),
                 Blocked::NoLocation => lang.cli_secret_without_location().to_string(),
             };
-            eprintln!("{msg}");
+            not_pasted(&config, &msg);
         }
         Plan::AsIs { scanned_clean } => {
             if scanned_clean {
                 eprintln!("{}", lang.cli_no_secrets());
             }
             if let Err(e) = input.wait_until_ready() {
-                eprintln!("{}", lang.cli_input_unavailable(&format!("{e:#}")));
+                not_pasted(&config, &lang.cli_input_unavailable(&format!("{e:#}")));
             } else if let Err(e) = sender.paste(lang) {
-                eprintln!("{e:#}");
+                not_pasted(&config, &format!("{e:#}"));
             }
         }
         Plan::Redacted {
@@ -201,7 +195,7 @@ pub fn run(terminal: bool) -> anyhow::Result<()> {
             count,
         } => {
             if let Err(e) = paste_redacted(&sender, &redacted, &original, lang) {
-                eprintln!("{}", lang.cli_paste_failed(&format!("{e:#}")));
+                not_pasted(&config, &lang.cli_paste_failed(&format!("{e:#}")));
                 return Ok(());
             }
             eprintln!("{}", lang.cli_redacted(count));
@@ -210,6 +204,26 @@ pub fn run(terminal: bool) -> anyhow::Result<()> {
         }
     }
     Ok(())
+}
+
+/// The paste keys, the terminal paste keys, and whether the held chord plus
+/// the keys sent fires the chord again.
+fn select_keys(config: &Config, terminal: bool) -> anyhow::Result<(PasteKeys, PasteKeys, bool)> {
+    let terminal_keys = PasteKeys::parse(&config.terminal_paste_keys)?;
+    if terminal {
+        let chord = crate::hotkey::terminal_chord(&config.hotkey).unwrap_or_default();
+        let reentrant = chord_reenters(&chord, &config.terminal_paste_keys);
+        Ok((terminal_keys.clone(), terminal_keys, reentrant))
+    } else {
+        let keys = PasteKeys::parse(&config.paste_keys)?;
+        let reentrant = chord_reenters(&config.hotkey, &config.paste_keys);
+        Ok((keys, terminal_keys, reentrant))
+    }
+}
+
+fn not_pasted(config: &Config, reason: &str) {
+    eprintln!("{reason}");
+    notify::not_pasted(config, reason);
 }
 
 struct Sender<'a> {
