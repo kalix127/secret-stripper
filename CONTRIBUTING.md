@@ -33,14 +33,6 @@ Other recipes:
 | `just clean` | `cargo clean` |
 | `just` (no args) | List every recipe |
 
-Linux contributors need a few system packages so `arboard` and `notify-rust` link:
-
-```bash
-sudo apt-get install -y \
-    libxcb1-dev libxcb-shape0-dev libxcb-xfixes0-dev \
-    libxkbcommon-dev libdbus-1-dev
-```
-
 The repo treats `clippy` warnings as bugs. `just lint` must pass before a PR is reviewable.
 
 ## Commit and PR conventions

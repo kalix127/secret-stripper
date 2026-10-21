@@ -55,16 +55,6 @@ jobs:
         with:
           ref: ${{ env.RELEASE_TAG }}
 
-      - name: Install Linux system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libxcb1-dev \
-            libxcb-shape0-dev \
-            libxcb-xfixes0-dev \
-            libxkbcommon-dev \
-            libdbus-1-dev
-
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -129,17 +119,6 @@ jobs:
         if: steps.check.outputs.skip == 'false'
         with:
           ref: ${{ env.RELEASE_TAG }}
-
-      - name: Install Linux system dependencies
-        if: steps.check.outputs.skip == 'false'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libxcb1-dev \
-            libxcb-shape0-dev \
-            libxcb-xfixes0-dev \
-            libxkbcommon-dev \
-            libdbus-1-dev
 
       - name: Install Rust toolchain
         if: steps.check.outputs.skip == 'false'
