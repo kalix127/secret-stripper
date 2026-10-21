@@ -135,7 +135,9 @@ impl X11Input {
     }
 
     // Resolved through the live keymap so non-US layouts still get the key
-    // that produces the wanted symbol.
+    // that produces the wanted symbol. The first two columns are the first
+    // layout; a key that types the symbol only in another layout is a last
+    // resort, since it types something else while the first is active.
     fn keycode_for(&self, keysym: u32) -> Result<Keycode> {
         let setup = self.conn.setup();
         let (min, max) = (setup.min_keycode, setup.max_keycode);
@@ -144,10 +146,14 @@ impl X11Input {
             .get_keyboard_mapping(min, max - min + 1)?
             .reply()?;
         let per = usize::from(mapping.keysyms_per_keycode);
-        mapping
-            .keysyms
-            .chunks(per)
-            .position(|syms| syms.contains(&keysym))
+        let find = |columns: usize| {
+            mapping
+                .keysyms
+                .chunks(per)
+                .position(|syms| syms.iter().take(columns).any(|&s| s == keysym))
+        };
+        find(2)
+            .or_else(|| find(per))
             .map(|i| min + i as u8)
             .ok_or_else(|| anyhow!("no keycode produces keysym {keysym:#x}"))
     }

@@ -4,7 +4,8 @@ use std::os::fd::AsRawFd;
 use std::os::unix::fs::OpenOptionsExt;
 use std::time::Duration;
 
-use super::keys::{evdev_code, evdev_modifier, PasteKeys};
+use super::keymap::Layout;
+use super::keys::{evdev_code, evdev_modifier, Key, PasteKeys};
 
 pub const DEVICE_PATH: &str = "/dev/uinput";
 
@@ -23,10 +24,23 @@ const BUS_VIRTUAL: u16 = 0x06;
 /// real hardware, so every Wayland compositor accepts its key events.
 pub struct UinputKeyboard {
     file: File,
+    /// Paste keys resolved to the positions that type them in the session
+    /// layout.
+    codes: Vec<(Key, u16)>,
 }
 
 impl UinputKeyboard {
-    pub fn create(keys: &[&PasteKeys]) -> Result<Self> {
+    pub fn create(keys: &[&PasteKeys], layout: Option<&Layout>) -> Result<Self> {
+        let codes: Vec<(Key, u16)> = keys
+            .iter()
+            .map(|k| {
+                let code = layout
+                    .and_then(|l| l.evdev_code(k.key))
+                    .unwrap_or_else(|| evdev_code(k.key));
+                log::debug!("paste key {:?} -> evdev {code}", k.key);
+                (k.key, code)
+            })
+            .collect();
         let file = OpenOptions::new()
             .write(true)
             .custom_flags(libc::O_NONBLOCK)
@@ -34,17 +48,13 @@ impl UinputKeyboard {
             .with_context(|| format!("open {DEVICE_PATH}"))?;
         let fd = file.as_raw_fd();
 
-        let mut codes: Vec<u16> = keys
+        let mut bits: Vec<u16> = keys
             .iter()
-            .flat_map(|k| {
-                k.modifiers
-                    .iter()
-                    .map(|&m| evdev_modifier(m))
-                    .chain([evdev_code(k.key)])
-            })
+            .flat_map(|k| k.modifiers.iter().map(|&m| evdev_modifier(m)))
+            .chain(codes.iter().map(|&(_, code)| code))
             .collect();
-        codes.sort_unstable();
-        codes.dedup();
+        bits.sort_unstable();
+        bits.dedup();
 
         let mut setup: libc::uinput_setup = unsafe { std::mem::zeroed() };
         setup.id.bustype = BUS_VIRTUAL;
@@ -57,7 +67,7 @@ impl UinputKeyboard {
 
         unsafe {
             check(libc::ioctl(fd, UI_SET_EVBIT, libc::c_int::from(EV_KEY)))?;
-            for code in codes {
+            for code in bits {
                 check(libc::ioctl(fd, UI_SET_KEYBIT, libc::c_int::from(code)))?;
             }
             check(libc::ioctl(
@@ -67,15 +77,20 @@ impl UinputKeyboard {
             ))?;
             check(libc::ioctl(fd, UI_DEV_CREATE))?;
         }
-        Ok(Self { file })
+        Ok(Self { file, codes })
     }
 
     pub fn send(&self, keys: &PasteKeys) -> Result<()> {
         for &m in &keys.modifiers {
             self.key(evdev_modifier(m), 1)?;
         }
-        self.key(evdev_code(keys.key), 1)?;
-        self.key(evdev_code(keys.key), 0)?;
+        let code = self
+            .codes
+            .iter()
+            .find(|(key, _)| *key == keys.key)
+            .map_or_else(|| evdev_code(keys.key), |&(_, code)| code);
+        self.key(code, 1)?;
+        self.key(code, 0)?;
         for &m in keys.modifiers.iter().rev() {
             self.key(evdev_modifier(m), 0)?;
         }

@@ -1,4 +1,5 @@
 pub mod access;
+mod keymap;
 mod keys;
 mod reentry;
 mod uinput;
@@ -62,8 +63,11 @@ enum Input {
 impl Input {
     fn open(keys: &[&PasteKeys], reentrant: bool) -> anyhow::Result<Self> {
         if std::env::var_os("WAYLAND_DISPLAY").is_some() {
+            let layout = keymap::session_layout()
+                .map_err(|e| log::warn!("session keymap unavailable, assuming US: {e:#}"))
+                .ok();
             Ok(Input::Uinput {
-                keyboard: uinput::UinputKeyboard::create(keys)?,
+                keyboard: uinput::UinputKeyboard::create(keys, layout.as_ref())?,
                 created: Instant::now(),
                 settle: if reentrant {
                     UINPUT_SETTLE
