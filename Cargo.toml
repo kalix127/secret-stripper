@@ -3,14 +3,14 @@ name = "secret-stripper"
 version = "1.5.1"
 edition = "2021"
 rust-version = "1.89"
-description = "A small Linux CLI that strips secrets and PII from the clipboard on demand via a global hotkey"
+description = "Paste a redacted copy of the clipboard with one hotkey: secrets and PII come out masked. Linux, X11 and Wayland"
 authors = ["Gianluca Iavicoli <info@gianlucaiavicoli.dev>"]
 license = "MIT"
 repository = "https://github.com/kalix127/secret-stripper"
 homepage = "https://secretstripper.download"
 readme = "README.md"
-keywords = ["security", "clipboard", "secrets", "pii", "redaction"]
-categories = ["command-line-utilities", "cryptography"]
+keywords = ["clipboard", "secrets", "redaction", "wayland", "x11"]
+categories = ["command-line-utilities", "text-processing"]
 include = [
     "src/**/*",
     "Cargo.toml",
