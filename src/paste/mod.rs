@@ -11,7 +11,7 @@ use std::fs::File;
 use std::time::{Duration, Instant};
 use zeroize::Zeroizing;
 
-use crate::clipboard::{ClipboardReader, Payload, Server};
+use crate::clipboard::{ClipboardReader, ClipboardSource, Payload, Server};
 use crate::config::{self, Config, RedactStyle};
 use crate::detector::{self, Detector};
 use crate::{lang, notify, stats};
@@ -344,7 +344,7 @@ fn restore(original: &Payload) {
     }
 }
 
-fn plan(reader: &mut ClipboardReader, config: &Config) -> Plan {
+fn plan(reader: &mut impl ClipboardSource, config: &Config) -> Plan {
     let detector = Detector::from_config(config);
 
     // Text first: apps such as spreadsheets offer a cell as both text and an
@@ -478,7 +478,8 @@ fn lock_file() -> std::io::Result<File> {
 
 #[cfg(test)]
 mod tests {
-    use super::{chord_is_paste_keys, chord_reenters};
+    use super::{chord_is_paste_keys, chord_reenters, plan, Blocked, Plan, MAX_INPUT_BYTES};
+    use crate::clipboard::ClipboardSource;
     use crate::config::Config;
 
     #[test]
@@ -499,5 +500,105 @@ mod tests {
         assert!(!chord_reenters("Ctrl+Alt+P", "Ctrl+V"));
         assert!(!chord_reenters("Ctrl+Alt+F5", "Ctrl+V"));
         assert!(!chord_reenters("Ctrl+Alt+V", "Shift+Insert"));
+    }
+
+    const SECRET: &str =
+        "key: sk-proj-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghij";
+
+    struct FakeClipboard {
+        text: Option<String>,
+        image: Option<(usize, usize, Vec<u8>)>,
+        image_reads: usize,
+    }
+
+    impl FakeClipboard {
+        fn new(text: Option<&str>, image: bool) -> Self {
+            Self {
+                text: text.map(str::to_string),
+                image: image.then(|| (1, 1, vec![0, 0, 0, 255])),
+                image_reads: 0,
+            }
+        }
+    }
+
+    impl ClipboardSource for FakeClipboard {
+        fn read_text(&mut self) -> Option<String> {
+            self.text.clone()
+        }
+
+        fn read_image(&mut self) -> Option<(usize, usize, Vec<u8>)> {
+            self.image_reads += 1;
+            self.image.clone()
+        }
+    }
+
+    fn config(image_scan: bool) -> Config {
+        Config {
+            enable_image_scan: image_scan,
+            ..Config::default()
+        }
+    }
+
+    #[test]
+    fn secret_text_is_redacted_without_reading_the_image() {
+        let mut clip = FakeClipboard::new(Some(SECRET), true);
+        assert!(matches!(
+            plan(&mut clip, &config(true)),
+            Plan::Redacted { .. }
+        ));
+        assert_eq!(clip.image_reads, 0);
+    }
+
+    #[test]
+    fn clean_text_with_image_scan_off_never_reads_the_image() {
+        let mut clip = FakeClipboard::new(Some("hello"), true);
+        assert!(matches!(
+            plan(&mut clip, &config(false)),
+            Plan::AsIs {
+                scanned_clean: true
+            }
+        ));
+        assert_eq!(clip.image_reads, 0);
+    }
+
+    #[test]
+    fn clean_text_with_image_scan_on_checks_for_an_image() {
+        let mut clip = FakeClipboard::new(Some("hello"), false);
+        assert!(matches!(
+            plan(&mut clip, &config(true)),
+            Plan::AsIs {
+                scanned_clean: true
+            }
+        ));
+        assert_eq!(clip.image_reads, 1);
+    }
+
+    #[test]
+    fn empty_clipboard_pastes_as_is_unscanned() {
+        let mut clip = FakeClipboard::new(None, false);
+        assert!(matches!(
+            plan(&mut clip, &config(true)),
+            Plan::AsIs {
+                scanned_clean: false
+            }
+        ));
+        let mut clip = FakeClipboard::new(Some(""), false);
+        assert!(matches!(
+            plan(&mut clip, &config(false)),
+            Plan::AsIs {
+                scanned_clean: false
+            }
+        ));
+    }
+
+    #[test]
+    fn oversized_text_is_blocked_before_the_image() {
+        let big = "a".repeat(MAX_INPUT_BYTES + 1);
+        let mut clip = FakeClipboard::new(Some(&big), true);
+        assert!(matches!(
+            plan(&mut clip, &config(true)),
+            Plan::Blocked(Blocked::TooLarge(_))
+        ));
+        assert_eq!(clip.image_reads, 0);
     }
 }

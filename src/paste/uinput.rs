@@ -15,6 +15,23 @@ const UI_DEV_SETUP: libc::c_ulong = 0x405c_5503;
 const UI_DEV_CREATE: libc::c_ulong = 0x5501;
 const UI_DEV_DESTROY: libc::c_ulong = 0x5502;
 
+// The kernel's _IO/_IOW encoding for the 'U' (uinput) ioctl type.
+const fn uinput_ioc(write: bool, nr: u32, size: usize) -> libc::c_ulong {
+    ((write as libc::c_ulong) << 30)
+        | ((size as libc::c_ulong) << 16)
+        | ((b'U' as libc::c_ulong) << 8)
+        | nr as libc::c_ulong
+}
+
+const _: () = {
+    let int = std::mem::size_of::<libc::c_int>();
+    assert!(UI_SET_EVBIT == uinput_ioc(true, 100, int));
+    assert!(UI_SET_KEYBIT == uinput_ioc(true, 101, int));
+    assert!(UI_DEV_SETUP == uinput_ioc(true, 3, std::mem::size_of::<libc::uinput_setup>()));
+    assert!(UI_DEV_CREATE == uinput_ioc(false, 1, 0));
+    assert!(UI_DEV_DESTROY == uinput_ioc(false, 2, 0));
+};
+
 const EV_SYN: u16 = 0x00;
 const EV_KEY: u16 = 0x01;
 const SYN_REPORT: u16 = 0;

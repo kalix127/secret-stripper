@@ -217,3 +217,51 @@ fn patterns_save_creates_dir_when_absent() {
         assert!(home.join("secret-stripper").join("patterns.toml").exists());
     });
 }
+
+// Written by 1.5.x: no config_version, paste keys or last_update_notice.
+const V1_CONFIG: &str = r#"lang = "IT"
+notification_timeout_secs = 5
+onboarding_done = true
+redact_pattern = "[REDACTED]"
+redact_style = "Marker"
+sensitivity = 3
+enable_deep_scan = false
+enable_entropy = false
+enable_image_scan = false
+silent = true
+hotkey = "Ctrl+Alt+X"
+check_for_updates = true
+auto_install = false
+last_seen_version = "v1.5.2"
+disabled_categories = ["pii"]
+"#;
+
+#[test]
+#[serial(config_env)]
+fn v1_config_file_loads_and_migrates() {
+    with_isolated_home(|home| {
+        let dir = home.join("secret-stripper");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("config.toml"), V1_CONFIG).unwrap();
+
+        let mut c = Config::load();
+        assert!(c.needs_migration());
+        assert_eq!(c.lang, Lang::IT);
+        assert!(c.silent);
+        assert_eq!(c.paste_keys, "Ctrl+V");
+        assert_eq!(c.terminal_paste_keys, "Ctrl+Shift+V");
+        assert!(c.last_update_notice.is_none());
+        assert_eq!(c.disabled_categories, vec!["pii".to_string()]);
+
+        assert!(c.migrate_from_v1());
+        c.save().expect("save");
+
+        let migrated = Config::load();
+        assert!(!migrated.needs_migration());
+        assert_eq!(migrated.hotkey, "Ctrl+Alt+V");
+        assert!(!migrated.silent);
+        assert_eq!(migrated.lang, Lang::IT);
+        assert_eq!(migrated.last_seen_version.as_deref(), Some("v1.5.2"));
+        assert_eq!(migrated.disabled_categories, vec!["pii".to_string()]);
+    });
+}

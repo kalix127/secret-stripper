@@ -1,5 +1,5 @@
 use std::os::unix::net::UnixDatagram;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 /// Socket through which a second `paste`, launched while the first one sends
@@ -13,7 +13,10 @@ pub struct Listener {
 impl Listener {
     /// Only bind while holding the paste lock: it replaces any stale socket.
     pub fn bind() -> std::io::Result<Self> {
-        let path = socket_path();
+        Self::bind_at(socket_path())
+    }
+
+    fn bind_at(path: PathBuf) -> std::io::Result<Self> {
         let _ = std::fs::remove_file(&path);
         let socket = UnixDatagram::bind(&path)?;
         Ok(Self { socket, path })
@@ -43,8 +46,12 @@ impl Drop for Listener {
 
 /// True when a running paste was listening and got the signal.
 pub fn notify() -> bool {
+    notify_at(&socket_path())
+}
+
+fn notify_at(path: &Path) -> bool {
     UnixDatagram::unbound()
-        .and_then(|socket| socket.send_to(b"r", socket_path()))
+        .and_then(|socket| socket.send_to(b"r", path))
         .is_ok()
 }
 
@@ -71,4 +78,52 @@ fn socket_path() -> PathBuf {
 
 fn sent_path() -> PathBuf {
     super::runtime_dir().join("secret-stripper-paste.sent")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const SHORT: Duration = Duration::from_millis(50);
+
+    fn socket_in(dir: &tempfile::TempDir) -> PathBuf {
+        dir.path().join("paste.sock")
+    }
+
+    #[test]
+    fn notify_without_a_listener_fails() {
+        let dir = tempfile::TempDir::new().unwrap();
+        assert!(!notify_at(&socket_in(&dir)));
+    }
+
+    #[test]
+    fn listener_receives_one_signal_per_notify() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let listener = Listener::bind_at(socket_in(&dir)).unwrap();
+        assert!(!listener.wait(SHORT));
+        assert!(notify_at(&socket_in(&dir)));
+        assert!(listener.wait(SHORT));
+        assert!(!listener.wait(SHORT));
+    }
+
+    #[test]
+    fn drain_drops_pending_signals() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let listener = Listener::bind_at(socket_in(&dir)).unwrap();
+        assert!(notify_at(&socket_in(&dir)));
+        assert!(notify_at(&socket_in(&dir)));
+        listener.drain();
+        assert!(!listener.wait(SHORT));
+    }
+
+    #[test]
+    fn bind_replaces_a_stale_socket_and_drop_removes_it() {
+        let dir = tempfile::TempDir::new().unwrap();
+        std::fs::write(socket_in(&dir), "stale").unwrap();
+        let listener = Listener::bind_at(socket_in(&dir)).unwrap();
+        assert!(notify_at(&socket_in(&dir)));
+        drop(listener);
+        assert!(!socket_in(&dir).exists());
+        assert!(!notify_at(&socket_in(&dir)));
+    }
 }

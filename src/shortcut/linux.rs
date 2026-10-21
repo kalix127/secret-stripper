@@ -278,20 +278,8 @@ fn unregister_gsettings(b: &GsettingsBinding) -> Result<()> {
 
 fn add_gsettings_list_entry(b: &GsettingsBinding, entry: &Entry) -> Result<()> {
     let current = read_list(b)?;
-    let value = list_entry_value(b, entry);
-    if current.contains(&format!("'{}'", value)) {
+    let Some(new_list) = list_with_entry(&current, &list_entry_value(b, entry)) else {
         return Ok(());
-    }
-
-    let new_list = if current == "@as []" || current.is_empty() {
-        format!("['{}']", value)
-    } else {
-        let inner = current.trim_start_matches('[').trim_end_matches(']').trim();
-        if inner.is_empty() {
-            format!("['{}']", value)
-        } else {
-            format!("[{}, '{}']", inner, value)
-        }
     };
 
     let status = Command::new("gsettings")
@@ -306,6 +294,25 @@ fn add_gsettings_list_entry(b: &GsettingsBinding, entry: &Entry) -> Result<()> {
         ));
     }
     Ok(())
+}
+
+/// The gsettings list `current` with `value` appended, or None when it is
+/// already there.
+fn list_with_entry(current: &str, value: &str) -> Option<String> {
+    if current.contains(&format!("'{}'", value)) {
+        return None;
+    }
+    let inner = current
+        .trim_start_matches("@as")
+        .trim()
+        .trim_start_matches('[')
+        .trim_end_matches(']')
+        .trim();
+    Some(if inner.is_empty() {
+        format!("['{}']", value)
+    } else {
+        format!("[{}, '{}']", inner, value)
+    })
 }
 
 fn register_xfce(chord: &str) -> Result<()> {
@@ -486,12 +493,16 @@ fn hyprland_source_line(include: &std::path::Path) -> String {
 // The binds live in their own sourced file so unregister never has to edit
 // lines the user wrote; hyprland.conf only gains one `source` line.
 fn register_hyprland(chord: &str) -> Result<()> {
-    let exe_str = own_exe()?;
+    write_hyprland_binds(&hyprland_dir()?, &own_exe()?, chord)?;
+    crate::proc::run_optional("hyprctl", &["reload"]);
+    Ok(())
+}
+
+fn write_hyprland_binds(dir: &std::path::Path, exe_str: &str, chord: &str) -> Result<()> {
     if exe_str.contains('\'') {
         return Err(anyhow!("binary path contains a quote: {}", exe_str));
     }
 
-    let dir = hyprland_dir()?;
     let main = dir.join("hyprland.conf");
     if !main.is_file() {
         return Err(anyhow!("{} not found", main.display()));
@@ -523,13 +534,16 @@ fn register_hyprland(chord: &str) -> Result<()> {
         };
         writeln!(main_file, "{sep}{source}")?;
     }
-
-    crate::proc::run_optional("hyprctl", &["reload"]);
     Ok(())
 }
 
 fn unregister_hyprland() -> Result<()> {
-    let dir = hyprland_dir()?;
+    remove_hyprland_binds(&hyprland_dir()?)?;
+    crate::proc::run_optional("hyprctl", &["reload"]);
+    Ok(())
+}
+
+fn remove_hyprland_binds(dir: &std::path::Path) -> Result<()> {
     let main = dir.join("hyprland.conf");
     let include = dir.join(HYPRLAND_INCLUDE_NAME);
     let source = hyprland_source_line(&include);
@@ -539,7 +553,6 @@ fn unregister_hyprland() -> Result<()> {
         }
     }
     let _ = fs::remove_file(&include);
-    crate::proc::run_optional("hyprctl", &["reload"]);
     Ok(())
 }
 
@@ -781,12 +794,100 @@ mod tests {
         assert_eq!(without_line(text, "source = /x.conf"), "a = 1\r\nb = 2\r\n");
     }
 
+    const EXE: &str = "/usr/local/bin/secret-stripper";
+
+    fn hypr_dir(main: &str) -> tempfile::TempDir {
+        let dir = tempfile::TempDir::new().unwrap();
+        fs::write(dir.path().join("hyprland.conf"), main).unwrap();
+        dir
+    }
+
+    fn read(dir: &tempfile::TempDir, name: &str) -> String {
+        fs::read_to_string(dir.path().join(name)).unwrap()
+    }
+
+    #[test]
+    fn hyprland_register_writes_both_binds_and_one_source_line() {
+        let dir = hypr_dir("monitor = ,preferred,auto,1\n");
+        write_hyprland_binds(dir.path(), EXE, "Ctrl+Alt+V").unwrap();
+        write_hyprland_binds(dir.path(), EXE, "Ctrl+Alt+V").unwrap();
+
+        let include = dir.path().join(HYPRLAND_INCLUDE_NAME);
+        let source = hyprland_source_line(&include);
+        let main = read(&dir, "hyprland.conf");
+        assert!(main.starts_with("monitor = ,preferred,auto,1\n"));
+        assert_eq!(main.lines().filter(|l| l.trim() == source).count(), 1);
+        assert_eq!(
+            read(&dir, HYPRLAND_INCLUDE_NAME),
+            format!(
+                "bind = CTRL ALT, V, exec, '{EXE}' paste\n\
+                 bind = CTRL ALT SHIFT, V, exec, '{EXE}' paste --terminal\n"
+            )
+        );
+    }
+
+    #[test]
+    fn hyprland_register_adds_a_newline_before_the_source_line() {
+        let dir = hypr_dir("monitor = ,preferred,auto,1");
+        write_hyprland_binds(dir.path(), EXE, "Ctrl+Alt+V").unwrap();
+        let main = read(&dir, "hyprland.conf");
+        assert!(main.starts_with("monitor = ,preferred,auto,1\nsource = "));
+    }
+
+    #[test]
+    fn hyprland_register_needs_the_main_config() {
+        let dir = tempfile::TempDir::new().unwrap();
+        assert!(write_hyprland_binds(dir.path(), EXE, "Ctrl+Alt+V").is_err());
+        assert!(!dir.path().join(HYPRLAND_INCLUDE_NAME).exists());
+    }
+
+    #[test]
+    fn hyprland_register_rejects_a_quote_in_the_binary_path() {
+        let dir = hypr_dir("");
+        assert!(write_hyprland_binds(dir.path(), "/opt/it's/bin", "Ctrl+Alt+V").is_err());
+        assert!(!dir.path().join(HYPRLAND_INCLUDE_NAME).exists());
+    }
+
+    #[test]
+    fn hyprland_unregister_restores_the_config_and_crlf() {
+        let dir = hypr_dir("a = 1\r\nb = 2\r\n");
+        write_hyprland_binds(dir.path(), EXE, "Ctrl+Alt+V").unwrap();
+        remove_hyprland_binds(dir.path()).unwrap();
+        assert_eq!(read(&dir, "hyprland.conf"), "a = 1\r\nb = 2\r\n");
+        assert!(!dir.path().join(HYPRLAND_INCLUDE_NAME).exists());
+        remove_hyprland_binds(dir.path()).unwrap();
+    }
+
+    #[test]
+    fn hyprland_unregister_without_a_config_is_ok() {
+        let dir = tempfile::TempDir::new().unwrap();
+        remove_hyprland_binds(dir.path()).unwrap();
+    }
+
     #[test]
     fn kde_component_matches_desktop_file() {
         assert_eq!(
             kde_component_path(PASTE.kde_desktop_file),
             "/component/secret_stripper_paste_desktop"
         );
+    }
+
+    #[test]
+    fn list_entry_appends_to_any_list_shape() {
+        assert_eq!(list_with_entry("@as []", "/a/").as_deref(), Some("['/a/']"));
+        assert_eq!(list_with_entry("", "/a/").as_deref(), Some("['/a/']"));
+        assert_eq!(list_with_entry("[]", "/a/").as_deref(), Some("['/a/']"));
+        assert_eq!(
+            list_with_entry("['/x/', '/y/']", "/a/").as_deref(),
+            Some("['/x/', '/y/', '/a/']")
+        );
+    }
+
+    #[test]
+    fn list_entry_already_present_is_left_alone() {
+        assert_eq!(list_with_entry("['/x/', '/a/']", "/a/"), None);
+        // A longer path that merely contains the value is a different entry.
+        assert!(list_with_entry("['/a/b/']", "/a/").is_some());
     }
 
     #[test]
