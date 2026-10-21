@@ -249,7 +249,10 @@ impl Detector {
 
         let disabled: HashSet<&str> = cfg.disabled_categories.iter().map(|s| s.as_str()).collect();
         let mut all = patterns::builtin_patterns_filtered(&disabled);
-        let (custom, _) = custom::load();
+        let (custom, errs) = custom::load();
+        for e in errs {
+            log::warn!("{e}");
+        }
         all.extend(
             custom
                 .into_iter()
