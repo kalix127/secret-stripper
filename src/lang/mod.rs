@@ -551,6 +551,12 @@ lang_strings! {
         IT => "Impossibile analizzare l'immagine degli appunti. Non è stato incollato nulla.",
         ES => "No se pudo analizar la imagen del portapapeles. No se pegó nada.",
     }
+    cli_ocr_missing {
+        EN => "tesseract is not installed. Install it, or turn off screenshot redaction in 'secret-stripper menu'.",
+        FR => "tesseract n'est pas installé. Installez-le ou désactivez l'expurgation des captures dans 'secret-stripper menu'.",
+        IT => "tesseract non è installato. Installalo o disattiva l'oscuramento degli screenshot in 'secret-stripper menu'.",
+        ES => "tesseract no está instalado. Instálalo o desactiva la redacción de capturas en 'secret-stripper menu'.",
+    }
 
     cli_image_detected_unmappable {
         EN => "Detected a secret in the image but could not locate it to redact. Nothing was pasted.",

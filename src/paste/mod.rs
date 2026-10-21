@@ -47,6 +47,7 @@ enum Plan {
 enum Blocked {
     TooLarge(usize),
     ImageScanFailed,
+    OcrMissing,
     ImageUnmappable,
     NoLocation,
 }
@@ -218,6 +219,7 @@ pub fn run(terminal: bool) -> anyhow::Result<()> {
             let msg = match reason {
                 Blocked::TooLarge(len) => lang.cli_clipboard_too_large(len, MAX_INPUT_BYTES),
                 Blocked::ImageScanFailed => lang.cli_image_scan_failed().to_string(),
+                Blocked::OcrMissing => lang.cli_ocr_missing().to_string(),
                 Blocked::ImageUnmappable => lang.cli_image_detected_unmappable().to_string(),
                 Blocked::NoLocation => lang.cli_secret_without_location().to_string(),
             };
@@ -390,6 +392,9 @@ fn plan_image(detector: &Detector, width: usize, height: usize, bytes: Vec<u8>) 
     use secret_stripper::image_scan::{self, ImageResult, TesseractOcr};
 
     match image_scan::redact_image(&bytes, width as u32, height as u32, &TesseractOcr, detector) {
+        ImageResult::Unavailable if !image_scan::tesseract_installed() => {
+            Plan::Blocked(Blocked::OcrMissing)
+        }
         ImageResult::Unavailable => Plan::Blocked(Blocked::ImageScanFailed),
         ImageResult::NoSecrets => Plan::AsIs {
             scanned_clean: true,
