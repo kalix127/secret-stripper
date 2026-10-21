@@ -58,10 +58,9 @@ pub fn capture_hotkey(
             if std::env::var_os("WAYLAND_DISPLAY").is_some()
                 && !crate::paste::chord_reenters(chord, &config.paste_keys)
             {
-                let key = config.paste_keys.rsplit('+').next().unwrap_or("V").trim();
                 body_lines.push(Line::from(""));
                 body_lines.push(Line::from(Span::styled(
-                    config.lang.hk_warn_slow_paste(key),
+                    config.lang.hk_warn_slow_paste(&config.paste_keys),
                     Style::new().fg(warn()),
                 )));
             }

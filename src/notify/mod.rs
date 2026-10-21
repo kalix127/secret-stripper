@@ -1,8 +1,5 @@
 use crate::config::Config;
 
-// Notifies on a redaction, a paste that did not happen, an available or
-// installed update and a hotkey moved by the 1.x upgrade. With `silent` set, nothing does.
-
 pub fn redacted(count: usize, config: &Config) {
     if config.silent {
         return;
@@ -14,12 +11,9 @@ pub fn redacted(count: usize, config: &Config) {
     ));
 }
 
-/// The hotkey runs in the background, so stderr is invisible: this is the only
-/// way the user learns why nothing was pasted.
+/// Ignores `silent`: the hotkey runs in the background, so stderr is invisible
+/// and this is the only way the user learns why nothing was pasted.
 pub fn not_pasted(config: &Config, reason: &str) {
-    if config.silent {
-        return;
-    }
     show(make_notification(
         config.lang.notify_not_pasted(),
         reason,

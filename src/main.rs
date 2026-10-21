@@ -23,6 +23,9 @@ fn main() -> anyhow::Result<()> {
     let args = cli::Cli::parse();
     setup_logging(&args);
 
+    // Not from `upgrade-check`: systemd runs it without $XDG_CURRENT_DESKTOP,
+    // so the shortcut could not be re-registered. The 1.x shortcut runs
+    // `trigger`, an alias of `paste`, which migrates from the desktop session.
     if matches!(
         args.command,
         cli::Command::Init
@@ -30,7 +33,6 @@ fn main() -> anyhow::Result<()> {
             | cli::Command::Menu
             | cli::Command::Status
             | cli::Command::RegisterShortcut
-            | cli::Command::UpgradeCheck { .. }
     ) {
         migrate::run();
     }

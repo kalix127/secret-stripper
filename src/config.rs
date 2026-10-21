@@ -41,8 +41,9 @@ pub struct Config {
     /// setting `enable_entropy = true` in `config.toml`.
     #[serde(default = "default_enable_entropy")]
     pub enable_entropy: bool,
-    /// Redact secrets visible in a clipboard image (screenshot) via OCR when the
-    /// clipboard holds no text. Off by default; needs the `tesseract` CLI.
+    /// Redact secrets visible in a clipboard image (screenshot) via OCR, unless
+    /// text on the clipboard was already redacted. Off by default; needs the
+    /// `tesseract` CLI.
     #[serde(default = "default_enable_image_scan")]
     pub enable_image_scan: bool,
     pub silent: bool,

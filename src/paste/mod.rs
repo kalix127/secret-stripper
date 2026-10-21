@@ -107,10 +107,14 @@ impl Input {
 }
 
 /// Whether a held `chord` plus the paste keys fires the chord again, which
-/// the second `paste` it launches can report.
+/// the second `paste` it launches can report. The compositor sees the union
+/// of both modifier sets, so that is the chord only when the paste modifiers
+/// are already part of it.
 pub fn chord_reenters(chord: &str, paste_keys: &str) -> bool {
     match (PasteKeys::parse(chord), PasteKeys::parse(paste_keys)) {
-        (Ok(chord), Ok(paste)) => chord.key == paste.key,
+        (Ok(chord), Ok(paste)) => {
+            chord.key == paste.key && paste.modifiers.iter().all(|m| chord.modifiers.contains(m))
+        }
         _ => false,
     }
 }
@@ -345,22 +349,30 @@ fn plan(reader: &mut ClipboardReader, config: &Config) -> Plan {
 
     // Text first: apps such as spreadsheets offer a cell as both text and an
     // image, and the text is what a text field pastes.
-    let Some(text) = reader.read_text().filter(|t| !t.is_empty()) else {
-        return match reader.read_image() {
-            Some((width, height, bytes)) if config.enable_image_scan => {
-                plan_image(&detector, width, height, bytes)
-            }
-            _ => Plan::AsIs {
-                scanned_clean: false,
-            },
-        };
+    let text_plan = match reader.read_text().filter(|t| !t.is_empty()) {
+        Some(text) if text.len() > MAX_INPUT_BYTES => {
+            return Plan::Blocked(Blocked::TooLarge(text.len()))
+        }
+        // Best-effort zeroization for buffers we own. arboard hands us a
+        // String we cannot zero from outside, so anything before this point
+        // may linger.
+        Some(text) => Some(plan_text(&detector, config, Zeroizing::new(text))),
+        None => None,
     };
-    if text.len() > MAX_INPUT_BYTES {
-        return Plan::Blocked(Blocked::TooLarge(text.len()));
+    let text_is_clean = matches!(text_plan, None | Some(Plan::AsIs { .. }));
+    if !config.enable_image_scan || !text_is_clean {
+        return text_plan.unwrap_or(Plan::AsIs {
+            scanned_clean: false,
+        });
     }
-    // Best-effort zeroization for buffers we own. arboard hands us a String we
-    // cannot zero from outside, so anything before this point may linger.
-    plan_text(&detector, config, Zeroizing::new(text))
+    // Clean text does not cover an image offered next to it: an app that
+    // prefers the image would paste it unscanned.
+    match reader.read_image() {
+        Some((width, height, bytes)) => plan_image(&detector, width, height, bytes),
+        None => text_plan.unwrap_or(Plan::AsIs {
+            scanned_clean: false,
+        }),
+    }
 }
 
 fn plan_image(detector: &Detector, width: usize, height: usize, bytes: Vec<u8>) -> Plan {
@@ -479,9 +491,11 @@ mod tests {
     }
 
     #[test]
-    fn chord_reenters_only_on_the_paste_key() {
+    fn chord_reenters_when_it_holds_the_paste_keys() {
         assert!(chord_reenters("Ctrl+Alt+V", "Ctrl+V"));
-        assert!(chord_reenters("super+alt+v", "Ctrl+Shift+V"));
+        assert!(chord_reenters("ctrl+alt+shift+v", "Ctrl+Shift+V"));
+        assert!(!chord_reenters("Super+Alt+V", "Ctrl+V"));
+        assert!(!chord_reenters("super+alt+shift+v", "Ctrl+Shift+V"));
         assert!(!chord_reenters("Ctrl+Alt+P", "Ctrl+V"));
         assert!(!chord_reenters("Ctrl+Alt+F5", "Ctrl+V"));
         assert!(!chord_reenters("Ctrl+Alt+V", "Shift+Insert"));

@@ -418,25 +418,31 @@ fn register_kde(chord: &str) -> Result<()> {
         if !status.success() {
             return Err(anyhow!("{} exited with status {}", kwc, status));
         }
-
-        let component = kde_component_path(entry.kde_desktop_file);
-        for tool in ["qdbus6", "qdbus-qt6", "qdbus"] {
-            let r = Command::new(tool)
-                .args([
-                    "org.kde.kglobalaccel",
-                    &component,
-                    "org.kde.kglobalaccel.Component.cleanUp",
-                ])
-                .status();
-            if let Ok(s) = r {
-                if s.success() {
-                    break;
-                }
-            }
-        }
+        kde_clean_up(entry.kde_desktop_file);
     }
 
     Ok(())
+}
+
+/// Make the running kglobalaccel drop shortcuts it still holds for this entry;
+/// otherwise a removed or changed binding keeps grabbing its chord until
+/// re-login.
+fn kde_clean_up(desktop_file: &str) {
+    let component = kde_component_path(desktop_file);
+    for tool in ["qdbus6", "qdbus-qt6", "qdbus"] {
+        let r = Command::new(tool)
+            .args([
+                "org.kde.kglobalaccel",
+                &component,
+                "org.kde.kglobalaccel.Component.cleanUp",
+            ])
+            .status();
+        if let Ok(s) = r {
+            if s.success() {
+                break;
+            }
+        }
+    }
 }
 
 fn unregister_kde() -> Result<()> {
@@ -464,6 +470,7 @@ fn remove_kde_entry(name: &str) {
             ])
             .status();
     }
+    kde_clean_up(name);
 }
 
 fn hyprland_dir() -> Result<PathBuf> {

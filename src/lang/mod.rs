@@ -1001,10 +1001,10 @@ lang_strings! {
         ES => "¿Te gusta Secret Stripper? Danos una estrella en GitHub",
     }
     help_notifications {
-        EN => "Turn desktop notifications on or off: redactions, failed pastes and updates",
-        FR => "Activer ou désactiver les notifications : expurgations, collages échoués et mises à jour",
-        IT => "Attiva o disattiva le notifiche: oscuramenti, incolla non riusciti e aggiornamenti",
-        ES => "Activa o desactiva las notificaciones: redacciones, pegados fallidos y actualizaciones",
+        EN => "Turn desktop notifications on or off: redactions and updates (failed pastes always notify)",
+        FR => "Activer ou désactiver les notifications : expurgations et mises à jour (les collages échoués notifient toujours)",
+        IT => "Attiva o disattiva le notifiche: oscuramenti e aggiornamenti (gli incolla non riusciti notificano sempre)",
+        ES => "Activa o desactiva las notificaciones: redacciones y actualizaciones (los pegados fallidos siempre notifican)",
     }
     help_rebind_hotkey {
         EN => "Change the keyboard shortcut that pastes a redacted copy",
@@ -1630,11 +1630,11 @@ lang_strings! {
         IT => "  Tieni premuti uno o più modificatori (Ctrl, Alt, Shift, Super) e premi un tasto.",
         ES => "  Mantén uno o más modificadores (Ctrl, Alt, Shift, Super) y pulsa una tecla.",
     }
-    hk_warn_slow_paste(key: &str,) {
-        EN => format!("  On Wayland, chords that do not end in {} paste after a short delay, so you can release the keys.", key),
-        FR => format!("  Sous Wayland, les combinaisons qui ne finissent pas par {} collent après un court délai, le temps de relâcher les touches.", key),
-        IT => format!("  Su Wayland, le combinazioni che non finiscono con {} incollano dopo una breve attesa, per darti il tempo di rilasciare i tasti.", key),
-        ES => format!("  En Wayland, las combinaciones que no terminan en {} pegan tras una breve espera, para que puedas soltar las teclas.", key),
+    hk_warn_slow_paste(keys: &str,) {
+        EN => format!("  On Wayland, chords that do not include {} paste after a short delay, so you can release the keys.", keys),
+        FR => format!("  Sous Wayland, les combinaisons qui ne contiennent pas {} collent après un court délai, le temps de relâcher les touches.", keys),
+        IT => format!("  Su Wayland, le combinazioni che non contengono {} incollano dopo una breve attesa, per darti il tempo di rilasciare i tasti.", keys),
+        ES => format!("  En Wayland, las combinaciones que no contienen {} pegan tras una breve espera, para que puedas soltar las teclas.", keys),
     }
     hk_terminal(chord: &str,) {
         EN => format!("  Terminals: {} (added automatically)", chord),
