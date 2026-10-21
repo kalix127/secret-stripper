@@ -1,4 +1,4 @@
-name: 🔍 Missing pattern
+name: Missing pattern
 description: Report a secret or PII format that Secret Stripper fails to redact
 title: "pattern: "
 labels: ["pattern-request"]
