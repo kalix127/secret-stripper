@@ -37,14 +37,12 @@ pub struct Config {
     pub enable_deep_scan: bool,
     /// Shannon-entropy scanner. Off by default - the named-pattern catalogue
     /// covers the high-precision cases; entropy is a safety net for unknown
-    /// secret shapes that costs a moderate false-positive rate. Users can
-    /// flip it on from the menu or by setting `enable_entropy = true` in
-    /// `config.toml`. `serde(default)` matches the new-install default so a
-    /// config.toml missing the field also loads as off.
+    /// secret shapes that costs a moderate false-positive rate. Turned on by
+    /// setting `enable_entropy = true` in `config.toml`.
     #[serde(default = "default_enable_entropy")]
     pub enable_entropy: bool,
     /// Redact secrets visible in a clipboard image (screenshot) via OCR when the
-    /// clipboard holds no text. On by default; needs the `tesseract` CLI present.
+    /// clipboard holds no text. Off by default; needs the `tesseract` CLI.
     #[serde(default = "default_enable_image_scan")]
     pub enable_image_scan: bool,
     pub silent: bool,

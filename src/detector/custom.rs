@@ -62,11 +62,8 @@ pub fn load_specs() -> Vec<CustomPatternSpec> {
     }
 }
 
-/// Process-level mtime cache for `patterns.toml`. Every TUI preview repaint
-/// and every `secret-stripper trigger` invocation goes through `load()`; with
-/// no cache that's a `fs::read_to_string` + TOML parse + `RegexBuilder::build`
-/// per custom row, every time. The cache reuses the prior `(patterns, errs)`
-/// when the file's mtime and size match what we last saw.
+/// Process-level cache for `patterns.toml`, reused while the file's mtime and
+/// size are unchanged, so repeated `load()` calls skip the parse and compile.
 struct CustomCache {
     mtime: SystemTime,
     len: u64,
@@ -78,8 +75,8 @@ static CACHE: Mutex<Option<CustomCache>> = Mutex::new(None);
 /// Build runtime patterns from the file. Invalid-regex rows are skipped and
 /// reported. Strings are leaked to `&'static str` to satisfy
 /// `SecretPattern`'s field types; the leak is bounded by the cache (a handful
-/// of custom rows, refreshed only when the file changes) and the process
-/// exits after each trigger, so the leaked memory is reclaimed.
+/// of custom rows, refreshed only when the file changes) and `paste` exits
+/// after each run, so the leaked memory is reclaimed.
 pub fn load() -> (Vec<SecretPattern>, Vec<String>) {
     let p = path();
     let meta = fs::metadata(&p).ok();

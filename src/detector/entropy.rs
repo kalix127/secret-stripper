@@ -44,8 +44,7 @@ pub fn find_high_entropy_strings(
             end = idx + ch.len_utf8();
             it.next();
         }
-        // token_len stays a *byte* length (String::len was bytes) so the
-        // min/max thresholds behave exactly as before for non-ASCII tokens.
+        // Thresholds are in bytes, not chars, for non-ASCII tokens too.
         let token = &text[start..end];
         let token_len = token.len();
         if token_len >= min_len && token_len <= max_len {

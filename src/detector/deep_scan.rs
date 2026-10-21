@@ -374,9 +374,8 @@ fn scan_vendor_host_secrets(text: &str) -> Vec<DeepFinding> {
             let window = &text[line_start..win_end];
 
             for s in entry.shape.find_iter(window) {
-                // Cannot realistically overflow (clipboard is capped at 1 MB
-                // in run_trigger); saturating_add removes the latent UB under
-                // panic="abort" if that invariant ever changes.
+                // Input is capped at 1 MiB, so this cannot overflow;
+                // saturating_add keeps it safe if the cap ever changes.
                 let abs_start = line_start.saturating_add(s.start());
                 let abs_end = line_start.saturating_add(s.end());
                 // Skip a shape that is actually (part of) the anchor itself,
