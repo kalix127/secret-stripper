@@ -317,7 +317,7 @@ pub fn run_upgrade_check(auto_install_flag: bool) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let do_install = auto_install_flag || config.auto_install;
+    let installed = (auto_install_flag || config.auto_install) && install(&agent, &release, &tag);
 
     // The timer fires on login and daily; this guard also covers repeated
     // logins and manual runs, so at most one notice per 24h.
@@ -325,22 +325,27 @@ pub fn run_upgrade_check(auto_install_flag: bool) -> anyhow::Result<()> {
     let due = config
         .last_update_notice
         .is_none_or(|last| now - last >= chrono::Duration::hours(24));
-    if due && !config.silent {
-        notify::update_available(&config, env!("CARGO_PKG_VERSION"), &tag);
+    if (due || installed) && !config.silent {
+        if installed {
+            notify::update_installed(&config, &tag);
+        } else {
+            notify::update_available(&config, env!("CARGO_PKG_VERSION"), &tag);
+        }
         let mut updated = Config::load();
         updated.last_update_notice = Some(now);
         let _ = updated.save();
     }
 
-    if !do_install {
-        return Ok(());
-    }
+    Ok(())
+}
 
+/// Download, verify and swap in `tag`'s binary; false when any step fails.
+fn install(agent: &ureq::Agent, release: &Value, tag: &str) -> bool {
     let current_exe = match std::env::current_exe() {
         Ok(p) => p,
         Err(e) => {
             log::debug!("upgrade-check: current_exe failed: {}", e);
-            return Ok(());
+            return false;
         }
     };
 
@@ -352,24 +357,28 @@ pub fn run_upgrade_check(auto_install_flag: bool) -> anyhow::Result<()> {
                 std::env::consts::OS,
                 std::env::consts::ARCH
             );
-            return Ok(());
+            return false;
         }
     };
     let asset_name = format!("secret-stripper-{}", suffix);
-    let url = match resolve_asset_url(&release, &asset_name) {
+    let url = match resolve_asset_url(release, &asset_name) {
         Some(u) => u,
         None => {
             log::debug!("upgrade-check: asset {} missing in {}", asset_name, tag);
-            return Ok(());
+            return false;
         }
     };
 
-    match download_and_swap(&agent, &url, &asset_name, &release, &current_exe) {
-        Ok(_) => log::debug!("upgrade-check: installed {}", tag),
-        Err(e) => log::debug!("upgrade-check: install failed: {}", e),
+    match download_and_swap(agent, &url, &asset_name, release, &current_exe) {
+        Ok(_) => {
+            log::debug!("upgrade-check: installed {}", tag);
+            true
+        }
+        Err(e) => {
+            log::debug!("upgrade-check: install failed: {}", e);
+            false
+        }
     }
-
-    Ok(())
 }
 
 const TIMER_NAME: &str = "secret-stripper-update-check.timer";

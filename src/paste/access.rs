@@ -19,7 +19,7 @@ const COMMANDS: [&str; 3] = [
     "udevadm trigger --settle --action=change --sysname-match=uinput",
 ];
 
-fn writable() -> bool {
+pub fn writable() -> bool {
     OpenOptions::new().write(true).open(DEVICE_PATH).is_ok()
 }
 

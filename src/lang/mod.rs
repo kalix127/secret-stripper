@@ -305,10 +305,24 @@ lang_strings! {
     }
 
     update_available_body(current: &str, latest: &str,) {
-        EN => format!("Version {} is out (you have {}). Run 'secret-stripper upgrade' to install.", latest, current),
-        FR => format!("La version {} est sortie (vous avez {}). Lancez 'secret-stripper upgrade' pour l'installer.", latest, current),
-        IT => format!("È disponibile la versione {} (la tua è {}). Esegui 'secret-stripper upgrade' per installarla.", latest, current),
-        ES => format!("La versión {} está disponible (tu versión es {}). Ejecuta 'secret-stripper upgrade' para instalarla.", latest, current),
+        EN => format!("Version {} is out (you have {}). Run 'secret-stripper upgrade' to install, with sudo if it is in /usr/local/bin.", latest, current),
+        FR => format!("La version {} est sortie (vous avez {}). Lancez 'secret-stripper upgrade' pour l'installer, avec sudo s'il est dans /usr/local/bin.", latest, current),
+        IT => format!("È disponibile la versione {} (la tua è {}). Esegui 'secret-stripper upgrade' per installarla, con sudo se è in /usr/local/bin.", latest, current),
+        ES => format!("La versión {} está disponible (tu versión es {}). Ejecuta 'secret-stripper upgrade' para instalarla, con sudo si está en /usr/local/bin.", latest, current),
+    }
+
+    update_installed_title {
+        EN => "Secret Stripper updated",
+        FR => "Secret Stripper mis à jour",
+        IT => "Secret Stripper aggiornato",
+        ES => "Secret Stripper actualizado",
+    }
+
+    update_installed_body(version: &str,) {
+        EN => format!("Version {} is installed and used from the next paste.", version),
+        FR => format!("La version {} est installée et servira dès le prochain collage.", version),
+        IT => format!("La versione {} è installata e verrà usata dal prossimo incolla.", version),
+        ES => format!("La versión {} está instalada y se usará desde el próximo pegado.", version),
     }
 
     // ---- Shared field labels (init / menu) ----
@@ -331,10 +345,10 @@ lang_strings! {
         ES => "Atajo",
     }
     lbl_de_binding {
-        EN => "DE binding",
-        FR => "Liaison DE",
-        IT => "Associazione DE",
-        ES => "Vínculo DE",
+        EN => "Desktop shortcut",
+        FR => "Raccourci du bureau",
+        IT => "Scorciatoia desktop",
+        ES => "Atajo del escritorio",
     }
     lbl_sensitivity {
         EN => "Sensitivity",
@@ -390,6 +404,36 @@ lang_strings! {
         IT => "Percorso configurazione",
         ES => "Ruta de configuración",
     }
+    lbl_terminal_chord {
+        EN => "Terminal hotkey",
+        FR => "Raccourci terminal",
+        IT => "Scorciatoia terminale",
+        ES => "Atajo de terminal",
+    }
+    lbl_desktop {
+        EN => "Desktop",
+        FR => "Bureau",
+        IT => "Desktop",
+        ES => "Escritorio",
+    }
+    lbl_session {
+        EN => "Session",
+        FR => "Session",
+        IT => "Sessione",
+        ES => "Sesión",
+    }
+    lbl_uinput_access {
+        EN => "uinput access",
+        FR => "Accès uinput",
+        IT => "Accesso uinput",
+        ES => "Acceso a uinput",
+    }
+    uinput_state(ok: bool,) {
+        EN => if ok { "yes".to_string() } else { "no, run 'secret-stripper init'".to_string() },
+        FR => if ok { "oui".to_string() } else { "non, lancez 'secret-stripper init'".to_string() },
+        IT => if ok { "sì".to_string() } else { "no, esegui 'secret-stripper init'".to_string() },
+        ES => if ok { "sí".to_string() } else { "no, ejecuta 'secret-stripper init'".to_string() },
+    }
     status_title {
         EN => "Secret Stripper Status",
         FR => "État de Secret Stripper",
@@ -431,16 +475,40 @@ lang_strings! {
 
     // ---- CLI: uninstall ----
     cli_uninstall_done {
-        EN => "Secret Stripper fully removed.",
-        FR => "Secret Stripper entièrement supprimé.",
-        IT => "Secret Stripper rimosso completamente.",
-        ES => "Secret Stripper eliminado por completo.",
+        EN => "Secret Stripper settings removed.",
+        FR => "Paramètres de Secret Stripper supprimés.",
+        IT => "Impostazioni di Secret Stripper rimosse.",
+        ES => "Configuración de Secret Stripper eliminada.",
     }
     cli_uninstall_de_cleared {
-        EN => "  - DE shortcut binding: cleared",
-        FR => "  - Liaison du raccourci DE : supprimée",
-        IT => "  - Associazione scorciatoia DE: rimossa",
-        ES => "  - Vínculo de atajo DE: eliminado",
+        EN => "  - Keyboard shortcut: removed",
+        FR => "  - Raccourci clavier : supprimé",
+        IT => "  - Scorciatoia da tastiera: rimossa",
+        ES => "  - Atajo de teclado: eliminado",
+    }
+    cli_uninstall_de_failed(err: &str,) {
+        EN => format!("  - Keyboard shortcut: not removed ({}); delete it in your desktop's keyboard settings", err),
+        FR => format!("  - Raccourci clavier : non supprimé ({}) ; supprimez-le dans les paramètres clavier du bureau", err),
+        IT => format!("  - Scorciatoia da tastiera: non rimossa ({}); eliminala nelle impostazioni tastiera del desktop", err),
+        ES => format!("  - Atajo de teclado: no eliminado ({}); bórralo en la configuración de teclado del escritorio", err),
+    }
+    cli_uninstall_timer_removed {
+        EN => "  - Update check timer: removed",
+        FR => "  - Minuteur de vérification des mises à jour : supprimé",
+        IT => "  - Timer di controllo aggiornamenti: rimosso",
+        ES => "  - Temporizador de comprobación de actualizaciones: eliminado",
+    }
+    cli_uninstall_timer_failed(err: &str,) {
+        EN => format!("  - Update check timer: not removed ({})", err),
+        FR => format!("  - Minuteur de vérification des mises à jour : non supprimé ({})", err),
+        IT => format!("  - Timer di controllo aggiornamenti: non rimosso ({})", err),
+        ES => format!("  - Temporizador de comprobación de actualizaciones: no eliminado ({})", err),
+    }
+    cli_uninstall_binary_left(exe: &str,) {
+        EN => format!("The program itself stays at {}; delete it to finish.", exe),
+        FR => format!("Le programme reste dans {} ; supprimez-le pour terminer.", exe),
+        IT => format!("Il programma resta in {}; eliminalo per completare.", exe),
+        ES => format!("El programa sigue en {}; bórralo para terminar.", exe),
     }
     cli_uninstall_nothing {
         EN => "  - Config dir: nothing to clean",
@@ -479,6 +547,12 @@ lang_strings! {
         FR => format!("Solution : liez '{} paste' manuellement à {} dans les paramètres clavier de votre bureau.", exe, hotkey),
         IT => format!("Soluzione: associa manualmente '{} paste' a {} nelle impostazioni della tastiera del desktop.", exe, hotkey),
         ES => format!("Solución: vincula '{} paste' manualmente a {} en la configuración de teclado de tu escritorio.", exe, hotkey),
+    }
+    cli_register_workaround_terminal(exe: &str, chord: &str,) {
+        EN => format!("For terminals, also bind '{} paste --terminal' to {}.", exe, chord),
+        FR => format!("Pour les terminaux, liez aussi '{} paste --terminal' à {}.", exe, chord),
+        IT => format!("Per i terminali, associa anche '{} paste --terminal' a {}.", exe, chord),
+        ES => format!("Para terminales, vincula también '{} paste --terminal' a {}.", exe, chord),
     }
     cli_bind_examples {
         EN => "Example config lines:",
@@ -643,11 +717,23 @@ lang_strings! {
         IT => "Bilanciato",
         ES => "Equilibrado",
     }
-    deep_scan_on_desc {
-        EN => "on (8 heuristic scanners)",
-        FR => "activé (8 scanners heuristiques)",
-        IT => "attivo (8 scanner euristici)",
-        ES => "activado (8 escáneres heurísticos)",
+    deep_scan_state_desc(on: bool,) {
+        EN => format!(
+            "{} (11 heuristic scanners)",
+            if on { "on" } else { "off" }
+        ),
+        FR => format!(
+            "{} (11 scanners heuristiques)",
+            if on { "activé" } else { "désactivé" }
+        ),
+        IT => format!(
+            "{} (11 scanner euristici)",
+            if on { "attivo" } else { "disattivo" }
+        ),
+        ES => format!(
+            "{} (11 escáneres heurísticos)",
+            if on { "activado" } else { "desactivado" }
+        ),
     }
     entropy_state_desc(on: bool,) {
         EN => format!(
@@ -673,11 +759,11 @@ lang_strings! {
         IT => format!("{} (commuta tramite 'secret-stripper menu')", if silent { "silenzioso" } else { "attive, per oscuramenti e aggiornamenti" }),
         ES => format!("{} (alternar con 'secret-stripper menu')", if silent { "silencioso" } else { "activadas, para redacciones y actualizaciones" }),
     }
-    cli_terminal_hint(chord: &str,) {
-        EN => format!("In a terminal, press {} instead (it sends Ctrl+Shift+V).", chord),
-        FR => format!("Dans un terminal, appuyez plutôt sur {} (il envoie Ctrl+Shift+V).", chord),
-        IT => format!("In un terminale, premi invece {} (invia Ctrl+Shift+V).", chord),
-        ES => format!("En una terminal, pulsa {} en su lugar (envía Ctrl+Shift+V).", chord),
+    cli_terminal_hint(chord: &str, keys: &str,) {
+        EN => format!("In a terminal, press {} instead (it sends {}).", chord, keys),
+        FR => format!("Dans un terminal, appuyez plutôt sur {} (il envoie {}).", chord, keys),
+        IT => format!("In un terminale, premi invece {} (invia {}).", chord, keys),
+        ES => format!("En una terminal, pulsa {} en su lugar (envía {}).", chord, keys),
     }
     cli_init_usage(hotkey: &str,) {
         EN => format!("Ctrl+C / Ctrl+V work as usual. Press {} to paste a redacted copy of the clipboard.", hotkey),
@@ -710,10 +796,10 @@ lang_strings! {
         ES => format!("{} (disponible)", key),
     }
     hk_fallback(active: &str, preferred: &str,) {
-        EN => format!("{} (fallback: {} was unavailable)", active, preferred),
-        FR => format!("{} (repli : {} était indisponible)", active, preferred),
-        IT => format!("{} (ripiego: {} non disponibile)", active, preferred),
-        ES => format!("{} (alternativa: {} no estaba disponible)", active, preferred),
+        EN => format!("{} (fallback: {} was invalid)", active, preferred),
+        FR => format!("{} (repli : {} était invalide)", active, preferred),
+        IT => format!("{} (ripiego: {} non valida)", active, preferred),
+        ES => format!("{} (alternativa: {} no era válida)", active, preferred),
     }
     hk_none(tried: &str,) {
         EN => format!("none available (tried {})", tried),
@@ -924,10 +1010,10 @@ lang_strings! {
         ES => "¿Te gusta Secret Stripper? Danos una estrella en GitHub",
     }
     help_notifications {
-        EN => "Turn desktop notifications on or off when a secret is redacted",
-        FR => "Activer ou désactiver les notifications lors d'une expurgation",
-        IT => "Attiva o disattiva le notifiche quando un segreto viene oscurato",
-        ES => "Activa o desactiva las notificaciones al redactar un secreto",
+        EN => "Turn desktop notifications on or off: redactions, failed pastes and updates",
+        FR => "Activer ou désactiver les notifications : expurgations, collages échoués et mises à jour",
+        IT => "Attiva o disattiva le notifiche: oscuramenti, incolla non riusciti e aggiornamenti",
+        ES => "Activa o desactiva las notificaciones: redacciones, pegados fallidos y actualizaciones",
     }
     help_rebind_hotkey {
         EN => "Change the keyboard shortcut that pastes a redacted copy",
@@ -1026,10 +1112,10 @@ lang_strings! {
         ES => "Buscar actualizaciones",
     }
     lbl_uninstall {
-        EN => "Uninstall (remove all)",
-        FR => "Désinstaller (tout supprimer)",
-        IT => "Disinstalla (rimuovi tutto)",
-        ES => "Desinstalar (eliminar todo)",
+        EN => "Uninstall",
+        FR => "Désinstaller",
+        IT => "Disinstalla",
+        ES => "Desinstalar",
     }
     lbl_back {
         EN => "Back",
@@ -1044,10 +1130,10 @@ lang_strings! {
         ES => "Descargar e instalar la última versión de Secret Stripper",
     }
     help_uninstall {
-        EN => "Remove the shortcut, config files, and Secret Stripper data",
-        FR => "Supprimer le raccourci, les fichiers de configuration et les données",
-        IT => "Rimuovi la scorciatoia, i file di configurazione e i dati",
-        ES => "Eliminar el atajo, los archivos de configuración y los datos",
+        EN => "Remove the shortcut, update timer, config and data; the program file stays",
+        FR => "Supprimer le raccourci, le minuteur, la configuration et les données ; le programme reste",
+        IT => "Rimuovi scorciatoia, timer, configurazione e dati; il programma resta",
+        ES => "Eliminar el atajo, el temporizador, la configuración y los datos; el programa se queda",
     }
     help_back {
         EN => "Return to the main menu",
@@ -1495,16 +1581,16 @@ lang_strings! {
         ES => format!("Actualización automática ({})", state),
     }
     help_auto_check {
-        EN => "Check once a day and notify when a new version is available",
-        FR => "Vérifier une fois par jour et notifier si une version est disponible",
-        IT => "Controlla una volta al giorno e notifica se c'è una nuova versione",
-        ES => "Comprobar una vez al día y notificar si hay una versión nueva",
+        EN => "Check at each login and notify, at most once a day, when a new version is out",
+        FR => "Vérifier à chaque connexion et notifier, au plus une fois par jour, si une version sort",
+        IT => "Controlla a ogni accesso e notifica, al massimo una volta al giorno, se c'è una nuova versione",
+        ES => "Comprobar en cada inicio de sesión y avisar, como mucho una vez al día, si hay una versión nueva",
     }
     help_auto_upgrade {
-        EN => "Also download and install new versions automatically, then notify",
-        FR => "Télécharger et installer aussi les nouvelles versions, puis notifier",
-        IT => "Scarica e installa anche le nuove versioni, poi notifica",
-        ES => "Descargar e instalar también las versiones nuevas y notificar",
+        EN => "Also install new versions automatically; needs a binary your user can write",
+        FR => "Installer aussi les nouvelles versions ; le binaire doit être modifiable par votre utilisateur",
+        IT => "Installa anche le nuove versioni; il binario deve essere scrivibile dal tuo utente",
+        ES => "Instalar también las versiones nuevas; el binario debe poder escribirlo tu usuario",
     }
     mi_checking {
         EN => "Checking for updates...",

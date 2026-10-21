@@ -101,8 +101,8 @@ fn run_menu() -> anyhow::Result<()> {
 
 fn run_uninstall() -> anyhow::Result<()> {
     let lang = lang::Lang::active();
-    let _ = shortcut::unregister();
-    let _ = updater::uninstall_update_check_timer();
+    let shortcut_result = shortcut::unregister();
+    let timer_result = updater::uninstall_update_check_timer();
 
     // Trim our managed alias block from the user's shell rc. Best effort:
     // unknown shell, missing rc, or unreadable rc just skips silently.
@@ -118,13 +118,26 @@ fn run_uninstall() -> anyhow::Result<()> {
     let removed = config::purge_config_dir();
 
     println!("{}", lang.cli_uninstall_done());
-    println!("{}", lang.cli_uninstall_de_cleared());
+    match shortcut_result {
+        Ok(()) => println!("{}", lang.cli_uninstall_de_cleared()),
+        Err(e) => println!("{}", lang.cli_uninstall_de_failed(&e.to_string())),
+    }
+    match timer_result {
+        Ok(()) => println!("{}", lang.cli_uninstall_timer_removed()),
+        Err(e) => println!("{}", lang.cli_uninstall_timer_failed(&e.to_string())),
+    }
     if removed.is_empty() {
         println!("{}", lang.cli_uninstall_nothing());
     } else {
         println!("{}", lang.cli_uninstall_files(&removed.join(", ")));
     }
     paste::access::print_uninstall_hint(lang);
+    if let Ok(exe) = std::env::current_exe() {
+        println!(
+            "{}",
+            lang.cli_uninstall_binary_left(&exe.display().to_string())
+        );
+    }
     println!();
     println!("{}", lang.cli_run_init_again());
     Ok(())
@@ -141,7 +154,7 @@ fn run_register_shortcut() -> anyhow::Result<()> {
         Ok(backend) => {
             println!("{}", lang.shortcut_bound(&backend, &config.hotkey));
             println!("{}", lang.cli_press_to_paste(&config.hotkey));
-            print_terminal_hint(lang, &config.hotkey);
+            print_terminal_hint(&config);
         }
         Err(e) => {
             eprintln!("{}", lang.cli_register_failed(&e.to_string()));
@@ -151,9 +164,14 @@ fn run_register_shortcut() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn print_terminal_hint(lang: lang::Lang, chord: &str) {
-    if let Some(terminal) = hotkey::terminal_chord(chord) {
-        println!("{}", lang.cli_terminal_hint(&terminal));
+fn print_terminal_hint(config: &Config) {
+    if let Some(terminal) = hotkey::terminal_chord(&config.hotkey) {
+        println!(
+            "{}",
+            config
+                .lang
+                .cli_terminal_hint(&terminal, &config.terminal_paste_keys)
+        );
     }
 }
 
@@ -163,6 +181,9 @@ fn print_manual_bind(lang: lang::Lang, chord: &str) {
         .map(|p| p.display().to_string())
         .unwrap_or_else(|_| "secret-stripper".to_string());
     println!("{}", lang.cli_register_workaround(&exe, chord));
+    if let Some(terminal) = hotkey::terminal_chord(chord) {
+        println!("{}", lang.cli_register_workaround_terminal(&exe, &terminal));
+    }
     let examples = shortcut::manual_examples(&exe, chord);
     if !examples.is_empty() {
         println!("{}", lang.cli_bind_examples());
@@ -224,7 +245,7 @@ fn run_init() -> anyhow::Result<()> {
             ]);
             println!();
             if register_result.is_ok() {
-                print_terminal_hint(lang, &existing.hotkey);
+                print_terminal_hint(&existing);
                 println!();
             }
             if register_result.is_err() {
@@ -280,7 +301,10 @@ fn run_init() -> anyhow::Result<()> {
             format!("{} ({})", config.sensitivity, lang.sensitivity_balanced()),
         ),
         (lang.lbl_redact_as(), format!("'{}'", config.redact_pattern)),
-        (lang.lbl_deep_scan(), lang.deep_scan_on_desc().to_string()),
+        (
+            lang.lbl_deep_scan(),
+            lang.deep_scan_state_desc(config.enable_deep_scan),
+        ),
         (
             lang.lbl_entropy(),
             lang.entropy_state_desc(config.enable_entropy),
@@ -302,7 +326,7 @@ fn run_init() -> anyhow::Result<()> {
     paste::access::setup(lang);
     if outcome.active.is_some() {
         println!("{}", lang.cli_init_usage(&config.hotkey));
-        print_terminal_hint(lang, &config.hotkey);
+        print_terminal_hint(&config);
     } else {
         eprintln!("{}", lang.cli_warn_no_hotkey());
         if let Some(err) = outcome.last_error {
@@ -363,9 +387,26 @@ fn print_status() -> anyhow::Result<()> {
     let lang = lang::Lang::active();
     println!("{}", lang.status_title());
     println!("===================");
-    print_aligned(&[
+    let wayland = std::env::var_os("WAYLAND_DISPLAY").is_some();
+    let mut rows = vec![
         (lang.lbl_hotkey(), config.hotkey.clone()),
-        (lang.lbl_de_binding(), shortcut::detect_desktop()),
+        (
+            lang.lbl_terminal_chord(),
+            hotkey::terminal_chord(&config.hotkey).unwrap_or_else(|| "-".to_string()),
+        ),
+        (lang.lbl_desktop(), shortcut::detect_desktop()),
+        (
+            lang.lbl_session(),
+            if wayland { "Wayland" } else { "X11" }.to_string(),
+        ),
+    ];
+    if wayland {
+        rows.push((
+            lang.lbl_uinput_access(),
+            lang.uinput_state(paste::access::writable()),
+        ));
+    }
+    rows.extend([
         (lang.lbl_sensitivity(), config.sensitivity.to_string()),
         (lang.lbl_silent(), config.silent.to_string()),
         (
@@ -374,9 +415,10 @@ fn print_status() -> anyhow::Result<()> {
         ),
         (
             lang.lbl_config_path(),
-            format!("{:?}", config::Config::path()),
+            config::Config::path().display().to_string(),
         ),
     ]);
+    print_aligned(&rows);
 
     Ok(())
 }

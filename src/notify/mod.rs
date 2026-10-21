@@ -1,7 +1,7 @@
 use crate::config::Config;
 
-// Notifies on a redaction, a paste that did not happen, an available update
-// and a hotkey moved by the 1.x upgrade. With `silent` set, nothing does.
+// Notifies on a redaction, a paste that did not happen, an available or
+// installed update and a hotkey moved by the 1.x upgrade. With `silent` set, nothing does.
 
 pub fn redacted(count: usize, config: &Config) {
     if config.silent {
@@ -45,6 +45,17 @@ pub fn update_available(config: &Config, current: &str, latest: &str) {
     show(make_notification(
         config.lang.update_available_title(),
         &config.lang.update_available_body(current, latest),
+        config.notification_timeout_secs,
+    ));
+}
+
+pub fn update_installed(config: &Config, version: &str) {
+    if config.silent {
+        return;
+    }
+    show(make_notification(
+        config.lang.update_installed_title(),
+        &config.lang.update_installed_body(version),
         config.notification_timeout_secs,
     ));
 }

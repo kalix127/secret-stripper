@@ -143,12 +143,12 @@ pub(super) fn register(chord: &str) -> Result<ShortcutBackend> {
         Ok(ShortcutBackend::Hyprland)
     } else if de.is_empty() {
         Err(anyhow!(
-            "No desktop environment detected ($XDG_CURRENT_DESKTOP is empty). Bind 'secret-stripper paste' to {} via your window manager's config.",
+            "No desktop environment detected ($XDG_CURRENT_DESKTOP is empty). Bind 'secret-stripper paste' to {} and 'secret-stripper paste --terminal' to the same chord plus Shift via your window manager's config.",
             chord
         ))
     } else {
         Err(anyhow!(
-            "Auto-binding for '{}' is not implemented. Bind 'secret-stripper paste' to {} via your desktop's shortcut settings.",
+            "Auto-binding for '{}' is not implemented. Bind 'secret-stripper paste' to {} and 'secret-stripper paste --terminal' to the same chord plus Shift via your desktop's shortcut settings.",
             de, chord
         ))
     }
