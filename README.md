@@ -155,12 +155,12 @@ regex = "itk_[A-Za-z0-9]{32}"
 
 Pick how secrets are replaced in `secret-stripper menu` -> **Redaction Style**:
 
-| Style | Output for `aws=AKIAIOSFODNN7EXAMPLE` |
+| Style | Output for `aws=AKIAQ7X2M4K9P3R6TB5Z` |
 |-------|----------------------------------------|
 | **Marker** (default) | `aws=[REDACTED]`, with a configurable marker |
 | **Drop** | `aws=`, the secret is removed |
 | **Typed** | `aws=[AWS_ACCESS_KEY_ID]`, a tag named after the pattern |
-| **Placeholder** | a realistic fake value of the same kind, for example `user@example.com` for an email |
+| **Placeholder** | `aws=AKIAIOSFODNN7EXAMPLE`, a well-known fake value of the same kind (AWS's documented example key here, `user@example.com` for an email) |
 
 The same setting applies to the hotkey, the `redact` command and `paste-guard`.
 
