@@ -20,13 +20,19 @@ detect() {
         *)
             printf "Unsupported OS: %s. Secret Stripper supports Linux only.\n" \
                 "$(uname -s)" >&2
+            printf "The last macOS release is 1.5.2: %s\n" \
+                "https://github.com/${REPO}/releases/tag/v1.5.2" >&2
             exit 1
             ;;
     esac
     case "$(uname -m)" in
         x86_64|amd64) arch="x86_64" ;;
         aarch64|arm64) arch="aarch64" ;;
-        *)            arch="x86_64" ;;
+        *)
+            printf "Unsupported CPU: %s. Release builds are x86_64 and aarch64.\n" \
+                "$(uname -m)" >&2
+            exit 1
+            ;;
     esac
     printf 'linux-%s' "$arch"
 }
@@ -94,6 +100,7 @@ main() {
 
     chmod +x "$tmp"
 
+    printf "  ${YELLOW}[~]${NC} Installing to /usr/local/bin (sudo may ask for your password; if it fails, ~/.local/bin is used)\n"
     if sudo mv "$tmp" /usr/local/bin/secret-stripper 2>/dev/null; then
         bin_path="/usr/local/bin/secret-stripper"
     else
@@ -106,6 +113,14 @@ main() {
         esac
     fi
     printf "  ${GREEN}[OK]${NC} Installed to ${bin_path}\n\n"
+
+    # An older copy earlier in PATH would shadow the new binary.
+    local on_path
+    on_path=$(command -v secret-stripper 2>/dev/null || true)
+    if [ -n "$on_path" ] && [ "$on_path" != "$bin_path" ]; then
+        printf "  ${YELLOW}[!]${NC} %s is another copy and runs first. Remove it: rm %s\n\n" \
+            "$on_path" "$on_path"
+    fi
 
     # init may ask before running sudo; under `curl | bash` stdin is the script.
     local input=/dev/null

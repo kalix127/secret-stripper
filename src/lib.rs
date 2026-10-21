@@ -1,5 +1,8 @@
 #[cfg(not(target_os = "linux"))]
-compile_error!("secret-stripper supports Linux only");
+compile_error!(
+    "secret-stripper 2.x supports Linux only; on macOS and Windows run \
+     `cargo install secret-stripper --version 1.5.2`"
+);
 
 pub mod ai_tui;
 pub mod config;
