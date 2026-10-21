@@ -12,15 +12,15 @@ readme = "README.md"
 keywords = ["clipboard", "secrets", "redaction", "wayland", "x11"]
 categories = ["command-line-utilities", "text-processing"]
 include = [
-    "src/**/*",
-    "Cargo.toml",
-    "Cargo.lock",
-    "LICENSE",
-    "README.md",
-    "SECURITY.md",
-    "CODE_OF_CONDUCT.md",
-    "CONTRIBUTING.md",
-    "DETECTION_COVERAGE.md",
+    "/src/**/*",
+    "/Cargo.toml",
+    "/Cargo.lock",
+    "/LICENSE",
+    "/README.md",
+    "/SECURITY.md",
+    "/CODE_OF_CONDUCT.md",
+    "/CONTRIBUTING.md",
+    "/DETECTION_COVERAGE.md",
 ]
 
 [lib]
