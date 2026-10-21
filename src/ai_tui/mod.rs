@@ -3,15 +3,15 @@ use std::path::PathBuf;
 
 /// One AI TUI tool secret-stripper knows how to wrap with `paste-guard`.
 /// `binary` is the executable name to look up on PATH; `label` is the
-/// human-readable name shown in the init prompt.
+/// human-readable name `paste-guard` prints with the aliases.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AiTui {
     pub binary: &'static str,
     pub label: &'static str,
 }
 
-/// Add a new entry here to teach `init` about another AI TUI. The matching
-/// binary name must be what users actually invoke from a shell prompt.
+/// Add an entry to teach `paste-guard` about another AI TUI. `binary` must be
+/// what users actually invoke from a shell prompt.
 pub const KNOWN: &[AiTui] = &[
     AiTui {
         binary: "claude",

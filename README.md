@@ -184,7 +184,7 @@ It fails closed: if `tesseract` is missing, the image cannot be read, or a secre
 
 ## Auto-redact paste into AI TUIs
 
-`secret-stripper init` looks for AI terminal tools (Claude Code, Codex CLI, aider, Gemini CLI, Continue, opencode) and prints an alias block for your shell config. Each alias runs the tool through `paste-guard`, a PTY wrapper that redacts bracketed pastes before they reach the prompt. Typing and output are untouched.
+`paste-guard` is a PTY wrapper that redacts bracketed pastes before they reach an AI tool's prompt. Typing and output are untouched. It is opt-in: run `secret-stripper paste-guard` with no command to print an alias block for the AI tools on your PATH (Claude Code, Codex CLI, aider, Gemini CLI, Continue, opencode):
 
 ```bash
 # ---- secret-stripper paste-guard ----
@@ -193,7 +193,7 @@ alias codex='secret-stripper paste-guard -- codex'
 # ---- secret-stripper paste-guard ----
 ```
 
-Add the block to `~/.zshrc`, `~/.bashrc` or `~/.config/fish/config.fish` yourself and open a new shell. `init` never edits your shell config; `uninstall` removes the block if it finds it.
+Add the block to `~/.zshrc`, `~/.bashrc` or `~/.config/fish/config.fish` yourself and open a new shell. Secret Stripper never adds it for you; `uninstall` removes it if it finds it. You can wrap any other command the same way: `secret-stripper paste-guard -- psql`.
 
 `paste-guard` only filters pastes into the one command it wraps. It needs a terminal with bracketed paste (all modern ones, including tmux and the VS Code terminal), never changes typed text, and passes pastes over 1 MiB through unredacted.
 
@@ -216,7 +216,7 @@ cat app.log | secret-stripper redact > clean.log
 | `register-shortcut` / `unregister-shortcut` | Bind or remove both shortcuts. |
 | `upgrade` | Download, verify and install the latest release. |
 | `redact` | Redact stdin to stdout. |
-| `paste-guard -- <cmd>` | Run `<cmd>` with pastes redacted. |
+| `paste-guard -- <cmd>` | Run `<cmd>` with pastes redacted. With no command, print the alias block. |
 | `uninstall` | Remove shortcuts, timer, config and the alias block. |
 
 Add `--log-level debug` to any command for details on stderr.

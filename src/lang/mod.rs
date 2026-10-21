@@ -330,12 +330,6 @@ lang_strings! {
         IT => "Configurazione",
         ES => "Configuración",
     }
-    lbl_language {
-        EN => "Language",
-        FR => "Langue",
-        IT => "Lingua",
-        ES => "Idioma",
-    }
     lbl_hotkey {
         EN => "Hotkey",
         FR => "Raccourci",
@@ -354,47 +348,11 @@ lang_strings! {
         IT => "Sensibilità",
         ES => "Sensibilidad",
     }
-    lbl_redact_as {
-        EN => "Redact as",
-        FR => "Masquer par",
-        IT => "Oscura come",
-        ES => "Redactar como",
-    }
-    lbl_deep_scan {
-        EN => "Deep scan",
-        FR => "Analyse approfondie",
-        IT => "Scansione profonda",
-        ES => "Análisis profundo",
-    }
-    lbl_entropy {
-        EN => "Entropy scan",
-        FR => "Analyse d'entropie",
-        IT => "Scansione entropia",
-        ES => "Análisis de entropía",
-    }
-    lbl_notifications {
-        EN => "Notifications",
-        FR => "Notifications",
-        IT => "Notifiche",
-        ES => "Notificaciones",
-    }
-    lbl_notif_timeout {
-        EN => "Notif timeout",
-        FR => "Délai de notification",
-        IT => "Durata notifica",
-        ES => "Tiempo de notificación",
-    }
     lbl_silent {
         EN => "Silent",
         FR => "Silencieux",
         IT => "Silenzioso",
         ES => "Silencioso",
-    }
-    lbl_onboarding_done {
-        EN => "Onboarding done",
-        FR => "Configuration initiale faite",
-        IT => "Configurazione iniziale completata",
-        ES => "Configuración inicial hecha",
     }
     lbl_config_path {
         EN => "Config path",
@@ -431,6 +389,12 @@ lang_strings! {
         FR => if ok { "oui".to_string() } else { "non, lancez 'secret-stripper init'".to_string() },
         IT => if ok { "sì".to_string() } else { "no, esegui 'secret-stripper init'".to_string() },
         ES => if ok { "sí".to_string() } else { "no, ejecuta 'secret-stripper init'".to_string() },
+    }
+    status_not_set_up {
+        EN => "Not set up. Run 'secret-stripper init'.",
+        FR => "Non configuré. Lancez 'secret-stripper init'.",
+        IT => "Non configurato. Esegui 'secret-stripper init'.",
+        ES => "No configurado. Ejecuta 'secret-stripper init'.",
     }
     status_title {
         EN => "Secret Stripper Status",
@@ -633,10 +597,16 @@ lang_strings! {
     }
 
     uinput_intro {
-        EN => "On Wayland, Secret Stripper presses the paste keys through a virtual keyboard (/dev/uinput). Granting your login session access needs root once; these commands run through sudo:",
-        FR => "Sous Wayland, Secret Stripper appuie sur les touches de collage via un clavier virtuel (/dev/uinput). Donner l'accès à votre session nécessite root une seule fois ; ces commandes passent par sudo :",
-        IT => "Su Wayland, Secret Stripper preme i tasti di incolla tramite una tastiera virtuale (/dev/uinput). Dare l'accesso alla tua sessione richiede root una sola volta; questi comandi vengono eseguiti con sudo:",
-        ES => "En Wayland, Secret Stripper pulsa las teclas de pegado mediante un teclado virtual (/dev/uinput). Dar acceso a tu sesión requiere root una sola vez; estos comandos se ejecutan con sudo:",
+        EN => "Pasting on Wayland needs access to /dev/uinput. These commands grant it once, with sudo:",
+        FR => "Coller sous Wayland nécessite l'accès à /dev/uinput. Ces commandes l'accordent une fois, avec sudo :",
+        IT => "Incollare su Wayland richiede l'accesso a /dev/uinput. Questi comandi lo concedono una volta, con sudo:",
+        ES => "Pegar en Wayland requiere acceso a /dev/uinput. Estos comandos lo conceden una vez, con sudo:",
+    }
+    cli_uinput_denied {
+        EN => "No access to /dev/uinput. Run 'secret-stripper init'.",
+        FR => "Pas d'accès à /dev/uinput. Lancez 'secret-stripper init'.",
+        IT => "Nessun accesso a /dev/uinput. Esegui 'secret-stripper init'.",
+        ES => "Sin acceso a /dev/uinput. Ejecuta 'secret-stripper init'.",
     }
     uinput_confirm {
         EN => "Run them now? [Y/n] ",
@@ -680,11 +650,11 @@ lang_strings! {
         IT => format!("La tua sessione ha ancora accesso alla tastiera virtuale. Per revocarlo, esegui: {}", cmd),
         ES => format!("Tu sesión aún tiene acceso al teclado virtual. Para revocarlo, ejecuta: {}", cmd),
     }
-    cli_already_configured(path: &str,) {
-        EN => format!("Secret Stripper is already configured at {}", path),
-        FR => format!("Secret Stripper est déjà configuré dans {}", path),
-        IT => format!("Secret Stripper è già configurato in {}", path),
-        ES => format!("Secret Stripper ya está configurado en {}", path),
+    cli_already_configured {
+        EN => "Secret Stripper is already set up.",
+        FR => "Secret Stripper est déjà configuré.",
+        IT => "Secret Stripper è già configurato.",
+        ES => "Secret Stripper ya está configurado.",
     }
     cli_init_done_hint {
         EN => "Run 'secret-stripper menu' to change settings, or 'secret-stripper uninstall' to start over.",
@@ -693,64 +663,10 @@ lang_strings! {
         ES => "Ejecuta 'secret-stripper menu' para cambiar la configuración, o 'secret-stripper uninstall' para empezar de nuevo.",
     }
     cli_init_header {
-        EN => "Secret Stripper initialized with defaults:",
-        FR => "Secret Stripper initialisé avec les valeurs par défaut :",
-        IT => "Secret Stripper inizializzato con i valori predefiniti:",
-        ES => "Secret Stripper inicializado con valores predeterminados:",
-    }
-    suffix_autodetected {
-        EN => "auto-detected",
-        FR => "détecté automatiquement",
-        IT => "rilevato automaticamente",
-        ES => "detectado automáticamente",
-    }
-    sensitivity_balanced {
-        EN => "Balanced",
-        FR => "Équilibré",
-        IT => "Bilanciato",
-        ES => "Equilibrado",
-    }
-    deep_scan_state_desc(on: bool,) {
-        EN => format!(
-            "{} (11 heuristic scanners)",
-            if on { "on" } else { "off" }
-        ),
-        FR => format!(
-            "{} (11 scanners heuristiques)",
-            if on { "activé" } else { "désactivé" }
-        ),
-        IT => format!(
-            "{} (11 scanner euristici)",
-            if on { "attivo" } else { "disattivo" }
-        ),
-        ES => format!(
-            "{} (11 escáneres heurísticos)",
-            if on { "activado" } else { "desactivado" }
-        ),
-    }
-    entropy_state_desc(on: bool,) {
-        EN => format!(
-            "{} (Shannon-entropy catch-all; edit config.toml)",
-            if on { "on" } else { "off" }
-        ),
-        FR => format!(
-            "{} (filet de sécurité par entropie ; modifier config.toml)",
-            if on { "activé" } else { "désactivé" }
-        ),
-        IT => format!(
-            "{} (rete di sicurezza a entropia; modifica config.toml)",
-            if on { "attivo" } else { "disattivo" }
-        ),
-        ES => format!(
-            "{} (red de seguridad por entropía; editar config.toml)",
-            if on { "activado" } else { "desactivado" }
-        ),
-    }
-    notif_state_hint(silent: bool,) {
-        EN => format!("{} (toggle via 'secret-stripper menu')", if silent { "silent" } else { "on, for redactions and updates" }),
-        FR => format!("{} (basculer via 'secret-stripper menu')", if silent { "silencieux" } else { "activées, pour les masquages et les mises à jour" }),
-        IT => format!("{} (commuta tramite 'secret-stripper menu')", if silent { "silenzioso" } else { "attive, per oscuramenti e aggiornamenti" }),
-        ES => format!("{} (alternar con 'secret-stripper menu')", if silent { "silencioso" } else { "activadas, para redacciones y actualizaciones" }),
+        EN => "Secret Stripper is set up.",
+        FR => "Secret Stripper est configuré.",
+        IT => "Secret Stripper è configurato.",
+        ES => "Secret Stripper está configurado.",
     }
     cli_terminal_hint(chord: &str, keys: &str,) {
         EN => format!("In a terminal, press {} instead (it sends {}).", chord, keys),
@@ -759,10 +675,10 @@ lang_strings! {
         ES => format!("En una terminal, pulsa {} en su lugar (envía {}).", chord, keys),
     }
     cli_init_usage(hotkey: &str,) {
-        EN => format!("Ctrl+C / Ctrl+V work as usual. Press {} to paste a redacted copy of the clipboard.", hotkey),
-        FR => format!("Ctrl+C / Ctrl+V fonctionnent comme d'habitude. Appuyez sur {} pour coller une copie masquée du presse-papiers.", hotkey),
-        IT => format!("Ctrl+C / Ctrl+V funzionano come al solito. Premi {} per incollare una copia oscurata degli appunti.", hotkey),
-        ES => format!("Ctrl+C / Ctrl+V funcionan como siempre. Pulsa {} para pegar una copia redactada del portapapeles.", hotkey),
+        EN => format!("Copy text as usual, then press {} to paste a redacted copy.", hotkey),
+        FR => format!("Copiez comme d'habitude, puis appuyez sur {} pour coller une copie masquée.", hotkey),
+        IT => format!("Copia come al solito, poi premi {} per incollare una copia oscurata.", hotkey),
+        ES => format!("Copia como siempre y luego pulsa {} para pegar una copia redactada.", hotkey),
     }
     cli_warn_no_hotkey {
         EN => "Warning: no hotkey could be registered. Run 'secret-stripper menu' and rebind the hotkey to capture a working chord.",
@@ -777,16 +693,10 @@ lang_strings! {
         ES => format!("Último error: {}", err),
     }
     cli_tweak_later {
-        EN => "Tweak any setting later with 'secret-stripper menu'.",
-        FR => "Ajustez n'importe quel réglage plus tard avec 'secret-stripper menu'.",
-        IT => "Modifica qualsiasi impostazione in seguito con 'secret-stripper menu'.",
-        ES => "Ajusta cualquier opción más tarde con 'secret-stripper menu'.",
-    }
-    hk_available(key: &str,) {
-        EN => format!("{} (available)", key),
-        FR => format!("{} (disponible)", key),
-        IT => format!("{} (disponibile)", key),
-        ES => format!("{} (disponible)", key),
+        EN => "Change settings with 'secret-stripper menu'.",
+        FR => "Modifiez les réglages avec 'secret-stripper menu'.",
+        IT => "Cambia le impostazioni con 'secret-stripper menu'.",
+        ES => "Cambia la configuración con 'secret-stripper menu'.",
     }
     hk_fallback(active: &str, preferred: &str,) {
         EN => format!("{} (fallback: {} was invalid)", active, preferred),
@@ -1710,53 +1620,35 @@ lang_strings! {
         ES => "Cambia el idioma de la interfaz",
     }
 
-    ai_tui_detected_title {
-        EN => "Detected AI TUIs on this system:",
-        FR => "Outils TUI d'IA détectés sur ce système :",
-        IT => "TUI di IA rilevate su questo sistema:",
-        ES => "TUI de IA detectadas en este sistema:",
-    }
-    ai_tui_why {
-        EN => "Add the snippet below to your shell config so each tool runs through 'paste-guard'. The wrapper sits between your terminal and the AI TUI, intercepting clipboard pastes and redacting any secrets or PII before they reach the prompt. Typing and normal output stay untouched.",
-        FR => "Ajoutez le bloc ci-dessous à la configuration de votre shell pour que chaque outil passe par 'paste-guard'. Ce wrapper se place entre votre terminal et l'outil d'IA, intercepte les collages du presse-papiers et masque les secrets ou les données personnelles avant qu'ils n'atteignent l'invite. La frappe et la sortie normale ne sont pas modifiées.",
-        IT => "Aggiungi il blocco qui sotto alla configurazione della shell così ogni strumento passa attraverso 'paste-guard'. Il wrapper si frappone tra il terminale e la TUI di IA, intercetta gli incolla dagli appunti e oscura segreti o dati personali prima che raggiungano il prompt. La digitazione e l'output normale restano invariati.",
-        ES => "Añade el bloque siguiente a la configuración de tu shell para que cada herramienta pase por 'paste-guard'. El envoltorio se sitúa entre tu terminal y la TUI de IA, intercepta los pegados del portapapeles y redacta los secretos o datos personales antes de que lleguen al prompt. La escritura y la salida normal no se ven afectadas.",
+    ai_tui_detected(tools: &str,) {
+        EN => format!("AI tools found: {}.", tools),
+        FR => format!("Outils d'IA trouvés : {}.", tools),
+        IT => format!("Strumenti di IA trovati: {}.", tools),
+        ES => format!("Herramientas de IA encontradas: {}.", tools),
     }
     ai_tui_add_to_file(path: &str,) {
-        EN => format!("Add the lines below to {} (then open a new shell or run 'source {}'):", path, path),
-        FR => format!("Ajoutez les lignes ci-dessous à {} (puis ouvrez un nouveau shell ou exécutez 'source {}') :", path, path),
-        IT => format!("Aggiungi le righe sottostanti a {} (poi apri una nuova shell o esegui 'source {}'):", path, path),
-        ES => format!("Añade las líneas siguientes a {} (después abre un nuevo shell o ejecuta 'source {}'):", path, path),
+        EN => format!("To redact pastes into them, add these lines to {} and open a new shell:", path),
+        FR => format!("Pour masquer les collages dans ces outils, ajoutez ces lignes à {} et ouvrez un nouveau shell :", path),
+        IT => format!("Per oscurare gli incolla in questi strumenti, aggiungi queste righe a {} e apri una nuova shell:", path),
+        ES => format!("Para redactar lo que pegas en ellas, añade estas líneas a {} y abre un nuevo shell:", path),
     }
     ai_tui_add_to_unknown_shell {
-        EN => "Could not detect your shell from $SHELL. Add the lines below to your shell's startup file (e.g. ~/.bashrc, ~/.zshrc, or ~/.config/fish/config.fish):",
-        FR => "Impossible de détecter votre shell via $SHELL. Ajoutez les lignes ci-dessous au fichier de démarrage de votre shell (par ex. ~/.bashrc, ~/.zshrc, ou ~/.config/fish/config.fish) :",
-        IT => "Impossibile rilevare la shell da $SHELL. Aggiungi le righe sottostanti al file di avvio della tua shell (ad es. ~/.bashrc, ~/.zshrc, oppure ~/.config/fish/config.fish):",
-        ES => "No se pudo detectar tu shell desde $SHELL. Añade las líneas siguientes al archivo de inicio de tu shell (por ejemplo ~/.bashrc, ~/.zshrc, o ~/.config/fish/config.fish):",
+        EN => "To redact pastes into them, add these lines to your shell config (~/.bashrc, ~/.zshrc or ~/.config/fish/config.fish) and open a new shell:",
+        FR => "Pour masquer les collages dans ces outils, ajoutez ces lignes à la configuration de votre shell (~/.bashrc, ~/.zshrc ou ~/.config/fish/config.fish) et ouvrez un nouveau shell :",
+        IT => "Per oscurare gli incolla in questi strumenti, aggiungi queste righe alla configurazione della shell (~/.bashrc, ~/.zshrc o ~/.config/fish/config.fish) e apri una nuova shell:",
+        ES => "Para redactar lo que pegas en ellas, añade estas líneas a la configuración de tu shell (~/.bashrc, ~/.zshrc o ~/.config/fish/config.fish) y abre un nuevo shell:",
     }
     ai_tui_none_detected {
-        EN => "No supported AI TUIs detected on PATH. If you install one later, re-run 'secret-stripper init' to see the alias snippet.",
-        FR => "Aucun outil TUI d'IA pris en charge détecté dans le PATH. Si vous en installez un plus tard, relancez 'secret-stripper init' pour obtenir le bloc d'alias.",
-        IT => "Nessuna TUI di IA supportata rilevata nel PATH. Se ne installi una in seguito, rilancia 'secret-stripper init' per vedere lo snippet di alias.",
-        ES => "No se detectó ninguna TUI de IA compatible en el PATH. Si instalas una más adelante, vuelve a ejecutar 'secret-stripper init' para ver el bloque de alias.",
-    }
-    ai_tui_remove_hint {
-        EN => "To stop routing through paste-guard, delete the block above (between the dashed comment lines) from your shell config, or run 'secret-stripper uninstall' to clean up everything at once.",
-        FR => "Pour cesser d'utiliser paste-guard, supprimez le bloc ci-dessus (entre les lignes de commentaire en tirets) de la configuration de votre shell, ou exécutez 'secret-stripper uninstall' pour tout nettoyer en une fois.",
-        IT => "Per non far più passare il pasting da paste-guard, elimina il blocco qui sopra (tra le righe di commento tratteggiate) dalla configurazione della tua shell, oppure esegui 'secret-stripper uninstall' per ripulire tutto in una volta.",
-        ES => "Para dejar de pasar por paste-guard, elimina el bloque de arriba (entre las líneas de comentario con guiones) de la configuración de tu shell, o ejecuta 'secret-stripper uninstall' para limpiar todo de una vez.",
+        EN => "No supported AI tools found on PATH. Wrap any command with 'secret-stripper paste-guard -- <cmd>'.",
+        FR => "Aucun outil d'IA pris en charge trouvé dans le PATH. Enveloppez n'importe quelle commande avec 'secret-stripper paste-guard -- <cmd>'.",
+        IT => "Nessuno strumento di IA supportato trovato nel PATH. Avvolgi qualsiasi comando con 'secret-stripper paste-guard -- <cmd>'.",
+        ES => "No se encontró ninguna herramienta de IA compatible en el PATH. Envuelve cualquier comando con 'secret-stripper paste-guard -- <cmd>'.",
     }
     ai_tui_alias_removed(path: &str,) {
         EN => format!("Removed paste-guard alias block from {}", path),
         FR => format!("Bloc d'alias paste-guard supprimé de {}", path),
         IT => format!("Blocco di alias paste-guard rimosso da {}", path),
         ES => format!("Bloque de alias paste-guard eliminado de {}", path),
-    }
-    pg_no_child {
-        EN => "paste-guard: no child command provided. Usage: secret-stripper paste-guard -- <cmd> [args...]",
-        FR => "paste-guard : aucune commande enfant fournie. Usage : secret-stripper paste-guard -- <cmd> [args...]",
-        IT => "paste-guard: nessun comando figlio fornito. Uso: secret-stripper paste-guard -- <cmd> [args...]",
-        ES => "paste-guard: no se proporcionó ningún comando hijo. Uso: secret-stripper paste-guard -- <cmd> [args...]",
     }
 }
 

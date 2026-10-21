@@ -188,6 +188,10 @@ pub fn run(terminal: bool) -> anyhow::Result<()> {
     // Opened before scanning so the uinput settle time overlaps redaction.
     let input = match Input::open(&[&keys, &terminal_keys], reentrant) {
         Ok(i) => i,
+        Err(e) if permission_denied(&e) => {
+            not_pasted(&config, lang.cli_uinput_denied());
+            return Ok(());
+        }
         Err(e) => {
             not_pasted(&config, &lang.cli_input_unavailable(&format!("{e:#}")));
             return Ok(());
@@ -259,6 +263,13 @@ fn select_keys(config: &Config, terminal: bool) -> anyhow::Result<(PasteKeys, Pa
         let reentrant = chord_reenters(&config.hotkey, &config.paste_keys);
         Ok((keys, terminal_keys, reentrant))
     }
+}
+
+fn permission_denied(e: &anyhow::Error) -> bool {
+    e.chain().any(|c| {
+        c.downcast_ref::<std::io::Error>()
+            .is_some_and(|io| io.kind() == std::io::ErrorKind::PermissionDenied)
+    })
 }
 
 fn not_pasted(config: &Config, reason: &str) {

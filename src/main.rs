@@ -241,161 +241,78 @@ fn print_aligned(rows: &[(&str, String)]) {
 
 fn run_init() -> anyhow::Result<()> {
     let path = Config::path();
-    if path.exists() {
-        let existing = Config::load();
-        if existing.onboarding_done {
-            // Already set up: restore the binding and timer if they were
-            // removed, but leave the config as the user set it.
-            if existing.check_for_updates {
-                let _ = updater::install_update_check_timer();
-            }
-            let lang = existing.lang;
-            let register_result = shortcut::register(&existing.hotkey);
-            let de_status = match &register_result {
-                Ok(backend) => lang.shortcut_bound(backend, &existing.hotkey),
-                Err(e) => lang.de_status_failed(&e.to_string()),
-            };
-            println!(
-                "{}",
-                lang.cli_already_configured(&path.display().to_string())
-            );
-            print_aligned(&[
-                (lang.lbl_hotkey(), existing.hotkey.clone()),
-                (lang.lbl_de_binding(), de_status),
-            ]);
-            println!();
-            if register_result.is_ok() {
-                print_terminal_hint(&existing);
-                println!();
-            }
-            if register_result.is_err() {
-                print_manual_bind(lang, &existing.hotkey);
-                println!();
-            }
-            paste::access::setup(lang);
-            println!("{}", lang.cli_init_done_hint());
-            return Ok(());
+    let existing = path.exists().then(Config::load);
+    if let Some(config) = existing.filter(|c| c.onboarding_done) {
+        // Already set up: restore the binding and timer if they were
+        // removed, but leave the config as the user set it.
+        if config.check_for_updates {
+            let _ = updater::install_update_check_timer();
         }
+        let lang = config.lang;
+        println!("{}", lang.cli_already_configured());
+        print_setup(&config, config.hotkey.clone());
+        println!("{}", lang.cli_init_done_hint());
+        return Ok(());
     }
 
     let mut config = Config::first_run(lang::Lang::detect_from_env());
-
     let outcome = hotkey::probe(&config.hotkey);
     let preferred = config.hotkey.clone();
     let hotkey_status = match outcome.active {
         Some(ref active) => {
             config.hotkey = active.clone();
             if active == &preferred {
-                config.lang.hk_available(active)
+                active.clone()
             } else {
                 config.lang.hk_fallback(active, &preferred)
             }
         }
         None => config.lang.hk_none(&outcome.tried.join(", ")),
     };
-
     config.save()?;
-
     if config.check_for_updates {
         let _ = updater::install_update_check_timer();
     }
 
     let lang = config.lang;
-    let register_result = shortcut::register(&config.hotkey);
-    let de_status = match &register_result {
-        Ok(backend) => lang.shortcut_bound(backend, &config.hotkey),
-        Err(e) => lang.de_status_failed(&e.to_string()),
-    };
-
     println!("{}", lang.cli_init_header());
-    print_aligned(&[
-        (lang.lbl_config(), path.display().to_string()),
-        (
-            lang.lbl_language(),
-            format!("{} ({})", config.lang.endonym(), lang.suffix_autodetected()),
-        ),
-        (lang.lbl_hotkey(), hotkey_status),
-        (lang.lbl_de_binding(), de_status),
-        (
-            lang.lbl_sensitivity(),
-            format!("{} ({})", config.sensitivity, lang.sensitivity_balanced()),
-        ),
-        (lang.lbl_redact_as(), format!("'{}'", config.redact_pattern)),
-        (
-            lang.lbl_deep_scan(),
-            lang.deep_scan_state_desc(config.enable_deep_scan),
-        ),
-        (
-            lang.lbl_entropy(),
-            lang.entropy_state_desc(config.enable_entropy),
-        ),
-        (
-            lang.lbl_notifications(),
-            lang.notif_state_hint(config.silent),
-        ),
-        (
-            lang.lbl_notif_timeout(),
-            format!("{}s", config.notification_timeout_secs),
-        ),
-    ]);
-    println!();
-    if register_result.is_err() {
-        print_manual_bind(lang, &config.hotkey);
-        println!();
-    }
-    paste::access::setup(lang);
+    print_setup(&config, hotkey_status);
     if outcome.active.is_some() {
         println!("{}", lang.cli_init_usage(&config.hotkey));
-        print_terminal_hint(&config);
     } else {
         eprintln!("{}", lang.cli_warn_no_hotkey());
         if let Some(err) = outcome.last_error {
             eprintln!("{}", lang.cli_last_error(&err.to_string()));
         }
     }
-    // Before the paste-guard section, so it reads as being about the
-    // settings above.
     println!("{}", lang.cli_tweak_later());
-    print_paste_guard_hint(lang);
     Ok(())
 }
 
-/// Show the alias snippet for paste-guard and which file to paste it into.
-/// Init never edits shell rc files; uninstall only removes the block.
-fn print_paste_guard_hint(lang: lang::Lang) {
-    let detected = ai_tui::detect();
-    if detected.is_empty() {
+/// Bind both shortcuts, then print them with the config path and set up
+/// uinput access. Shared by a first run and a rerun of `init`.
+fn print_setup(config: &Config, hotkey_status: String) {
+    let lang = config.lang;
+    let register_result = shortcut::register(&config.hotkey);
+    let mut rows = vec![(lang.lbl_hotkey(), hotkey_status)];
+    if let Some(terminal) = hotkey::terminal_chord(&config.hotkey) {
+        rows.push((lang.lbl_terminal_chord(), terminal));
+    }
+    rows.push((
+        lang.lbl_de_binding(),
+        match &register_result {
+            Ok(backend) => lang.shortcut_bound(backend, &config.hotkey),
+            Err(e) => lang.de_status_failed(&e.to_string()),
+        },
+    ));
+    rows.push((lang.lbl_config(), Config::path().display().to_string()));
+    print_aligned(&rows);
+    println!();
+    if register_result.is_err() {
+        print_manual_bind(lang, &config.hotkey);
         println!();
-        println!("{}", lang.ai_tui_none_detected());
-        return;
     }
-
-    let shell = shell_rc::Shell::from_env();
-    let bins: Vec<&str> = detected.iter().map(|t| t.binary).collect();
-
-    println!();
-    println!("{}", lang.ai_tui_detected_title());
-    for t in &detected {
-        println!("  - {} ({})", t.label, t.binary);
-    }
-    println!();
-    println!("{}", lang.ai_tui_why());
-    println!();
-
-    let snippet_shell = shell.unwrap_or(shell_rc::Shell::Bash);
-    match shell.and_then(|s| s.rc_path().map(|p| (s, p))) {
-        Some((_, path)) => {
-            let path_str = path.display().to_string();
-            println!("{}", lang.ai_tui_add_to_file(&path_str));
-        }
-        None => {
-            println!("{}", lang.ai_tui_add_to_unknown_shell());
-        }
-    }
-    println!();
-    print!("{}", shell_rc::render_alias_snippet(snippet_shell, &bins));
-    println!();
-    println!("{}", lang.ai_tui_remove_hint());
+    paste::access::setup(lang);
 }
 
 fn print_status() -> anyhow::Result<()> {
@@ -404,6 +321,10 @@ fn print_status() -> anyhow::Result<()> {
     let lang = lang::Lang::active();
     println!("{}", lang.status_title());
     println!("{}", "=".repeat(lang.status_title().chars().count()));
+    if !config.onboarding_done {
+        println!("  {}", lang.status_not_set_up());
+        return Ok(());
+    }
     let wayland = std::env::var_os("WAYLAND_DISPLAY").is_some();
     let mut rows = vec![
         (lang.lbl_hotkey(), config.hotkey.clone()),
@@ -426,10 +347,6 @@ fn print_status() -> anyhow::Result<()> {
     rows.extend([
         (lang.lbl_sensitivity(), config.sensitivity.to_string()),
         (lang.lbl_silent(), config.silent.to_string()),
-        (
-            lang.lbl_onboarding_done(),
-            config.onboarding_done.to_string(),
-        ),
         (
             lang.lbl_config_path(),
             config::Config::path().display().to_string(),

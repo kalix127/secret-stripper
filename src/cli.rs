@@ -57,7 +57,8 @@ pub enum Command {
     /// Run a child program inside a PTY and redact any bracketed-paste
     /// payloads on the way in. Exits with the child's exit code. Use it to
     /// wrap AI TUIs like Claude Code or Codex so pasted secrets never reach
-    /// the prompt.
+    /// the prompt. With no command, print shell aliases for the AI tools
+    /// found on PATH.
     PasteGuard {
         /// The child command and its arguments. Pass after `--`.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true, num_args = 0..)]

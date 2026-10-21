@@ -22,14 +22,36 @@ pub const END_SEQ: &[u8] = b"\x1b[201~";
 
 const ENV_NO_OS: &str = "SECRET_STRIPPER_NO_OS_SIDE_EFFECTS";
 
+/// Print the alias block for the AI tools on PATH. Opt-in: the user adds it to
+/// their shell config by hand.
+fn print_aliases(lang: crate::lang::Lang) {
+    let detected = crate::ai_tui::detect();
+    if detected.is_empty() {
+        println!("{}", lang.ai_tui_none_detected());
+        return;
+    }
+    let labels: Vec<&str> = detected.iter().map(|t| t.label).collect();
+    println!("{}", lang.ai_tui_detected(&labels.join(", ")));
+
+    let shell = crate::shell_rc::Shell::from_env();
+    match shell.and_then(|s| s.rc_path()) {
+        Some(path) => println!("{}", lang.ai_tui_add_to_file(&path.display().to_string())),
+        None => println!("{}", lang.ai_tui_add_to_unknown_shell()),
+    }
+    println!();
+    let bins: Vec<&str> = detected.iter().map(|t| t.binary).collect();
+    let shell = shell.unwrap_or(crate::shell_rc::Shell::Bash);
+    print!("{}", crate::shell_rc::render_alias_snippet(shell, &bins));
+}
+
 /// Spawn `argv` in a PTY, intercept bracketed-paste payloads on the way in,
-/// redact them, and forward. Returns the child's exit code.
+/// redact them, and forward. Returns the child's exit code. With no command,
+/// print the alias block instead.
 /// Runs as long as the child does; holds no global state and no PID file.
 pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
     if argv.is_empty() {
-        let lang = cfg.lang;
-        eprintln!("{}", lang.pg_no_child());
-        return Ok(2);
+        print_aliases(cfg.lang);
+        return Ok(0);
     }
     // Allow tests / scripts to verify wiring without touching the real PTY.
     if std::env::var_os(ENV_NO_OS).is_some() {
