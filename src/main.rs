@@ -23,6 +23,25 @@ fn main() -> anyhow::Result<()> {
     let args = cli::Cli::parse();
     setup_logging(&args);
 
+    // Exit quietly when stdout closes early (`status | head`) instead of
+    // panicking. Not for paste, serve-clipboard and paste-guard: they write
+    // to pipes whose reader may exit first and must survive that.
+    if matches!(
+        args.command,
+        cli::Command::Init
+            | cli::Command::Status
+            | cli::Command::RegisterShortcut
+            | cli::Command::UnregisterShortcut
+            | cli::Command::Uninstall
+            | cli::Command::Upgrade
+            | cli::Command::Redact
+    ) {
+        // SAFETY: called before any other thread exists.
+        unsafe {
+            libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+        }
+    }
+
     // Not from `upgrade-check`: systemd runs it without $XDG_CURRENT_DESKTOP,
     // so the shortcut could not be re-registered. The 1.x shortcut runs
     // `trigger`, an alias of `paste`, which migrates from the desktop session.
@@ -384,7 +403,7 @@ fn print_status() -> anyhow::Result<()> {
 
     let lang = lang::Lang::active();
     println!("{}", lang.status_title());
-    println!("===================");
+    println!("{}", "=".repeat(lang.status_title().chars().count()));
     let wayland = std::env::var_os("WAYLAND_DISPLAY").is_some();
     let mut rows = vec![
         (lang.lbl_hotkey(), config.hotkey.clone()),
