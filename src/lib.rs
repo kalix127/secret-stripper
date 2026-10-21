@@ -10,6 +10,5 @@ pub mod redact_cli;
 pub mod shell_rc;
 pub mod stats;
 
-pub use detector::deep_scan::DeepFinding;
-pub use detector::patterns::{bucket_patterns, SecretPattern, Severity};
-pub use detector::{DetectionResult, Detector};
+pub use detector::patterns::{bucket_patterns, Severity};
+pub use detector::Detector;

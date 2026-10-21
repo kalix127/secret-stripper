@@ -47,14 +47,6 @@ impl Shell {
         })
     }
 
-    pub fn display_name(&self) -> &'static str {
-        match self {
-            Shell::Bash => "bash",
-            Shell::Zsh => "zsh",
-            Shell::Fish => "fish",
-        }
-    }
-
     /// Fish uses `alias name 'target'` instead of POSIX `alias name='target'`.
     fn alias_line(&self, name: &str, target: &str) -> String {
         match self {
@@ -189,13 +181,6 @@ mod tests {
     fn snippet_fish_format_differs() {
         let s = render_alias_snippet(Shell::Fish, &["claude"]);
         assert!(s.contains("alias claude 'secret-stripper paste-guard -- claude'"));
-    }
-
-    #[test]
-    fn display_name_round_trip() {
-        assert_eq!(Shell::Bash.display_name(), "bash");
-        assert_eq!(Shell::Zsh.display_name(), "zsh");
-        assert_eq!(Shell::Fish.display_name(), "fish");
     }
 
     #[test]

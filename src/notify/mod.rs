@@ -9,7 +9,7 @@ pub fn redacted(count: usize, config: &Config) {
     }
     show(make_notification(
         &config.lang.notify_redacted(count),
-        config.lang.notify_cleaned(),
+        config.lang.notify_pasted(),
         config.notification_timeout_secs,
     ));
 }

@@ -37,9 +37,9 @@ fn translations_do_not_leak_english() {
     // a different-language non-empty string but is still a missing translation.
     for l in Lang::all() {
         assert!(!l.cli_no_secrets().is_empty());
-        assert!(!l.menu_exit().is_empty());
+        assert!(!l.lbl_exit().is_empty());
     }
-    assert_ne!(Lang::EN.menu_exit(), Lang::FR.menu_exit());
+    assert_ne!(Lang::EN.lbl_exit(), Lang::FR.lbl_exit());
     assert_ne!(Lang::EN.up_updated("v1"), Lang::ES.up_updated("v1"));
 }
 

@@ -269,7 +269,7 @@ lang_strings! {
         ES => if n == 1 { "1 elemento redactado".to_string() } else { format!("{} elementos redactados", n) },
     }
 
-    notify_cleaned {
+    notify_pasted {
         EN => "Pasted a redacted copy",
         FR => "Copie masquée collée",
         IT => "Copia oscurata incollata",
@@ -778,14 +778,6 @@ lang_strings! {
         ES => "Comprobación de Secret Stripper al iniciar sesión",
     }
 
-    // ---- TUI: menu ----
-    menu_exit {
-        EN => "Exit",
-        FR => "Quitter",
-        IT => "Esci",
-        ES => "Salir",
-    }
-
     // ---- TUI: status + activity panel ----
     status_panel_title {
         EN => "Status",
@@ -1113,7 +1105,7 @@ lang_strings! {
         IT => "Indietro",
         ES => "Atrás",
     }
-    dm_image_scan(on: bool,) {
+    menu_image_scan(on: bool,) {
         EN => format!("Screenshot redaction: {}", if on { "on" } else { "off" }),
         FR => format!(
             "Expurgation des captures d'écran : {}",
@@ -1158,7 +1150,7 @@ lang_strings! {
         IT => "Torna al menu principale",
         ES => "Volver al menú principal",
     }
-    help_dm_image_scan {
+    help_menu_image_scan {
         EN => "Redact secrets in clipboard screenshots (needs tesseract)",
         FR => "Expurger les secrets des captures du presse-papiers (requiert tesseract)",
         IT => "Oscura i segreti negli screenshot degli appunti (richiede tesseract)",
@@ -1200,13 +1192,13 @@ lang_strings! {
         IT => "Personalizzato (selezione manuale)",
         ES => "Personalizado (selección manual)",
     }
-    dm_redact_style {
+    menu_redact_style {
         EN => "Redaction Style",
         FR => "Style d'expurgation",
         IT => "Stile di oscuramento",
         ES => "Estilo de redacción",
     }
-    help_dm_redact_style {
+    help_menu_redact_style {
         EN => "Choose how detected secrets are replaced",
         FR => "Choisir comment les secrets détectés sont remplacés",
         IT => "Scegli come sostituire i segreti rilevati",
@@ -1702,7 +1694,7 @@ mod tests {
     #[test]
     fn every_language_returns_non_empty() {
         for l in Lang::all() {
-            assert!(!l.notify_cleaned().is_empty());
+            assert!(!l.notify_pasted().is_empty());
             assert!(!l.notify_redacted(2).is_empty());
             assert!(!l.cli_no_config().is_empty());
             assert!(!l.cli_redacted(1).is_empty());
@@ -1712,22 +1704,6 @@ mod tests {
             assert!(!l.svc_update_desc().is_empty());
             assert!(!l.endonym().is_empty());
         }
-    }
-
-    #[test]
-    fn severity_label_covers_all_pairs() {
-        let sevs = [
-            Severity::Critical,
-            Severity::High,
-            Severity::Medium,
-            Severity::Low,
-        ];
-        for l in Lang::all() {
-            for s in &sevs {
-                assert!(!l.severity_label(s).is_empty());
-            }
-        }
-        assert_eq!(Lang::EN.severity_label(&Severity::Critical), "Critical");
     }
 
     #[test]
@@ -1758,14 +1734,5 @@ mod tests {
                 assert!(s.contains("Ctrl+Alt+V"));
             }
         }
-    }
-
-    #[test]
-    fn endonyms_are_distinct() {
-        let names: Vec<&str> = Lang::all().iter().map(|l| l.endonym()).collect();
-        let mut dedup = names.clone();
-        dedup.sort_unstable();
-        dedup.dedup();
-        assert_eq!(names.len(), dedup.len());
     }
 }

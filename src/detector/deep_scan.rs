@@ -4,18 +4,12 @@ use std::sync::OnceLock;
 
 const MAX_DEPTH: u32 = 3;
 
-// description/severity are consumed by the binary's notification path; under the
-// lib test build only finding_type is read, so the allow keeps clippy quiet
-// without dropping data the other consumers need.
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct DeepFinding {
     pub finding_type: &'static str,
-    pub description: String,
-    pub severity: &'static str,
     // Byte range of the offending token in the scanned text, when the scanner
     // can pinpoint it (BIP39 run, vendor-host token). None means the finding
-    // is not redactable in place and falls back to the whole-clipboard wipe.
+    // is not redactable in place, so the paste replaces the whole clipboard.
     pub span: Option<(usize, usize)>,
 }
 
@@ -160,10 +154,6 @@ fn scan_bip39_mnemonic(text: &str) -> Vec<DeepFinding> {
         if run >= 12 {
             findings.push(DeepFinding {
                 finding_type: "BIP39 mnemonic",
-                description: format!(
-                    "{run} consecutive BIP39 wordlist words (likely wallet seed phrase)"
-                ),
-                severity: "Critical",
                 span: Some((start, end)),
             });
         }
@@ -192,7 +182,6 @@ fn scan_bip39_mnemonic(text: &str) -> Vec<DeepFinding> {
 
 struct VendorEntry {
     finding_type: &'static str,
-    severity: &'static str,
     // A vendor host or a labelled-key prefix. Bare-shape tokens are only
     // flagged when one of these sits in the same small window.
     anchor: regex::Regex,
@@ -209,9 +198,8 @@ fn vendor_table() -> &'static Vec<VendorEntry> {
         let uuid =
             r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}";
         let b64 = r"[A-Za-z0-9+/]{40,}={0,2}";
-        let mk = |finding_type, severity, anchor: &str, shape: &str| VendorEntry {
+        let mk = |finding_type, anchor: &str, shape: &str| VendorEntry {
             finding_type,
-            severity,
             anchor: regex::Regex::new(anchor)
                 .unwrap_or_else(|e| panic!("invalid vendor anchor {anchor:?}: {e}")),
             shape: regex::Regex::new(shape)
@@ -220,175 +208,142 @@ fn vendor_table() -> &'static Vec<VendorEntry> {
         vec![
             mk(
                 "Azure Cognitive Services Key (host-gated)",
-                "Critical",
                 r"[a-z0-9-]{1,40}\.cognitiveservices\.azure\.com",
                 hex32,
             ),
             mk(
                 "Linode API Token (host-gated)",
-                "Critical",
                 r"\bapi\.linode\.com\b",
                 hex64,
             ),
             mk(
                 "Neon Database Token (host-gated)",
-                "Critical",
                 r"\bconsole\.neon\.tech\b",
                 r"[A-Za-z0-9_-]{40,}",
             ),
             mk(
                 "Hetzner Cloud Token (host-gated)",
-                "Critical",
                 r"\bapi\.hetzner\.cloud\b",
                 r"[A-Za-z0-9]{64}",
             ),
             mk(
                 "Cloudant Credential (host-gated)",
-                "Critical",
                 r"[a-z0-9-]{1,60}\.cloudant\.com",
                 r"[A-Za-z0-9]{64}",
             ),
             mk(
                 "Cloudflare R2 Access Key (host-gated)",
-                "Critical",
                 r"[a-z0-9]{1,40}\.r2\.cloudflarestorage\.com",
                 r"[a-fA-F0-9]{32,64}",
             ),
             mk(
                 "Generic API Key Header",
-                "High",
                 r"(?i)X-Api-Key:\s*",
                 r"[A-Za-z0-9_\-./+=]{16,}",
             ),
             mk(
                 "Authorization Bearer Token",
-                "High",
                 r"(?i)Authorization:\s*Bearer\s+",
                 r"[A-Za-z0-9_\-./+=]{20,}",
             ),
             mk(
                 "Authorization Basic Credential",
-                "High",
                 r"(?i)Authorization:\s*Basic\s+",
                 r"[A-Za-z0-9+/]{16,}={0,2}",
             ),
             mk(
                 "Datadog API Key (host-gated)",
-                "Critical",
                 r"(?i)(?:DD-API-KEY:\s*|\bapi\.datadoghq\.(?:com|eu)\b)",
                 hex32,
             ),
             mk(
                 "New Relic License Key (host-gated)",
-                "Critical",
                 r"(?i)(?:X-License-Key:\s*|\bapi\.newrelic\.com\b)",
                 r"[A-Fa-f0-9x]{40}",
             ),
             mk(
                 "Civo API Key (host-gated)",
-                "Critical",
                 r"\bapi\.civo\.com\b",
                 r"[A-Za-z0-9]{40,}",
             ),
             mk(
                 "Railway Token (host-gated)",
-                "Critical",
                 r"\bbackboard\.railway\.app\b",
                 uuid,
             ),
             mk(
                 "Porter Token (host-gated)",
-                "Critical",
                 r"\bdashboard\.porter\.run\b",
                 r"[A-Za-z0-9_-]{40,}",
             ),
             mk(
                 "Vultr API Key (host-gated)",
-                "Critical",
                 r"\bapi\.vultr\.com\b",
                 r"[A-Z0-9]{36}",
             ),
             mk(
                 "OVH Application Secret (host-gated)",
-                "Critical",
                 r"\b(?:eu|ca)\.api\.ovh\.com\b",
                 r"[A-Za-z0-9]{32}",
             ),
             mk(
                 "Postmark Server Token (host-gated)",
-                "Critical",
                 r"(?i)X-Postmark-Server-Token:\s*",
                 uuid,
             ),
             mk(
                 "Scaleway Secret Key (host-gated)",
-                "Critical",
                 r"\bapi\.scaleway\.com\b",
                 uuid,
             ),
             mk(
                 "Maven Central Token (host-gated)",
-                "Critical",
                 r"(?i)(?:central\.sonatype\.com|s01\.oss\.sonatype\.org)",
                 b64,
             ),
             mk(
                 "Hex.pm API Key (host-gated)",
-                "Critical",
                 r"\bhex\.pm\b",
                 r"[A-Za-z0-9]{32,}",
             ),
             mk(
                 "UpCloud API Credential (host-gated)",
-                "Critical",
                 r"\bapi\.upcloud\.com\b",
                 r"[A-Za-z0-9+/]{16,}={0,2}",
             ),
             mk(
                 "Coolify API Token (labeled)",
-                "Critical",
                 r#"(?i)\bcoolify[_-]?(?:api[_-]?)?token['"]?\s*[:=]\s*['"]?"#,
                 r"[A-Za-z0-9]{40,}",
             ),
             mk(
                 "Criteo API Token (host-gated)",
-                "Critical",
                 r"\bapi\.criteo\.com\b",
                 b64,
             ),
             mk(
                 "Xandr Token (host-gated)",
-                "Critical",
                 r"\b[a-z0-9-]{1,40}\.adnxs\.com\b",
                 r"[A-Za-z0-9]{32,}",
             ),
             mk(
                 "Twilio Auth Token (paired with Account SID)",
-                "Critical",
                 r"\bAC[a-f0-9]{32}\b",
                 hex32,
             ),
             mk(
                 "Wiz Service Account Token (host-gated)",
-                "Critical",
                 r"\b(?:auth\.app|api)\.wiz\.io\b",
                 r"[A-Za-z0-9_-]{40,}",
             ),
             mk(
                 "Censys API Secret (host-gated)",
-                "Critical",
                 r"\b(?:search|api)\.censys\.io\b",
                 r"[A-Za-z0-9]{32,}",
             ),
-            mk(
-                "Tatum API Key (host-gated)",
-                "Critical",
-                r"\bapi\.tatum\.io\b",
-                uuid,
-            ),
+            mk("Tatum API Key (host-gated)", r"\bapi\.tatum\.io\b", uuid),
             mk(
                 "Particle Access Token (host-gated)",
-                "Critical",
                 r"\bapi\.particle\.io\b",
                 r"[a-f0-9]{40}",
             ),
@@ -431,11 +386,6 @@ fn scan_vendor_host_secrets(text: &str) -> Vec<DeepFinding> {
                 }
                 findings.push(DeepFinding {
                     finding_type: entry.finding_type,
-                    description: format!(
-                        "{} token found next to its vendor host/label anchor",
-                        entry.finding_type
-                    ),
-                    severity: entry.severity,
                     span: Some((abs_start, abs_end)),
                 });
                 break;
@@ -504,22 +454,8 @@ fn scan_key_value_pairs(text: &str) -> Vec<DeepFinding> {
                 continue;
             }
 
-            let entropy = entropy::shannon_entropy(value);
-            let severity = if entropy > 4.0 || value.len() > 20 {
-                "Critical"
-            } else if entropy > 3.0 {
-                "High"
-            } else {
-                "Medium"
-            };
-
             findings.push(DeepFinding {
                 finding_type: "Secret Key-Value Pair",
-                description: format!(
-                    "Key '{}' suggests a secret with entropy {:.2}",
-                    key, entropy
-                ),
-                severity,
                 span: Some((value_m.start(), value_m.end())),
             });
         }
@@ -574,18 +510,8 @@ fn scan_env_format(text: &str) -> Vec<DeepFinding> {
             continue;
         }
 
-        let entropy = entropy::shannon_entropy(value);
         findings.push(DeepFinding {
             finding_type: "Environment Variable Secret",
-            description: format!(
-                ".env style: '{}' contains a potential secret (entropy {:.2})",
-                key, entropy
-            ),
-            severity: if entropy > 4.0 || value.len() > 20 {
-                "Critical"
-            } else {
-                "High"
-            },
             span: Some((value_m.start(), value_m.end())),
         });
     }
@@ -593,25 +519,19 @@ fn scan_env_format(text: &str) -> Vec<DeepFinding> {
     findings
 }
 
-fn conn_string_patterns() -> &'static [(regex::Regex, &'static str)] {
-    static RE: OnceLock<Vec<(regex::Regex, &'static str)>> = OnceLock::new();
+fn conn_string_patterns() -> &'static [regex::Regex] {
+    static RE: OnceLock<Vec<regex::Regex>> = OnceLock::new();
     RE.get_or_init(|| {
-        let raw: &[(&str, &str)] = &[
-            (
-                r"(?i)(?:postgres(?:ql)?|mysql|mariadb)://([^:]+):([^@]+)@",
-                "Database",
-            ),
-            (r"(?i)mongodb(?:\+srv)?://([^:]+):([^@]+)@", "MongoDB"),
-            (r"(?i)redis://[^:]+:([^@]+)@", "Redis"),
-            (r"(?i)rediss://[^:]+:([^@]+)@", "Redis TLS"),
-            (
-                r"jdbc:(?i)(mysql|postgresql|oracle|sqlserver)://[^:]+:([^:]+)@",
-                "JDBC",
-            ),
-            (r"(?i)sqlite:///(.+\.db)", "SQLite Path"),
+        let raw: &[&str] = &[
+            r"(?i)(?:postgres(?:ql)?|mysql|mariadb)://([^:]+):([^@]+)@",
+            r"(?i)mongodb(?:\+srv)?://([^:]+):([^@]+)@",
+            r"(?i)redis://[^:]+:([^@]+)@",
+            r"(?i)rediss://[^:]+:([^@]+)@",
+            r"jdbc:(?i)(mysql|postgresql|oracle|sqlserver)://[^:]+:([^:]+)@",
+            r"(?i)sqlite:///(.+\.db)",
         ];
         raw.iter()
-            .filter_map(|(p, l)| regex::Regex::new(p).ok().map(|r| (r, *l)))
+            .filter_map(|p| regex::Regex::new(p).ok())
             .collect()
     })
 }
@@ -619,12 +539,10 @@ fn conn_string_patterns() -> &'static [(regex::Regex, &'static str)] {
 fn scan_connection_strings(text: &str) -> Vec<DeepFinding> {
     let mut findings = Vec::new();
 
-    for (re, label) in conn_string_patterns() {
+    for re in conn_string_patterns() {
         if re.is_match(text) {
             findings.push(DeepFinding {
                 finding_type: "Connection String",
-                description: format!("{} connection string with embedded credentials", label),
-                severity: "Critical",
                 span: None,
             });
         }
@@ -669,17 +587,11 @@ fn scan_base64_content(text: &str, depth: u32) -> Vec<DeepFinding> {
             if !sub_findings.is_empty() {
                 findings.push(DeepFinding {
                     finding_type: "Base64 Encoded Secret",
-                    description: format!(
-                        "Base64 content contains {} nested secret(s)",
-                        sub_findings.len()
-                    ),
-                    severity: "Critical",
                     span: None,
                 });
                 // Sub-finding spans are offsets into the decoded string, which
                 // does not exist in the original clipboard text; drop them so
-                // redaction never uses a bogus range (the whole-clipboard
-                // fail-closed wipe still covers the nested case).
+                // redaction never uses a bogus range.
                 findings.extend(sub_findings.into_iter().map(|mut f| {
                     f.span = None;
                     f
@@ -690,11 +602,6 @@ fn scan_base64_content(text: &str, depth: u32) -> Vec<DeepFinding> {
         if decoded.len() >= 32 && decoded.len() <= 4096 && printable_ratio < 0.3 {
             findings.push(DeepFinding {
                 finding_type: "Base64 (Binary/Key Material)",
-                description: format!(
-                    "Base64-encoded binary likely a key or certificate ({:.2} entropy)",
-                    entropy_val
-                ),
-                severity: "Critical",
                 span: None,
             });
         }
@@ -786,27 +693,14 @@ fn scan_ssh_keys(text: &str) -> Vec<DeepFinding> {
             let body_clean: String = body.chars().filter(|c| !c.is_whitespace()).collect();
 
             if !body_clean.is_empty() {
-                let decoded = base64_decode(&body_clean);
-                let is_valid = decoded.is_some();
-
                 findings.push(DeepFinding {
                     finding_type: "Private Key",
-                    description: format!(
-                        "Complete private key block ({} chars body, valid base64: {})",
-                        body_clean.len(),
-                        if is_valid { "yes" } else { "no" }
-                    ),
-                    severity: "Critical",
                     span: None,
                 });
             }
         } else {
             findings.push(DeepFinding {
                 finding_type: "Private Key (Incomplete)",
-                description:
-                    "Private key header found but no footer - possible clipboard truncated"
-                        .to_string(),
-                severity: "High",
                 span: None,
             });
         }
@@ -815,8 +709,6 @@ fn scan_ssh_keys(text: &str) -> Vec<DeepFinding> {
     if ssh_pub_re().is_match(text) {
         findings.push(DeepFinding {
             finding_type: "SSH Public Key",
-            description: "SSH public key material exposed".to_string(),
-            severity: "Medium",
             span: None,
         });
     }
@@ -831,8 +723,6 @@ fn scan_credential_composites(text: &str) -> Vec<DeepFinding> {
         for m in re.find_iter(text) {
             findings.push(DeepFinding {
                 finding_type: label,
-                description: format!("{} detected in clipboard", label),
-                severity: "Critical",
                 span: Some((m.start(), m.end())),
             });
         }
@@ -904,8 +794,6 @@ fn scan_card_pan_expiry(text: &str) -> Vec<DeepFinding> {
         if ctx.is_match(window) {
             findings.push(DeepFinding {
                 finding_type: "Card PAN with Expiry/CVV",
-                description: "Luhn-valid card number co-located with expiry or CVV".to_string(),
-                severity: "Critical",
                 span: Some((m.start(), m.end())),
             });
         }
@@ -952,8 +840,6 @@ fn scan_json_secrets(text: &str) -> Vec<DeepFinding> {
                                             let abs = s + off;
                                             findings.push(DeepFinding {
                                                 finding_type: "JSON Secret",
-                                                description: format!("JSON contains secret-like value (entropy {:.2})", ent),
-                                                severity: if ent > 4.5 { "Critical" } else { "High" },
                                                 span: Some((abs, abs + val.len())),
                                             });
                                         }
@@ -1036,7 +922,6 @@ fn scan_proximity_analysis(text: &str) -> Vec<DeepFinding> {
             for token in &tokens {
                 let ent = entropy::shannon_entropy(token);
                 if ent > 3.8 {
-                    let preview: String = token.chars().take(30).collect();
                     // Both `text` and `token` live in the same allocation
                     // (`token` is a &str from split_whitespace on a &str from
                     // text.lines()), so the pointer difference is the byte
@@ -1044,12 +929,6 @@ fn scan_proximity_analysis(text: &str) -> Vec<DeepFinding> {
                     let abs = (token.as_ptr() as usize) - (text.as_ptr() as usize);
                     findings.push(DeepFinding {
                         finding_type: "Proximity Secret",
-                        description: format!(
-                            "High-entropy string '{}' found near keyword on line {}",
-                            preview,
-                            i + 1
-                        ),
-                        severity: if ent > 4.5 { "Critical" } else { "High" },
                         span: Some((abs, abs + token.len())),
                     });
                 }

@@ -77,12 +77,12 @@ pub fn show_menu(config: &mut Config) -> anyhow::Result<Option<MenuAction>> {
                 },
                 MenuItem::RedactStyle => MenuRow {
                     icon: "\u{270F}\u{FE0F}",
-                    label: config.lang.dm_redact_style().to_string(),
+                    label: config.lang.menu_redact_style().to_string(),
                     icon_color: theme::icon_yellow(),
                 },
                 MenuItem::ImageScan => MenuRow {
                     icon: "\u{1F5BC}\u{FE0F}",
-                    label: config.lang.dm_image_scan(config.enable_image_scan),
+                    label: config.lang.menu_image_scan(config.enable_image_scan),
                     icon_color: theme::icon_green(),
                 },
                 MenuItem::ManageInstallation => MenuRow {
@@ -111,8 +111,8 @@ pub fn show_menu(config: &mut Config) -> anyhow::Result<Option<MenuAction>> {
                 MenuItem::RebindHotkey => config.lang.help_rebind_hotkey().to_string(),
                 MenuItem::Language => config.lang.help_language().to_string(),
                 MenuItem::DetectionSettings => config.lang.help_detection_settings().to_string(),
-                MenuItem::RedactStyle => config.lang.help_dm_redact_style().to_string(),
-                MenuItem::ImageScan => config.lang.help_dm_image_scan().to_string(),
+                MenuItem::RedactStyle => config.lang.help_menu_redact_style().to_string(),
+                MenuItem::ImageScan => config.lang.help_menu_image_scan().to_string(),
                 MenuItem::ManageInstallation => config.lang.help_manage_installation().to_string(),
                 MenuItem::Exit => config.lang.help_exit().to_string(),
                 MenuItem::StarOnGitHub => config.lang.help_star_github().to_string(),

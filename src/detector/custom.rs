@@ -32,10 +32,6 @@ pub fn parse_severity(s: &str) -> Severity {
     Severity::from_wire(s)
 }
 
-pub fn severity_str(s: &Severity) -> &'static str {
-    s.as_str()
-}
-
 /// Compile a user regex with a bounded size, never panicking. Returns a
 /// human-readable error string on failure (the built-in `re()` panics, so it
 /// must never touch user input).
@@ -134,15 +130,6 @@ pub fn load() -> (Vec<SecretPattern>, Vec<String>) {
     }
 
     (out, errs)
-}
-
-/// Drop the in-process custom-patterns cache. Tests use this to ensure each
-/// scenario rebuilds from disk; production code should not need to call it.
-#[cfg(test)]
-pub fn _invalidate_cache_for_tests() {
-    if let Ok(mut g) = CACHE.lock() {
-        *g = None;
-    }
 }
 
 pub fn save(file: &CustomPatternsFile) -> anyhow::Result<()> {

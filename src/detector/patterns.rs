@@ -75,22 +75,8 @@ pub enum Severity {
 }
 
 impl Severity {
-    /// Single source of truth for the lowercase wire form (config /
-    /// `patterns.toml`). Exhaustive match - a new variant fails to compile
-    /// here until it is given a serialization, mirroring the i18n drift
-    /// guard. Localized display text is the separate concern of
-    /// `Lang::severity_label`.
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Severity::Critical => "critical",
-            Severity::High => "high",
-            Severity::Medium => "medium",
-            Severity::Low => "low",
-        }
-    }
-
-    /// Parse the wire form. Unknown / "medium" both map to `Medium` (the
-    /// historical lenient default for user-supplied custom patterns).
+    /// Parse the `patterns.toml` form. Unknown values map to `Medium`, the
+    /// lenient default for user-supplied custom patterns.
     pub fn from_wire(s: &str) -> Severity {
         match s.trim().to_ascii_lowercase().as_str() {
             "critical" => Severity::Critical,
@@ -207,15 +193,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn severity_wire_round_trips() {
-        for s in [
-            Severity::Critical,
-            Severity::High,
-            Severity::Medium,
-            Severity::Low,
-        ] {
-            assert_eq!(Severity::from_wire(s.as_str()), s);
-        }
+    fn severity_parses_wire_names() {
+        assert_eq!(Severity::from_wire("critical"), Severity::Critical);
+        assert_eq!(Severity::from_wire("high"), Severity::High);
+        assert_eq!(Severity::from_wire("medium"), Severity::Medium);
+        assert_eq!(Severity::from_wire("low"), Severity::Low);
         // Lenient parse: case-insensitive, trimmed, unknown -> Medium.
         assert_eq!(Severity::from_wire("  CRITICAL "), Severity::Critical);
         assert_eq!(Severity::from_wire("bogus"), Severity::Medium);
