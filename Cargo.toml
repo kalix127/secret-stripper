@@ -1,6 +1,6 @@
 [package]
 name = "secret-stripper"
-version = "1.5.1"
+version = "1.5.2"
 edition = "2021"
 rust-version = "1.89"
 description = "Paste a redacted copy of the clipboard with one hotkey: secrets and PII come out masked. Linux, X11 and Wayland"
@@ -47,21 +47,21 @@ arboard = { version = "3.6.1", features = ["wayland-data-control"] }
 image = { version = "0.25.10", default-features = false, features = ["png"] }
 regex = "1.13.1"
 serde = { version = "1.0.229", features = ["derive"] }
-serde_json = "1.0.151"
-toml = "1.1.6"
+serde_json = "1.0.154"
+toml = "1.1.8"
 clap = { version = "4.6.7", features = ["derive"] }
 ratatui = "0.30.2"
 crossterm = "0.29"
-notify-rust = "4.18.1"
+notify-rust = "4.18.2"
 dirs = "7.0.0"
 log = "0.4.34"
 env_logger = { version = "0.11.11", default-features = false }
 anyhow = "1.0.104"
 ureq = { version = "3.4.2", default-features = false, features = ["rustls", "json"] }
-zeroize = { version = "1.9.0", features = ["std"] }
+zeroize = { version = "1.9.1", features = ["std"] }
 semver = "1.0.28"
 tempfile = "3.27.0"
-sha2 = "0.11.0"
+sha2 = "0.11.1"
 chrono = { version = "0.4.45", default-features = false, features = ["std", "serde"] }
 portable-pty = "0.9.0"
 libc = "0.2.190"
@@ -71,7 +71,7 @@ wayland-protocols = { version = "0.32.13", features = ["client", "staging"] }
 wayland-protocols-wlr = { version = "0.3.12", features = ["client"] }
 
 [dev-dependencies]
-proptest = "1.11.0"
+proptest = "1.12.0"
 serial_test = "4.0.1"
 
 [profile.release]
