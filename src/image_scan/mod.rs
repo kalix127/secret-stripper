@@ -14,6 +14,10 @@ pub struct OcrWord {
     pub line: u32,
 }
 
+pub fn tesseract_installed() -> bool {
+    crate::ai_tui::which_on_path("tesseract").is_some()
+}
+
 #[derive(Debug)]
 pub enum OcrError {
     NotInstalled,

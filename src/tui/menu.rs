@@ -171,6 +171,12 @@ pub fn show_menu(config: &mut Config) -> anyhow::Result<Option<MenuAction>> {
                     MenuItem::ImageScan => {
                         config.enable_image_scan = !config.enable_image_scan;
                         config.save()?;
+                        // Screenshot pastes are blocked while OCR is missing.
+                        if config.enable_image_scan
+                            && !secret_stripper::image_scan::tesseract_installed()
+                        {
+                            flash = Some(config.lang.flash_tesseract_missing().to_string());
+                        }
                         continue;
                     }
                     MenuItem::ManageInstallation => {

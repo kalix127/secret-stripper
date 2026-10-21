@@ -51,7 +51,7 @@ pub fn detect() -> Vec<AiTui> {
 
 /// Minimal `which` reimplementation - we already shell out for OS integration
 /// but adding a `which` crate just to walk PATH is not worth it.
-fn which_on_path(name: &str) -> Option<PathBuf> {
+pub(crate) fn which_on_path(name: &str) -> Option<PathBuf> {
     let path = env::var_os("PATH")?;
     for dir in env::split_paths(&path) {
         let candidate = dir.join(name);

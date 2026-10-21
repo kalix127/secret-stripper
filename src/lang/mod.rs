@@ -1136,6 +1136,12 @@ lang_strings! {
         IT => "Torna al menu principale",
         ES => "Volver al menú principal",
     }
+    flash_tesseract_missing {
+        EN => "tesseract is not installed: screenshots will not paste until you install it.",
+        FR => "tesseract n'est pas installé : les captures ne seront pas collées tant qu'il manque.",
+        IT => "tesseract non è installato: gli screenshot non verranno incollati finché manca.",
+        ES => "tesseract no está instalado: las capturas no se pegarán hasta que lo instales.",
+    }
     help_menu_image_scan {
         EN => "Redact secrets in clipboard screenshots (needs tesseract)",
         FR => "Expurger les secrets des captures du presse-papiers (requiert tesseract)",

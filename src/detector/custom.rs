@@ -46,7 +46,18 @@ pub fn validate_regex(src: &str) -> Result<regex::Regex, String> {
         .size_limit(REGEX_SIZE_LIMIT)
         .dfa_size_limit(REGEX_SIZE_LIMIT)
         .build()
-        .map_err(|e| e.to_string())
+        .map_err(|e| one_line(&e.to_string()))
+}
+
+// Syntax errors span several lines (pattern, caret, message); the TUI shows
+// one line, so keep only the message.
+fn one_line(err: &str) -> String {
+    let last = err
+        .lines()
+        .rev()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or(err);
+    last.trim().trim_start_matches("error: ").to_string()
 }
 
 /// Read the raw specs straight from disk. The TOML file is the source of
@@ -153,7 +164,7 @@ mod tests {
     #[test]
     fn validate_regex_syntax_error_reported() {
         let err = validate_regex(r"foo[\\d").unwrap_err();
-        assert!(!err.is_empty(), "error message must be non-empty");
+        assert_eq!(err, "unclosed character class");
     }
 
     #[test]
