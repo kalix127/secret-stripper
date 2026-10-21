@@ -7,7 +7,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::{
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::Paragraph,
+    widgets::{Paragraph, Wrap},
 };
 
 pub fn capture_hotkey(
@@ -48,6 +48,23 @@ pub fn capture_hotkey(
                 preview_style,
             )),
         ];
+        if let Some(terminal) = captured.as_deref().and_then(hotkey::terminal_chord) {
+            body_lines.push(Line::from(Span::styled(
+                config.lang.hk_terminal(&terminal),
+                Style::new().fg(text_dim()),
+            )));
+        }
+        if let Some(chord) = &captured {
+            if std::env::var_os("WAYLAND_DISPLAY").is_some()
+                && !crate::paste::chord_reenters(chord, &config.paste_keys)
+            {
+                body_lines.push(Line::from(""));
+                body_lines.push(Line::from(Span::styled(
+                    config.lang.hk_warn_slow_paste(&config.paste_keys),
+                    Style::new().fg(warn()),
+                )));
+            }
+        }
         if let Some(err) = &error {
             body_lines.push(Line::from(""));
             body_lines.push(Line::from(Span::styled(
@@ -58,7 +75,10 @@ pub fn capture_hotkey(
 
         terminal.draw(|f| {
             let body = scaffold(f, config.lang.hk_title(), config.lang.hk_hint(), config);
-            f.render_widget(Paragraph::new(body_lines.clone()), body);
+            f.render_widget(
+                Paragraph::new(body_lines.clone()).wrap(Wrap { trim: false }),
+                body,
+            );
         })?;
 
         if let Event::Key(key) = event::read()? {
@@ -71,6 +91,9 @@ pub fn capture_hotkey(
                     match &captured {
                         Some(chord) => {
                             match hotkey::parse_chord(chord) {
+                                Ok(_) if crate::paste::chord_is_paste_keys(chord, config) => {
+                                    error = Some(config.lang.hk_err_paste_keys(chord));
+                                }
                                 Ok(_) => {
                                     // Tear down the old DE binding before persisting the new
                                     // chord so the OS shortcut points at the right key after.
@@ -140,11 +163,7 @@ fn build_chord(mods: KeyModifiers, code: KeyCode) -> Option<String> {
         parts.push("Shift".to_string());
     }
     if mods.contains(KeyModifiers::SUPER) || mods.contains(KeyModifiers::META) {
-        parts.push(if cfg!(target_os = "macos") {
-            "Cmd".to_string()
-        } else {
-            "Super".to_string()
-        });
+        parts.push("Super".to_string());
     }
 
     if parts.is_empty() {

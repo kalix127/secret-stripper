@@ -6,7 +6,7 @@ use ratatui::{
     layout::Rect,
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Paragraph},
+    widgets::{Block, BorderType, Borders, Paragraph, Wrap},
     Frame,
 };
 
@@ -96,6 +96,16 @@ pub fn visible_window(total: usize, selected: usize, rows: usize) -> (usize, usi
     (start, start + rows)
 }
 
+/// Rows `lines` take once wrapped to `width`. Word wrapping can need a row
+/// more than this character count, so callers keep a blank line at the end.
+pub fn wrapped_height(lines: &[Line], width: u16) -> u16 {
+    let width = usize::from(width.max(1));
+    lines
+        .iter()
+        .map(|l| l.width().max(1).div_ceil(width) as u16)
+        .sum()
+}
+
 /// Generic Yes/No confirmation screen drawn through the shared chrome.
 /// `detail` is an optional second line (e.g. a URL). Yes is the default;
 /// Esc / q return false.
@@ -144,7 +154,7 @@ pub fn confirm(
                     Span::styled((*label).to_string(), style),
                 ]));
             }
-            f.render_widget(Paragraph::new(lines), body);
+            f.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), body);
         })?;
 
         if let Event::Key(key) = event::read()? {

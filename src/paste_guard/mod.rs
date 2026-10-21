@@ -14,7 +14,7 @@ pub use parser::PasteParser;
 
 /// Limit on a single paste payload before we give up on in-flight redaction.
 /// Above this the parser falls back to passthrough so we never OOM on a
-/// pathological paste. 1 MiB matches the cap in `run_trigger`.
+/// pathological paste. 1 MiB matches the cap in `paste`.
 pub const MAX_PASTE_BYTES: usize = 1024 * 1024;
 
 pub const START_SEQ: &[u8] = b"\x1b[200~";
@@ -22,17 +22,36 @@ pub const END_SEQ: &[u8] = b"\x1b[201~";
 
 const ENV_NO_OS: &str = "SECRET_STRIPPER_NO_OS_SIDE_EFFECTS";
 
+/// Print the alias block for the AI tools on PATH. Opt-in: the user adds it to
+/// their shell config by hand.
+fn print_aliases(lang: crate::lang::Lang) {
+    let detected = crate::ai_tui::detect();
+    if detected.is_empty() {
+        println!("{}", lang.ai_tui_none_detected());
+        return;
+    }
+    let labels: Vec<&str> = detected.iter().map(|t| t.label).collect();
+    println!("{}", lang.ai_tui_detected(&labels.join(", ")));
+
+    let shell = crate::shell_rc::Shell::from_env();
+    match shell.and_then(|s| s.rc_path()) {
+        Some(path) => println!("{}", lang.ai_tui_add_to_file(&path.display().to_string())),
+        None => println!("{}", lang.ai_tui_add_to_unknown_shell()),
+    }
+    println!();
+    let bins: Vec<&str> = detected.iter().map(|t| t.binary).collect();
+    let shell = shell.unwrap_or(crate::shell_rc::Shell::Bash);
+    print!("{}", crate::shell_rc::render_alias_snippet(shell, &bins));
+}
+
 /// Spawn `argv` in a PTY, intercept bracketed-paste payloads on the way in,
-/// redact them, and forward. Returns the child's exit code.
-///
-/// Long-lived for the lifetime of the child - this is the second carve-out
-/// from the one-shot model documented in CLAUDE.md (the first is the daily
-/// update-check scheduler). Holds no global state, no PID file.
+/// redact them, and forward. Returns the child's exit code. With no command,
+/// print the alias block instead.
+/// Runs as long as the child does; holds no global state and no PID file.
 pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
     if argv.is_empty() {
-        let lang = cfg.lang;
-        eprintln!("{}", lang.pg_no_child());
-        return Ok(2);
+        print_aliases(cfg.lang);
+        return Ok(0);
     }
     // Allow tests / scripts to verify wiring without touching the real PTY.
     if std::env::var_os(ENV_NO_OS).is_some() {
@@ -109,11 +128,9 @@ pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
     // grep, etc.).
     //
     // Feedback policy: never write to the parent's stderr while the wrapped
-    // child is rendering a TUI - it punches through the frame (see
-    // CLAUDE.md::tui-no-stdout). Instead, fire a desktop notification per
-    // redaction event (gated on `!config.silent` to match the trigger
-    // flow). The visible proof is the AI TUI rendering `[REDACTED]` in
-    // place of the secret in its own input field.
+    // child is rendering a TUI - it punches through the frame. Instead, fire
+    // a desktop notification per redaction event (muted by `silent`, like
+    // the paste flow).
     let detector_for_parser = Arc::clone(&detector);
     let cfg_for_parser = Arc::clone(&cfg);
     let stdin_pump = thread::spawn(move || {
@@ -140,12 +157,8 @@ pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
             // floor rather than corrupt the TUI frame. The fact that the
             // paste was not redacted is observable in the child itself.
             let _ = parser.take_overflow();
-            if redacted_total > 0 && !cfg_for_parser.silent {
-                crate::notify::redacted_notification(
-                    redacted_total,
-                    cfg_for_parser.notification_timeout_secs,
-                    cfg_for_parser.lang,
-                );
+            if redacted_total > 0 {
+                crate::notify::redacted(redacted_total, &cfg_for_parser);
             }
             if !out_bytes.is_empty() && pty_writer.write_all(&out_bytes).is_err() {
                 break;

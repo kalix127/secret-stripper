@@ -1,185 +1,176 @@
 <p align="center">
-  <a href="https://github.com/kalix127/secret-stripper"><img src="https://shieldcn.dev/group/badge/platform-Linux_%7C_macOS_%7C_Windows-blue+crates/secret-stripper+github/license/kalix127/secret-stripper.svg?variant=secondary" alt="status"></a>
+  <a href="https://github.com/kalix127/secret-stripper"><img src="https://shieldcn.dev/group/badge/platform-Linux-blue+crates/secret-stripper+github/license/kalix127/secret-stripper.svg?variant=secondary" alt="status"></a>
 </p>
 
 <img src="https://raw.githubusercontent.com/kalix127/secret-stripper/main/.github/assets/banner.gif" width="100%">
 
-**A small Rust CLI that strips secrets from your clipboard on demand. Bind a hotkey, highlight text, press the chord - the clipboard holds a redacted version. Normal Ctrl+C / Ctrl+V is never intercepted.**
+**Paste a redacted copy of your clipboard with one hotkey. Copy as usual, press `Ctrl+Alt+V`, and API keys, tokens, private keys and PII come out as `[REDACTED]`. Your clipboard keeps the original, and plain `Ctrl+V` is never touched. Linux only, X11 and Wayland, everything stays on your machine.**
 
 ## Contents
 
 - [Quick Start](#quick-start)
-- [Supported OS](#supported-os)
-- [Platform setup](#platform-setup)
-  - [macOS setup](#macos-setup)
-  - [Windows setup](#windows-setup)
-- [What It Detects](#what-it-detects)
+- [How it works](#how-it-works)
+- [Supported desktops](#supported-desktops)
+- [What it detects](#what-it-detects)
+- [Redaction styles](#redaction-styles)
 - [Redact screenshots](#redact-screenshots)
 - [Auto-redact paste into AI TUIs](#auto-redact-paste-into-ai-tuis)
+- [Commands](#commands)
+- [Configuration](#configuration)
+- [Notifications](#notifications)
+- [Updates](#updates)
+- [Upgrading from 1.x](#upgrading-from-1x)
+- [Uninstall](#uninstall)
+- [Troubleshooting](#troubleshooting)
+- [Privacy and security](#privacy-and-security)
 - [Contributing](#contributing)
-- [Star history](#star-history)
 - [License](#license)
 
 ---
 
 ## Quick Start
 
-**Linux** - one command, no extra setup:
-
 ```bash
 curl -sSf https://secretstripper.download/install.sh | bash
 ```
 
-Default chord: `Ctrl+Alt+X`.
+The installer downloads the release binary for your CPU (x86_64 or aarch64), checks it against the release's `SHA256SUMS`, and installs it to `/usr/local/bin` (sudo asks for your password) or to `~/.local/bin` if that fails. It then runs `secret-stripper init`, which:
 
-**macOS** - needs a one-time global-hotkey helper (skhd or Hammerspoon). See [macOS setup](#macos-setup) for permissions and troubleshooting.
+- writes `~/.config/secret-stripper/config.toml`,
+- binds two shortcuts in your desktop: `Ctrl+Alt+V` and, for terminals, `Ctrl+Alt+Shift+V`,
+- installs a systemd user timer that checks for updates,
+- on Wayland, asks before running sudo once to let your session use `/dev/uinput` (see [Wayland setup](#wayland-setup)).
 
-```bash
-brew install koekeishiya/formulae/skhd
-curl -sSf https://secretstripper.download/install.sh | bash
-# Grant skhd Accessibility: System Settings -> Privacy & Security -> Accessibility
-skhd --restart-service
-```
+Then copy something with a secret in it and press `Ctrl+Alt+V` in any text field.
 
-Default chord: `Cmd+Shift+C`.
-
-**Windows (PowerShell)** - needs AutoHotkey v2. See [Windows setup](#windows-setup) for the full flow.
-
-```powershell
-winget install AutoHotkey.AutoHotkey
-iwr -useb https://secretstripper.download/install.ps1 | iex
-```
-
-Default chord: `Ctrl+Alt+C`.
-
-**From [crates.io](https://crates.io/crates/secret-stripper) (Rust)** - same per-OS prerequisites apply (skhd on macOS, AutoHotkey on Windows):
+**From [crates.io](https://crates.io/crates/secret-stripper)** (Rust 1.89 or newer):
 
 ```bash
-cargo install secret-stripper && secret-stripper init
+cargo install secret-stripper
+secret-stripper init
 ```
 
-**From source (git):**
+**From source:**
 
 ```bash
-cargo install --git https://github.com/kalix127/secret-stripper.git --locked && secret-stripper init
+cargo install --git https://github.com/kalix127/secret-stripper.git --locked
+secret-stripper init
 ```
 
-After install, highlight text and press your chord. On Linux the PRIMARY selection is read directly, so you can skip the `Ctrl+C`. Paste with `Ctrl+V` (`Cmd+V` on macOS).
+The shortcuts run the binary by its absolute path. If you move the binary, run `secret-stripper init` again.
 
-Run `secret-stripper menu` to tune settings, or `secret-stripper --help` for all commands.
+Run `secret-stripper menu` to change the hotkey, detection and notifications, or `secret-stripper status` to see what is set up.
 
 ---
 
-## Supported OS
+## How it works
 
-| OS | Status | Hotkey backend |
-|----|--------|----------------|
-| Linux | ✅ Supported | gsettings (GNOME / Cinnamon / Unity / Budgie / Pantheon), gsettings (MATE schema), xfconf-query (XFCE), kwriteconfig + qdbus (KDE Plasma 5/6) |
-| macOS | ✅ Supported | skhd (`~/.skhdrc`) or Hammerspoon (`~/.hammerspoon/init.lua`); manual instructions if neither is installed |
-| Windows | ✅ Supported | AutoHotkey v2 (`%APPDATA%\secret-stripper\secret-stripper.ahk`) - install via `winget install AutoHotkey.AutoHotkey` |
+The hotkey runs `secret-stripper paste`, which:
 
-## Platform setup
+1. reads the clipboard and scans it locally, with no network access;
+2. with nothing to redact, sends the normal paste keys, so the app pastes the clipboard unchanged;
+3. otherwise puts a redacted copy on the clipboard, sends the paste keys, waits for the app to read it, then puts the original back.
 
-### macOS setup
+The paste keys are `Ctrl+V`, or `Ctrl+Shift+V` for the terminal hotkey. On X11 they are typed through XTest, and a focused terminal is detected by its window class, so the main hotkey works there too. On Wayland they are typed through a virtual keyboard on `/dev/uinput`, which works on every compositor and with any keyboard layout.
 
-There is no zero-install way to register a true global hotkey on macOS without a resident process. Secret Stripper itself stays one-shot, so it delegates hotkey capture to one of two well-known helpers: [skhd](https://github.com/koekeishiya/skhd) (lightweight, recommended) or [Hammerspoon](https://www.hammerspoon.org/) (heavier, scriptable). If neither is installed, `init` falls back to printing manual binding instructions.
+If the app has not read the clipboard within 3 seconds, the redacted copy stays on the clipboard instead of the original, so a slow app can never paste the secret.
 
-1. **Install skhd via Homebrew:**
+### Wayland setup
 
-   ```bash
-   brew install koekeishiya/formulae/skhd
-   ```
+Wayland does not let programs type into other windows, so `paste` creates a virtual keyboard through `/dev/uinput`. That device is root-only by default. `init` shows these commands and asks before running them with sudo:
 
-2. **Run `secret-stripper init`.** It writes `~/.skhdrc`, the launchd LaunchAgent for the daily update check, and the config file. Output includes a "DE binding" line: `OK` if skhd / Hammerspoon was detected, `FAILED` with install hints if not.
+```bash
+echo 'uinput' | sudo tee /etc/modules-load.d/secret-stripper-uinput.conf
+echo 'KERNEL=="uinput", SUBSYSTEM=="misc", TAG+="uaccess", OPTIONS+="static_node=uinput"' | sudo tee /etc/udev/rules.d/60-secret-stripper-uinput.rules
+sudo modprobe uinput
+sudo udevadm control --reload-rules
+sudo udevadm trigger --settle --action=change --sysname-match=uinput
+```
 
-3. **Grant skhd Accessibility permission.** skhd needs this to intercept global hotkeys, otherwise it silently captures nothing. Open **System Settings -> Privacy & Security -> Accessibility**, click `+`, add `/usr/local/bin/skhd`, and toggle it on. If skhd was already running, restart it so the new permission takes effect:
+The `uaccess` tag gives `/dev/uinput` to the user of the active local session only, not to a group. If the paste still fails right after setup, log out and back in. To revoke the access:
 
-   ```bash
-   skhd --restart-service
-   ```
+```bash
+sudo rm -f /etc/modules-load.d/secret-stripper-uinput.conf
+sudo rm -f /etc/udev/rules.d/60-secret-stripper-uinput.rules
+```
 
-4. **Test the chord:**
+### Terminal hotkey
 
-   ```bash
-   echo "test@example.com" | pbcopy
-   # Press your chord (default: Cmd+Shift+C)
-   pbpaste     # expect: [REDACTED]
-   ```
-
-*Hammerspoon alternative:* `brew install --cask hammerspoon`, open it once to grant Accessibility, then run `secret-stripper init` - it writes the binding into `~/.hammerspoon/init.lua` instead of `~/.skhdrc`.
-
-*Default chord:* `Cmd+Shift+C`. macOS apps often claim Cmd-modifier chords, so if it conflicts with something you use (browser DevTools, Finder "Copy Path", etc.), rebind from `secret-stripper menu -> Rebind Hotkey`. Two safer options if you want to plan ahead: `Cmd+Option+X` or `Cmd+Ctrl+X`.
-
-### Windows setup
-
-Windows has no zero-install way to register a true global hotkey. Same constraint as macOS - Secret Stripper delegates hotkey capture to [AutoHotkey](https://www.autohotkey.com/) v2 (the Windows analogue of skhd). AutoHotkey uses the Win32 `RegisterHotKey` API under the hood and is the only mechanism that delivers the chord reliably across focused windows, full-screen apps, and elevated processes. AutoHotkey is required - `init` aborts with an install hint if it cannot find it.
-
-1. **Install AutoHotkey via winget:**
-
-   ```powershell
-   winget install AutoHotkey.AutoHotkey
-   ```
-
-   The package installs AutoHotkey v2 to `C:\Program Files\AutoHotkey\v2\`.
-
-2. **Run `secret-stripper init`.** It writes `%APPDATA%\secret-stripper\secret-stripper.ahk`, drops a startup `.lnk` so AHK re-launches the script at every login, and starts the AHK process immediately so the chord is live without a logout.
-
-3. **Test the chord:**
-
-   ```powershell
-   Set-Clipboard "test@example.com"
-   # Press your chord (default: Ctrl+Alt+C)
-   Get-Clipboard    # expect: [REDACTED]
-   ```
-
-- The hotkey is limited to `Ctrl+Alt+<key>` (optionally with `Shift`); other chords are rejected.
-- No PRIMARY selection: the flow is two steps (`Ctrl+C`, then your chord).
-- The AHK script runs the redaction with a hidden console, so no window flashes on each trigger.
-- The daily update check runs as a `schtasks` daily task at 11:00.
-- *Uninstall* kills the AHK process bound to our script and removes the `.ahk` file and the startup `.lnk`. Other AHK scripts you have running are untouched.
+Terminals paste with `Ctrl+Shift+V`, because `Ctrl+V` means something else there. The terminal hotkey is your hotkey plus Shift (`Ctrl+Alt+Shift+V` by default) and runs `secret-stripper paste --terminal`. On X11 the main hotkey also works in common terminals.
 
 ---
 
-## What It Detects
+## Supported desktops
+
+Secret Stripper supports Linux only, on X11 and Wayland. 1.5.x was the last release for macOS and Windows; see [Upgrading from 1.x](#upgrading-from-1x).
+
+| Desktop | How the shortcuts are bound |
+|---------|-----------------------------|
+| GNOME, Unity, Budgie, Pantheon | gsettings custom keybindings |
+| Cinnamon | gsettings (Cinnamon schema) |
+| MATE | gsettings (MATE schema) |
+| XFCE | xfconf-query |
+| KDE Plasma 5/6 | kglobalshortcutsrc + kglobalaccel |
+| Hyprland | `~/.config/hypr/secret-stripper.conf`, sourced from `hyprland.conf` |
+| sway, i3 and others | printed lines to add to your config yourself |
+
+On a desktop it cannot configure, `init` prints the two commands and ready-made lines, for example:
+
+```
+bindsym Ctrl+Mod1+v exec '/usr/local/bin/secret-stripper' paste
+bindsym Ctrl+Mod1+Shift+v exec '/usr/local/bin/secret-stripper' paste --terminal
+```
+
+On GNOME, which has no clipboard protocol for background programs on Wayland, the redacted copy is served through XWayland. Wayland apps see it as usual.
+
+---
+
+## What it detects
 
 | Category | Examples |
-|----------|---------|
-| **🔴 Cloud Secrets** | AWS keys, Google API keys, Azure credentials, OpenAI tokens, Stripe keys, Heroku API keys |
-| **🔴 Auth Tokens** | GitHub tokens, GitLab tokens, Slack tokens, Discord tokens, JWTs, bearer tokens, NPM tokens |
-| **🔴 Cryptographic Keys** | RSA/EC/OpenSSH private keys, PGP private keys, SSH public keys |
-| **🔴 PII** | Credit card numbers, SSNs, phone numbers, email addresses, passport numbers |
-| **🟠 Connection Strings** | PostgreSQL, MongoDB, Redis, MySQL, JDBC URLs with credentials |
-| **🟡 Heuristic** | Unusual strings, env files with secrets, JSON with password fields, base64-encoded content |
-| **🟢 Safe** | Normal text, emails, documents - no false alerts |
+|----------|----------|
+| Cloud secrets | AWS keys, Google API keys, Azure credentials, Heroku and other PaaS tokens |
+| Auth and API tokens | GitHub, GitLab, Slack, Discord, OpenAI, Anthropic, Stripe and NPM tokens, JWTs, bearer tokens |
+| Private keys | RSA, EC, OpenSSH and PGP private key blocks |
+| Connection strings | PostgreSQL, MongoDB, Redis and MySQL URLs with credentials |
+| PII | Email addresses, phone numbers, credit cards (Luhn-checked), IBANs, IP addresses |
+| Optional | Government IDs, password hashes, crypto wallets and other niche buckets (Full preset) |
+| Optional, off by default | High-entropy strings (`enable_entropy`) and deep-scan heuristics such as `.env` files and JSON password fields (`enable_deep_scan`) |
 
-For the full list of buckets, severity tiers, and patterns, see [DETECTION_COVERAGE.md](DETECTION_COVERAGE.md).
+New installs use the Balanced preset. Switch presets or toggle single buckets in `secret-stripper menu` -> **Detection Settings**. The full list of 850+ patterns is in [DETECTION_COVERAGE.md](DETECTION_COVERAGE.md).
+
+You can add your own patterns in `~/.config/secret-stripper/patterns.toml`:
+
+```toml
+[[patterns]]
+name = "internal_token"
+category = "custom"
+severity = "high"
+regex = "itk_[A-Za-z0-9]{32}"
+```
 
 ---
 
 ## Redaction styles
 
-Pick how detected secrets are replaced from `secret-stripper menu` -> **Redaction Style**:
+Pick how secrets are replaced in `secret-stripper menu` -> **Redaction Style**:
 
-| Style | Output for `aws=AKIAIOSFODNN7EXAMPLE` |
+| Style | Output for `aws=AKIAQ7X2M4K9P3R6TB5Z` |
 |-------|----------------------------------------|
-| **Marker** (default) | `aws=[REDACTED]` - uses a configurable marker string (eight presets + custom) |
-| **Drop** | `aws=` - removes the matched bytes entirely |
-| **Typed** | `aws=[AWS_ACCESS_KEY_ID]` - replaces each span with a tag derived from the matched pattern name |
-| **Placeholder** | `aws=AKIAIOSFODNN7EXAMPLE` - swaps in a realistic but fake sample value for the matched pattern (an email becomes `user@example.com`, a Stripe key `sk_test_4eC39HqLyjWDarjtT1zdp7dc`) |
+| **Marker** (default) | `aws=[REDACTED]`, with a configurable marker |
+| **Drop** | `aws=`, the secret is removed |
+| **Typed** | `aws=[AWS_ACCESS_KEY_ID]`, a tag named after the pattern |
+| **Placeholder** | `aws=AKIAIOSFODNN7EXAMPLE`, a well-known fake value of the same kind (AWS's documented example key here, `user@example.com` for an email) |
 
-The same setting applies to the hotkey trigger, the `redact` pipeline subcommand, and the `paste-guard` AI-TUI wrapper.
+The same setting applies to the hotkey, the `redact` command and `paste-guard`.
 
 ---
 
 ## Redact screenshots
 
-Secrets often live in screenshots, not just text - a terminal grab, a config pane, an API dashboard. When you trigger the hotkey and the clipboard holds an image instead of text, Secret Stripper OCRs the image, runs the same detector it uses for text, and paints a solid black box over only the words that contain a secret. The redacted image is written back to the clipboard. Clean parts of the image are left untouched - the whole screenshot is never blacked out.
+With screenshot redaction on, an image on the clipboard is read with OCR, scanned with the same detector, and pasted with a black box over each word that holds a secret. The rest of the image is left as is.
 
-Supported on Linux only - both X11 and Wayland. On macOS and Windows the hotkey still does text redaction; a clipboard image is left untouched.
-
-When an image is on the clipboard, the hotkey redacts the image even if you have text highlighted - so `screenshot -> hotkey` just works.
-
-It needs the [`tesseract`](https://github.com/tesseract-ocr/tesseract) OCR CLI on your `PATH`. It is an optional runtime dependency: everything else works without it.
+It is off by default: until you turn it on, images paste unredacted. Turn it on in `secret-stripper menu` -> **Screenshot redaction**, or set `enable_image_scan = true`. It needs the [`tesseract`](https://github.com/tesseract-ocr/tesseract) CLI:
 
 ```bash
 sudo pacman -S tesseract tesseract-data-eng    # Arch
@@ -187,46 +178,141 @@ sudo apt install tesseract-ocr                  # Debian / Ubuntu
 sudo dnf install tesseract                      # Fedora
 ```
 
-It fails closed: if `tesseract` is missing, the image cannot be read, or a detected secret cannot be located, the clipboard is left untouched and you get a notification - the original image is never silently passed through and never wiped. OCR makes this path slower than the instant text path (roughly half a second to a couple of seconds for a full screenshot), so wait for the notification before pasting.
-
-Image redaction is off by default. Turn it on from `secret-stripper menu` -> **Detection Settings** -> **Screenshot redaction**, or set `enable_image_scan = true` in `config.toml`.
+It fails closed: if `tesseract` is missing, the image cannot be read, or a secret cannot be located in it, nothing is pasted and a notification says why. OCR adds about half a second to a couple of seconds before the paste.
 
 ---
 
 ## Auto-redact paste into AI TUIs
 
-`secret-stripper init` looks for installed AI terminal tools (Claude Code, Codex CLI, aider, Gemini CLI, Continue, opencode) and prints a ready-to-copy shell alias block. Each alias routes the tool through `paste-guard`, a PTY wrapper that intercepts clipboard pastes and redacts secrets before they reach the AI's prompt - typing and normal output are untouched. Copy the snippet into your shell config (`~/.zshrc`, `~/.bashrc`, `~/.config/fish/config.fish`, or your PowerShell profile) and open a new shell:
+`paste-guard` is a PTY wrapper that redacts bracketed pastes before they reach an AI tool's prompt. Typing and output are untouched. It is opt-in: run `secret-stripper paste-guard` with no command to print an alias block for the AI tools on your PATH (Claude Code, Codex CLI, aider, Gemini CLI, Continue, opencode):
 
 ```bash
-# ----------------------------------
+# ---- secret-stripper paste-guard ----
 alias claude='secret-stripper paste-guard -- claude'
 alias codex='secret-stripper paste-guard -- codex'
-# ----------------------------------
+# ---- secret-stripper paste-guard ----
 ```
 
-Secret Stripper never writes to your shell rc on its own. To stop routing through `paste-guard`, delete the block between the dashed comment lines.
+Add the block to `~/.zshrc`, `~/.bashrc` or `~/.config/fish/config.fish` yourself and open a new shell. Secret Stripper never adds it for you; `uninstall` removes it if it finds it. You can wrap any other command the same way: `secret-stripper paste-guard -- psql`.
 
-**Scope.** `paste-guard` is a per-process wrapper - it only filters pastes into the *one* command you ran it on. Daily use of `ssh`, `psql`, `vim`, `kubectl`, the bare shell prompt, GUI apps, the system clipboard - all completely untouched. You can also add aliases for non-AI tools by hand (live demos against `psql` / `mysql`, screen-recordings) - wrapping leaf commands is fine, wrapping a whole shell usually is not.
+`paste-guard` only filters pastes into the one command it wraps. It needs a terminal with bracketed paste (all modern ones, including tmux and the VS Code terminal), never changes typed text, and passes pastes over 1 MiB through unredacted.
 
-You can also pipe arbitrary text through the same engine:
+The same engine works in pipelines:
 
 ```bash
-cat secrets.log | secret-stripper redact > clean.log
+cat app.log | secret-stripper redact > clean.log
 ```
 
-**Limitations.** Bracketed paste must be supported by your terminal (every modern emulator does, including the VSCode integrated terminal and tmux passthrough); typed secrets are never modified, only pasted ones; paste payloads above 1 MiB fall through unredacted.
+---
+
+## Commands
+
+| Command | What it does |
+|---------|--------------|
+| `init` | Set up config, shortcuts, update timer and uinput access. Safe to run again. |
+| `paste [--terminal]` | Paste a redacted copy. Run by the hotkeys. |
+| `menu` | Settings menu. |
+| `status` | Hotkeys, desktop, session, uinput access and main settings. |
+| `register-shortcut` / `unregister-shortcut` | Bind or remove both shortcuts. |
+| `upgrade` | Download, verify and install the latest release. |
+| `redact` | Redact stdin to stdout. |
+| `paste-guard -- <cmd>` | Run `<cmd>` with pastes redacted. With no command, print the alias block. |
+| `uninstall` | Remove shortcuts, timer, config and the alias block. |
+
+Add `--log-level debug` to any command for details on stderr.
+
+---
+
+## Configuration
+
+Settings live in `~/.config/secret-stripper/config.toml` (or `$SECRET_STRIPPER_CONFIG_HOME/secret-stripper/config.toml`). The menu covers most of them; these are the keys you may want to edit by hand:
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `hotkey` | `"Ctrl+Alt+V"` | The paste hotkey. Change it in the menu so the shortcuts are rebound. |
+| `paste_keys` | `"Ctrl+V"` | Keys sent to paste. |
+| `terminal_paste_keys` | `"Ctrl+Shift+V"` | Keys sent by `paste --terminal`. |
+| `redact_pattern` | `"[REDACTED]"` | Marker text for the Marker style. |
+| `silent` | `false` | Turn off redaction and update notifications. |
+| `enable_image_scan` | `false` | Screenshot redaction. |
+| `enable_entropy` | `false` | Redact random-looking strings with no known format. |
+| `enable_deep_scan` | `false` | Heuristic scanners for `.env`, JSON, YAML and similar. |
+| `allowlist_regex` | `[]` | Regexes for values that must never be redacted. |
+| `check_for_updates` | `true` | Daily update check. |
+| `auto_install` | `false` | Install updates automatically when the binary is writable. |
+
+---
+
+## Notifications
+
+A desktop notification tells you how many secrets were redacted and when an update is available or was installed. `silent = true` (or the menu toggle) turns those off. A paste that did not happen always notifies, with the reason, since the hotkey has no terminal to print to.
+
+---
+
+## Updates
+
+A systemd user timer runs `secret-stripper upgrade-check` 2 minutes after login and once a day. It shows at most one update notice per day and stays quiet on network errors.
+
+Install an update with `secret-stripper upgrade`, or `sudo secret-stripper upgrade` if the binary is in `/usr/local/bin`. Downloads are checked against the release's `SHA256SUMS`. With `auto_install = true`, the timer installs updates itself, but only when it can write to the binary's directory (for example `~/.local/bin`).
+
+---
+
+## Upgrading from 1.x
+
+2.0 replaces the 1.x flow, where the hotkey rewrote the clipboard in place, with a paste: the hotkey now types the redacted copy into the focused app and keeps your clipboard intact.
+
+On Linux, `secret-stripper upgrade` (or the 1.x auto-install) brings you to 2.0. The first time you press your old hotkey or run `init`, `menu` or `status`, it migrates once:
+
+- the old default hotkey `Ctrl+Alt+X` moves to `Ctrl+Alt+V`; a hotkey you chose yourself is kept,
+- the terminal hotkey is added and both shortcuts are rebound,
+- notifications are turned on (1.x was silent by default),
+- the update timer is rewritten.
+
+On Wayland, run `secret-stripper init` once more to set up uinput access.
+
+**macOS and Windows:** 2.0 is Linux only. Stay on 1.5.2, the last release for those systems. Older 1.x versions will show notices about 2.0 that they cannot install; to stop them, install 1.5.2 from the [release page](https://github.com/kalix127/secret-stripper/releases/tag/v1.5.2) or with `cargo install secret-stripper --version 1.5.2`, or turn off update checks in the menu.
+
+---
+
+## Uninstall
+
+```bash
+secret-stripper uninstall
+```
+
+This removes both shortcuts, the update timer, the config directory and the `paste-guard` alias block. It then prints the two commands it cannot run for you: the `sudo rm -f` for the uinput rule, and the path of the binary to delete.
+
+---
+
+## Troubleshooting
+
+To see each step, run `secret-stripper paste --terminal --log-level debug` in a terminal: it pastes into that terminal and logs to stderr.
+
+- **Nothing is pasted on Wayland:** check that `secret-stripper status` shows `uinput access: yes`. If not, run `secret-stripper init`, then log out and back in.
+- **"The shortcut keys were still held":** release the keys right after pressing. A hotkey that does not include `Ctrl+V` (for example `Super+Alt+V`) waits a moment for you to let go.
+- **Wrong character pasted, or nothing, with a non-US layout:** run with `--log-level debug` and open an issue with the output and your layout.
+- **The original comes back too early or not at all:** the original is restored after the app reads the paste. An app that takes longer than 3 seconds keeps the redacted copy on the clipboard.
+- **Rich formatting lost:** after a redacted paste the original is restored as plain text (or PNG). Copy again if you need the formatting.
+- **No notifications:** a notification daemon must be running; most desktops have one.
+- **Screenshot not redacted:** check that `tesseract` is installed and screenshot redaction is on.
+
+---
+
+## Privacy and security
+
+- Scanning happens on your machine. The only network request is the update check to the GitHub API.
+- During a redacted paste a small `serve-clipboard` process owns the clipboard. It keeps the content in memory until another program takes the clipboard, like any clipboard owner.
+- Everything Secret Stripper puts on the clipboard carries KDE's password-manager hint, which Klipper and managers that honor it skip. Other clipboard managers may still record the redacted copy and the restored original.
+- On Wayland, uinput access lets any program running as you create a virtual keyboard while you are logged in at the machine.
+- Release binaries are checked against `SHA256SUMS` from the same release. This catches corrupted or tampered downloads, but it is not a signature.
+
+Report vulnerabilities as described in [SECURITY.md](SECURITY.md).
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for build, test, lint, and commit conventions.
-
-## Star history
-
-<a href="https://star-history.com/#kalix127/secret-stripper&Date">
-  <img src="https://api.star-history.com/svg?repos=kalix127/secret-stripper&type=Date" alt="Star history chart" width="100%">
-</a>
+See [CONTRIBUTING.md](CONTRIBUTING.md) for build, test, lint and commit conventions.
 
 ## License
 

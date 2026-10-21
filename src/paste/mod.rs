@@ -1,0 +1,620 @@
+pub mod access;
+mod keymap;
+mod keys;
+mod reentry;
+mod uinput;
+mod x11;
+
+use keys::PasteKeys;
+
+use std::fs::File;
+use std::time::{Duration, Instant};
+use zeroize::Zeroizing;
+
+use crate::clipboard::{ClipboardReader, ClipboardSource, Payload, Server};
+use crate::config::{self, Config, RedactStyle};
+use crate::detector::{self, Detector};
+use crate::{lang, notify, stats};
+
+// A multi-MB clipboard runs every regex over the whole text and can stall the
+// engine. Refuse rather than truncate: truncating could split a secret span.
+const MAX_INPUT_BYTES: usize = 1024 * 1024;
+const READ_TIMEOUT: Duration = Duration::from_secs(3);
+const READ_QUIET: Duration = Duration::from_millis(150);
+const MANAGER_GRACE: Duration = Duration::from_millis(150);
+const MODIFIER_TIMEOUT: Duration = Duration::from_secs(2);
+const UINPUT_SETTLE: Duration = Duration::from_millis(250);
+// Without re-entry detection a held chord cannot be seen, so give the user
+// time to release it.
+const HELD_CHORD_DELAY: Duration = Duration::from_millis(600);
+const REENTRY_WINDOW: Duration = Duration::from_millis(500);
+const REENTRY_RETRY: Duration = Duration::from_millis(100);
+const REENTRY_CAP: Duration = Duration::from_secs(2);
+
+enum Plan {
+    AsIs {
+        scanned_clean: bool,
+    },
+    Redacted {
+        redacted: Payload,
+        original: Payload,
+        count: usize,
+    },
+    Blocked(Blocked),
+}
+
+#[derive(Clone, Copy)]
+enum Blocked {
+    TooLarge(usize),
+    ImageScanFailed,
+    OcrMissing,
+    ImageUnmappable,
+    NoLocation,
+}
+
+enum Input {
+    X11(Box<x11::X11Input>),
+    Uinput {
+        keyboard: uinput::UinputKeyboard,
+        created: Instant,
+        settle: Duration,
+    },
+}
+
+impl Input {
+    fn open(keys: &[&PasteKeys], reentrant: bool) -> anyhow::Result<Self> {
+        if std::env::var_os("WAYLAND_DISPLAY").is_some() {
+            let layout = keymap::session_layout()
+                .map_err(|e| log::warn!("session keymap unavailable, assuming US: {e:#}"))
+                .ok();
+            Ok(Input::Uinput {
+                keyboard: uinput::UinputKeyboard::create(keys, layout.as_ref())?,
+                created: Instant::now(),
+                settle: if reentrant {
+                    UINPUT_SETTLE
+                } else {
+                    HELD_CHORD_DELAY
+                },
+            })
+        } else {
+            Ok(Input::X11(Box::new(x11::X11Input::connect()?)))
+        }
+    }
+
+    /// Block until the synthetic keys will not merge with the chord the user
+    /// pressed. X11 reads the real key state; a uinput device also needs time
+    /// for the compositor to pick it up.
+    fn wait_until_ready(&self) -> anyhow::Result<()> {
+        match self {
+            Input::X11(x) => x.wait_modifiers_released(MODIFIER_TIMEOUT),
+            Input::Uinput {
+                created, settle, ..
+            } => {
+                std::thread::sleep(settle.saturating_sub(created.elapsed()));
+                Ok(())
+            }
+        }
+    }
+
+    /// `keys` are already the terminal keys for `paste --terminal`; X11 can
+    /// also spot a terminal from the focused window.
+    fn send(&self, keys: &PasteKeys, terminal_keys: &PasteKeys) -> anyhow::Result<()> {
+        match self {
+            Input::X11(x) if x.focused_is_terminal() => x.send(terminal_keys),
+            Input::X11(x) => x.send(keys),
+            Input::Uinput { keyboard, .. } => keyboard.send(keys),
+        }
+    }
+}
+
+/// Whether a held `chord` plus the paste keys fires the chord again, which
+/// the second `paste` it launches can report. The compositor sees the union
+/// of both modifier sets, so that is the chord only when the paste modifiers
+/// are already part of it.
+pub fn chord_reenters(chord: &str, paste_keys: &str) -> bool {
+    match (PasteKeys::parse(chord), PasteKeys::parse(paste_keys)) {
+        (Ok(chord), Ok(paste)) => {
+            chord.key == paste.key && paste.modifiers.iter().all(|m| chord.modifiers.contains(m))
+        }
+        _ => false,
+    }
+}
+
+fn same_keys(a: &PasteKeys, b: &PasteKeys) -> bool {
+    a.key == b.key
+        && a.modifiers.len() == b.modifiers.len()
+        && a.modifiers.iter().all(|m| b.modifiers.contains(m))
+}
+
+/// Whether `chord` or its terminal variant is one of the paste key sets. Such
+/// a hotkey fires again on every synthetic paste.
+pub fn chord_is_paste_keys(chord: &str, config: &Config) -> bool {
+    let sent: Vec<PasteKeys> = [&config.paste_keys, &config.terminal_paste_keys]
+        .into_iter()
+        .filter_map(|k| PasteKeys::parse(k).ok())
+        .collect();
+    [
+        Some(chord.to_string()),
+        crate::hotkey::terminal_chord(chord),
+    ]
+    .into_iter()
+    .flatten()
+    .filter_map(|c| PasteKeys::parse(&c).ok())
+    .any(|c| sent.iter().any(|k| same_keys(&c, k)))
+}
+
+pub fn run(terminal: bool) -> anyhow::Result<()> {
+    // Taken first so a re-entrant launch reports itself as fast as possible.
+    let lock = match lock_file().map(|f| (f.try_lock(), f)) {
+        Ok((Ok(()), f)) => Ok(f),
+        // A launch during or right after the running paste's send came from
+        // its keys. Anything later is a second press: wait for the first
+        // paste to finish.
+        Ok((Err(std::fs::TryLockError::WouldBlock), f)) => {
+            if reentry::notify() || reentry::sent_within(REENTRY_WINDOW) {
+                return Ok(());
+            }
+            f.lock().map(|()| f)
+        }
+        Ok((Err(std::fs::TryLockError::Error(e)), _)) | Err(e) => Err(e),
+    };
+
+    let config = Config::load();
+    let lang = config.lang;
+    // Without the lock a held chord would chain full pastes.
+    let _lock = match lock {
+        Ok(f) => f,
+        Err(e) => {
+            not_pasted(&config, &lang.cli_lock_failed(&e.to_string()));
+            return Ok(());
+        }
+    };
+    if !config.onboarding_done {
+        not_pasted(&config, lang::Lang::active().cli_run_init_first());
+        return Ok(());
+    }
+    if chord_is_paste_keys(&config.hotkey, &config) {
+        not_pasted(&config, &lang.hk_err_paste_keys(&config.hotkey));
+        return Ok(());
+    }
+
+    let (keys, terminal_keys, reentrant) = match select_keys(&config, terminal) {
+        Ok(k) => k,
+        Err(e) => {
+            not_pasted(&config, &format!("{e:#}"));
+            return Ok(());
+        }
+    };
+
+    // Opened before scanning so the uinput settle time overlaps redaction.
+    let input = match Input::open(&[&keys, &terminal_keys], reentrant) {
+        Ok(i) => i,
+        Err(e) if permission_denied(&e) => {
+            not_pasted(&config, lang.cli_uinput_denied());
+            return Ok(());
+        }
+        Err(e) => {
+            not_pasted(&config, &lang.cli_input_unavailable(&format!("{e:#}")));
+            return Ok(());
+        }
+    };
+    let sender = Sender {
+        input: &input,
+        keys: &keys,
+        terminal_keys: &terminal_keys,
+        // X11 waits for the real modifier release, so only uinput can re-enter.
+        reentrant: reentrant && matches!(input, Input::Uinput { .. }),
+    };
+
+    let plan = match ClipboardReader::new() {
+        Ok(mut reader) => plan(&mut reader, &config),
+        Err(e) => {
+            not_pasted(&config, &lang.cli_clipboard_access_failed(&e.to_string()));
+            return Ok(());
+        }
+    };
+
+    match plan {
+        Plan::Blocked(reason) => {
+            let msg = match reason {
+                Blocked::TooLarge(len) => lang.cli_clipboard_too_large(len, MAX_INPUT_BYTES),
+                Blocked::ImageScanFailed => lang.cli_image_scan_failed().to_string(),
+                Blocked::OcrMissing => lang.cli_ocr_missing().to_string(),
+                Blocked::ImageUnmappable => lang.cli_image_detected_unmappable().to_string(),
+                Blocked::NoLocation => lang.cli_secret_without_location().to_string(),
+            };
+            not_pasted(&config, &msg);
+        }
+        Plan::AsIs { scanned_clean } => {
+            if scanned_clean {
+                eprintln!("{}", lang.cli_no_secrets());
+            }
+            if let Err(e) = input.wait_until_ready() {
+                not_pasted(&config, &lang.cli_input_unavailable(&format!("{e:#}")));
+            } else if let Err(e) = sender.paste(lang) {
+                not_pasted(&config, &format!("{e:#}"));
+            }
+        }
+        Plan::Redacted {
+            redacted,
+            original,
+            count,
+        } => {
+            if let Err(e) = paste_redacted(&sender, &redacted, &original, lang) {
+                not_pasted(&config, &lang.cli_paste_failed(&format!("{e:#}")));
+                return Ok(());
+            }
+            eprintln!("{}", lang.cli_redacted(count));
+            stats::append(count as u64);
+            notify::redacted(count, &config);
+        }
+    }
+    Ok(())
+}
+
+/// The paste keys, the terminal paste keys, and whether the held chord plus
+/// the keys sent fires the chord again.
+fn select_keys(config: &Config, terminal: bool) -> anyhow::Result<(PasteKeys, PasteKeys, bool)> {
+    let terminal_keys = PasteKeys::parse(&config.terminal_paste_keys)?;
+    if terminal {
+        let chord = crate::hotkey::terminal_chord(&config.hotkey).unwrap_or_default();
+        let reentrant = chord_reenters(&chord, &config.terminal_paste_keys);
+        Ok((terminal_keys.clone(), terminal_keys, reentrant))
+    } else {
+        let keys = PasteKeys::parse(&config.paste_keys)?;
+        let reentrant = chord_reenters(&config.hotkey, &config.paste_keys);
+        Ok((keys, terminal_keys, reentrant))
+    }
+}
+
+fn permission_denied(e: &anyhow::Error) -> bool {
+    e.chain().any(|c| {
+        c.downcast_ref::<std::io::Error>()
+            .is_some_and(|io| io.kind() == std::io::ErrorKind::PermissionDenied)
+    })
+}
+
+fn not_pasted(config: &Config, reason: &str) {
+    eprintln!("{reason}");
+    notify::not_pasted(config, reason);
+}
+
+struct Sender<'a> {
+    input: &'a Input,
+    keys: &'a PasteKeys,
+    terminal_keys: &'a PasteKeys,
+    reentrant: bool,
+}
+
+impl Sender<'_> {
+    /// Send the paste keys. A chord still held on Wayland merges with them;
+    /// when it ends in the same key the compositor fires it again instead of
+    /// passing the paste on, and the `paste` it launches signals us. Resend
+    /// until a send goes through without that signal.
+    fn paste(&self, lang: lang::Lang) -> anyhow::Result<()> {
+        let listener = if self.reentrant {
+            reentry::Listener::bind()
+                .map_err(|e| log::warn!("re-entry socket unavailable: {e}"))
+                .ok()
+        } else {
+            None
+        };
+        let start = Instant::now();
+        loop {
+            if let Some(l) = &listener {
+                l.drain();
+            }
+            self.input.send(self.keys, self.terminal_keys)?;
+            if self.reentrant {
+                reentry::mark_sent();
+            }
+            match &listener {
+                Some(l) if l.wait(REENTRY_WINDOW) => {}
+                _ => return Ok(()),
+            }
+            if start.elapsed() >= REENTRY_CAP {
+                anyhow::bail!("{}", lang.cli_chord_held());
+            }
+            std::thread::sleep(REENTRY_RETRY);
+        }
+    }
+}
+
+/// Swap the redacted payload in, paste it, and restore the original only
+/// after the target app has read it. Restoring earlier would let a slow app
+/// paste the unredacted original, so without an observed read the redacted
+/// copy stays on the clipboard.
+fn paste_redacted(
+    sender: &Sender,
+    redacted: &Payload,
+    original: &Payload,
+    lang: lang::Lang,
+) -> anyhow::Result<()> {
+    let server = Server::start(redacted)?;
+    // Both failures mean no paste reached an app, so the original is safe to
+    // put back.
+    if let Err(e) = sender.input.wait_until_ready() {
+        restore(original);
+        return Err(e);
+    }
+    server.discard_reads(MANAGER_GRACE);
+    if let Err(e) = sender.paste(lang) {
+        restore(original);
+        return Err(e);
+    }
+
+    if server.await_read(READ_TIMEOUT, READ_QUIET) {
+        restore(original);
+    } else {
+        eprintln!("{}", lang.cli_restore_skipped());
+    }
+    Ok(())
+}
+
+fn restore(original: &Payload) {
+    if let Err(e) = Server::start(original) {
+        log::warn!("restoring the original clipboard failed: {e:#}");
+    }
+}
+
+fn plan(reader: &mut impl ClipboardSource, config: &Config) -> Plan {
+    let detector = Detector::from_config(config);
+
+    // Text first: apps such as spreadsheets offer a cell as both text and an
+    // image, and the text is what a text field pastes.
+    let text_plan = match reader.read_text().filter(|t| !t.is_empty()) {
+        Some(text) if text.len() > MAX_INPUT_BYTES => {
+            return Plan::Blocked(Blocked::TooLarge(text.len()))
+        }
+        // Best-effort zeroization for buffers we own. arboard hands us a
+        // String we cannot zero from outside, so anything before this point
+        // may linger.
+        Some(text) => Some(plan_text(&detector, config, Zeroizing::new(text))),
+        None => None,
+    };
+    let text_is_clean = matches!(text_plan, None | Some(Plan::AsIs { .. }));
+    if !config.enable_image_scan || !text_is_clean {
+        return text_plan.unwrap_or(Plan::AsIs {
+            scanned_clean: false,
+        });
+    }
+    // Clean text does not cover an image offered next to it: an app that
+    // prefers the image would paste it unscanned.
+    match reader.read_image() {
+        Some((width, height, bytes)) => plan_image(&detector, width, height, bytes),
+        None => text_plan.unwrap_or(Plan::AsIs {
+            scanned_clean: false,
+        }),
+    }
+}
+
+fn plan_image(detector: &Detector, width: usize, height: usize, bytes: Vec<u8>) -> Plan {
+    use secret_stripper::image_scan::{self, ImageResult, TesseractOcr};
+
+    match image_scan::redact_image(&bytes, width as u32, height as u32, &TesseractOcr, detector) {
+        ImageResult::Unavailable if !image_scan::tesseract_installed() => {
+            Plan::Blocked(Blocked::OcrMissing)
+        }
+        ImageResult::Unavailable => Plan::Blocked(Blocked::ImageScanFailed),
+        ImageResult::NoSecrets => Plan::AsIs {
+            scanned_clean: true,
+        },
+        ImageResult::DetectedUnmappable => Plan::Blocked(Blocked::ImageUnmappable),
+        ImageResult::Redacted {
+            bytes: out,
+            w,
+            h,
+            count,
+        } => {
+            let encoded = Payload::png_from_rgba(w as usize, h as usize, out)
+                .and_then(|r| Ok((r, Payload::png_from_rgba(width, height, bytes)?)));
+            match encoded {
+                Ok((redacted, original)) => Plan::Redacted {
+                    redacted,
+                    original,
+                    count,
+                },
+                Err(e) => {
+                    log::error!("{e:#}");
+                    Plan::Blocked(Blocked::ImageScanFailed)
+                }
+            }
+        }
+    }
+}
+
+fn plan_text(detector: &Detector, config: &Config, text: Zeroizing<String>) -> Plan {
+    let result = detector.scan(&text);
+    if !result.has_secrets {
+        return Plan::AsIs {
+            scanned_clean: true,
+        };
+    }
+
+    let entropy_tokens: Vec<&str> = result
+        .high_entropy_tokens
+        .iter()
+        .map(|(t, _)| t.as_str())
+        .collect();
+    let mut deep_spans: Vec<(usize, usize, &'static str)> = result
+        .deep_findings
+        .iter()
+        .filter_map(|f| f.span.map(|(s, e)| (s, e, f.finding_type)))
+        .collect();
+    deep_spans.extend(result.extra_spans.iter().copied());
+    let mut redacted = Zeroizing::new(detector::redact::redact_with_spans(
+        &text,
+        &result.matched_spans,
+        &entropy_tokens,
+        &deep_spans,
+        detector.allowlist(),
+        config.redact_style,
+        &config.redact_pattern,
+    ));
+    let count = result.matched_patterns.len()
+        + result.deep_findings.len()
+        + result.high_entropy_tokens.len();
+
+    // Detection found something but the redactor produced an identical string.
+    // For Marker/Typed/Drop that only happens when no span was located (a
+    // deep-scan-only hit), so fail closed. Placeholder sample values can
+    // legitimately equal the original (a fixed point), so for that style only
+    // fail closed when there was genuinely no span to redact.
+    let had_spans =
+        !result.matched_spans.is_empty() || !entropy_tokens.is_empty() || !deep_spans.is_empty();
+    let noop = *redacted == *text
+        && !(matches!(config.redact_style, RedactStyle::Placeholder) && had_spans);
+    let output = if noop {
+        Zeroizing::new(match config.redact_style {
+            RedactStyle::Marker => config.redact_pattern.clone(),
+            RedactStyle::Typed => "[SECRET]".to_string(),
+            RedactStyle::Drop => return Plan::Blocked(Blocked::NoLocation),
+            RedactStyle::Placeholder => detector::placeholders::GENERIC.to_string(),
+        })
+    } else {
+        Zeroizing::new(std::mem::take(&mut *redacted))
+    };
+
+    Plan::Redacted {
+        redacted: Payload::Text(output),
+        original: Payload::Text(text),
+        count,
+    }
+}
+
+fn runtime_dir() -> std::path::PathBuf {
+    std::env::var_os("XDG_RUNTIME_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(config::ensure_base_dir)
+}
+
+fn lock_file() -> std::io::Result<File> {
+    File::create(runtime_dir().join("secret-stripper-paste.lock"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{chord_is_paste_keys, chord_reenters, plan, Blocked, Plan, MAX_INPUT_BYTES};
+    use crate::clipboard::ClipboardSource;
+    use crate::config::Config;
+
+    #[test]
+    fn paste_keys_are_not_a_valid_hotkey() {
+        let c = Config::default();
+        assert!(chord_is_paste_keys("Ctrl+V", &c));
+        assert!(chord_is_paste_keys("shift+ctrl+v", &c));
+        assert!(!chord_is_paste_keys("Ctrl+Alt+V", &c));
+        assert!(!chord_is_paste_keys("Ctrl+Alt+F5", &c));
+    }
+
+    #[test]
+    fn chord_reenters_when_it_holds_the_paste_keys() {
+        assert!(chord_reenters("Ctrl+Alt+V", "Ctrl+V"));
+        assert!(chord_reenters("ctrl+alt+shift+v", "Ctrl+Shift+V"));
+        assert!(!chord_reenters("Super+Alt+V", "Ctrl+V"));
+        assert!(!chord_reenters("super+alt+shift+v", "Ctrl+Shift+V"));
+        assert!(!chord_reenters("Ctrl+Alt+P", "Ctrl+V"));
+        assert!(!chord_reenters("Ctrl+Alt+F5", "Ctrl+V"));
+        assert!(!chord_reenters("Ctrl+Alt+V", "Shift+Insert"));
+    }
+
+    const SECRET: &str =
+        "key: sk-proj-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghij";
+
+    struct FakeClipboard {
+        text: Option<String>,
+        image: Option<(usize, usize, Vec<u8>)>,
+        image_reads: usize,
+    }
+
+    impl FakeClipboard {
+        fn new(text: Option<&str>, image: bool) -> Self {
+            Self {
+                text: text.map(str::to_string),
+                image: image.then(|| (1, 1, vec![0, 0, 0, 255])),
+                image_reads: 0,
+            }
+        }
+    }
+
+    impl ClipboardSource for FakeClipboard {
+        fn read_text(&mut self) -> Option<String> {
+            self.text.clone()
+        }
+
+        fn read_image(&mut self) -> Option<(usize, usize, Vec<u8>)> {
+            self.image_reads += 1;
+            self.image.clone()
+        }
+    }
+
+    fn config(image_scan: bool) -> Config {
+        Config {
+            enable_image_scan: image_scan,
+            ..Config::default()
+        }
+    }
+
+    #[test]
+    fn secret_text_is_redacted_without_reading_the_image() {
+        let mut clip = FakeClipboard::new(Some(SECRET), true);
+        assert!(matches!(
+            plan(&mut clip, &config(true)),
+            Plan::Redacted { .. }
+        ));
+        assert_eq!(clip.image_reads, 0);
+    }
+
+    #[test]
+    fn clean_text_with_image_scan_off_never_reads_the_image() {
+        let mut clip = FakeClipboard::new(Some("hello"), true);
+        assert!(matches!(
+            plan(&mut clip, &config(false)),
+            Plan::AsIs {
+                scanned_clean: true
+            }
+        ));
+        assert_eq!(clip.image_reads, 0);
+    }
+
+    #[test]
+    fn clean_text_with_image_scan_on_checks_for_an_image() {
+        let mut clip = FakeClipboard::new(Some("hello"), false);
+        assert!(matches!(
+            plan(&mut clip, &config(true)),
+            Plan::AsIs {
+                scanned_clean: true
+            }
+        ));
+        assert_eq!(clip.image_reads, 1);
+    }
+
+    #[test]
+    fn empty_clipboard_pastes_as_is_unscanned() {
+        let mut clip = FakeClipboard::new(None, false);
+        assert!(matches!(
+            plan(&mut clip, &config(true)),
+            Plan::AsIs {
+                scanned_clean: false
+            }
+        ));
+        let mut clip = FakeClipboard::new(Some(""), false);
+        assert!(matches!(
+            plan(&mut clip, &config(false)),
+            Plan::AsIs {
+                scanned_clean: false
+            }
+        ));
+    }
+
+    #[test]
+    fn oversized_text_is_blocked_before_the_image() {
+        let big = "a".repeat(MAX_INPUT_BYTES + 1);
+        let mut clip = FakeClipboard::new(Some(&big), true);
+        assert!(matches!(
+            plan(&mut clip, &config(true)),
+            Plan::Blocked(Blocked::TooLarge(_))
+        ));
+        assert_eq!(clip.image_reads, 0);
+    }
+}

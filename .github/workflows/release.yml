@@ -46,43 +46,14 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             asset: secret-stripper-linux-x86_64
-            ext: ""
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             asset: secret-stripper-linux-aarch64
-            ext: ""
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            asset: secret-stripper-macos-x86_64
-            ext: ""
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            asset: secret-stripper-macos-aarch64
-            ext: ""
-          - os: windows-2025-vs2026
-            target: x86_64-pc-windows-msvc
-            asset: secret-stripper-windows-x86_64.exe
-            ext: ".exe"
-          - os: windows-11-arm
-            target: aarch64-pc-windows-msvc
-            asset: secret-stripper-windows-aarch64.exe
-            ext: ".exe"
 
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ env.RELEASE_TAG }}
-
-      - name: Install Linux system dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libxcb1-dev \
-            libxcb-shape0-dev \
-            libxcb-xfixes0-dev \
-            libxkbcommon-dev \
-            libdbus-1-dev
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -97,22 +68,13 @@ jobs:
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Stage artifact (Unix)
-        if: runner.os != 'Windows'
+      - name: Stage artifact
         run: |
           mkdir -p dist
-          cp "target/${{ matrix.target }}/release/secret-stripper${{ matrix.ext }}" "dist/${{ matrix.asset }}"
+          cp "target/${{ matrix.target }}/release/secret-stripper" "dist/${{ matrix.asset }}"
           chmod +x "dist/${{ matrix.asset }}"
 
-      - name: Stage artifact (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/secret-stripper${{ matrix.ext }}" "dist/${{ matrix.asset }}"
-
       - name: Upload asset to release
-        shell: bash
         run: gh release upload "$RELEASE_TAG" "dist/${{ matrix.asset }}" --clobber
 
   checksums:
@@ -157,17 +119,6 @@ jobs:
         if: steps.check.outputs.skip == 'false'
         with:
           ref: ${{ env.RELEASE_TAG }}
-
-      - name: Install Linux system dependencies
-        if: steps.check.outputs.skip == 'false'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libxcb1-dev \
-            libxcb-shape0-dev \
-            libxcb-xfixes0-dev \
-            libxkbcommon-dev \
-            libdbus-1-dev
 
       - name: Install Rust toolchain
         if: steps.check.outputs.skip == 'false'

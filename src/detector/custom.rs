@@ -32,10 +32,6 @@ pub fn parse_severity(s: &str) -> Severity {
     Severity::from_wire(s)
 }
 
-pub fn severity_str(s: &Severity) -> &'static str {
-    s.as_str()
-}
-
 /// Compile a user regex with a bounded size, never panicking. Returns a
 /// human-readable error string on failure (the built-in `re()` panics, so it
 /// must never touch user input).
@@ -50,7 +46,18 @@ pub fn validate_regex(src: &str) -> Result<regex::Regex, String> {
         .size_limit(REGEX_SIZE_LIMIT)
         .dfa_size_limit(REGEX_SIZE_LIMIT)
         .build()
-        .map_err(|e| e.to_string())
+        .map_err(|e| one_line(&e.to_string()))
+}
+
+// Syntax errors span several lines (pattern, caret, message); the TUI shows
+// one line, so keep only the message.
+fn one_line(err: &str) -> String {
+    let last = err
+        .lines()
+        .rev()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or(err);
+    last.trim().trim_start_matches("error: ").to_string()
 }
 
 /// Read the raw specs straight from disk. The TOML file is the source of
@@ -66,11 +73,8 @@ pub fn load_specs() -> Vec<CustomPatternSpec> {
     }
 }
 
-/// Process-level mtime cache for `patterns.toml`. Every TUI preview repaint
-/// and every `secret-stripper trigger` invocation goes through `load()`; with
-/// no cache that's a `fs::read_to_string` + TOML parse + `RegexBuilder::build`
-/// per custom row, every time. The cache reuses the prior `(patterns, errs)`
-/// when the file's mtime and size match what we last saw.
+/// Process-level cache for `patterns.toml`, reused while the file's mtime and
+/// size are unchanged, so repeated `load()` calls skip the parse and compile.
 struct CustomCache {
     mtime: SystemTime,
     len: u64,
@@ -82,8 +86,8 @@ static CACHE: Mutex<Option<CustomCache>> = Mutex::new(None);
 /// Build runtime patterns from the file. Invalid-regex rows are skipped and
 /// reported. Strings are leaked to `&'static str` to satisfy
 /// `SecretPattern`'s field types; the leak is bounded by the cache (a handful
-/// of custom rows, refreshed only when the file changes) and the process
-/// exits after each trigger, so the leaked memory is reclaimed.
+/// of custom rows, refreshed only when the file changes) and `paste` exits
+/// after each run, so the leaked memory is reclaimed.
 pub fn load() -> (Vec<SecretPattern>, Vec<String>) {
     let p = path();
     let meta = fs::metadata(&p).ok();
@@ -136,15 +140,6 @@ pub fn load() -> (Vec<SecretPattern>, Vec<String>) {
     (out, errs)
 }
 
-/// Drop the in-process custom-patterns cache. Tests use this to ensure each
-/// scenario rebuilds from disk; production code should not need to call it.
-#[cfg(test)]
-pub fn _invalidate_cache_for_tests() {
-    if let Ok(mut g) = CACHE.lock() {
-        *g = None;
-    }
-}
-
 pub fn save(file: &CustomPatternsFile) -> anyhow::Result<()> {
     let data = toml::to_string_pretty(file)?;
     crate::config::atomic_write(&path(), data.as_bytes())
@@ -169,7 +164,7 @@ mod tests {
     #[test]
     fn validate_regex_syntax_error_reported() {
         let err = validate_regex(r"foo[\\d").unwrap_err();
-        assert!(!err.is_empty(), "error message must be non-empty");
+        assert_eq!(err, "unclosed character class");
     }
 
     #[test]

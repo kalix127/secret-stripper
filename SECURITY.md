@@ -6,8 +6,24 @@ issues privately and give us a chance to fix them before public disclosure.
 
 ## Supported versions
 
-Only the latest published release is supported. Fixes ship in a new release;
-older versions do not receive backports.
+Only the latest 2.x release is supported, on Linux. Fixes ship in a new
+release; older versions do not receive backports. 1.5.x, the last release for
+macOS and Windows, receives no further fixes.
+
+## Threat model
+
+Secret Stripper runs as your user and never sends clipboard content anywhere.
+Things worth knowing when you assess a report:
+
+- On Wayland, `init` grants the active session's user write access to
+  `/dev/uinput`, so any program running as that user can create a virtual
+  keyboard.
+- During a redacted paste a `serve-clipboard` child process holds the redacted
+  copy, and afterwards the original, in memory until another program takes the
+  clipboard.
+- Downloads by `upgrade` and the installer are checked against the release's
+  `SHA256SUMS`. That detects corrupted or tampered downloads, but it is not a
+  signature: whoever can publish a release can publish matching checksums.
 
 ## Reporting a vulnerability
 
@@ -20,7 +36,8 @@ Report the issue privately, either:
 
 Please include:
 
-- Affected version (`secret-stripper --version`) and OS / desktop environment
+- Affected version (`secret-stripper --version`), distribution, desktop
+  environment and session type (X11 or Wayland)
 - A description of the issue and its impact
 - Minimal reproduction steps
 

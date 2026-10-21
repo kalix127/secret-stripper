@@ -14,19 +14,27 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 detect() {
-    local os arch suffix=""
+    local arch
     case "$(uname -s)" in
-        Linux*)  os="linux" ;;
-        Darwin*) os="macos" ;;
-        CYGWIN*|MINGW*|MSYS*) os="windows"; suffix=".exe" ;;
-        *)       printf "Unsupported OS: %s\n" "$(uname -s)" >&2; exit 1 ;;
+        Linux*) ;;
+        *)
+            printf "Unsupported OS: %s. Secret Stripper supports Linux only.\n" \
+                "$(uname -s)" >&2
+            printf "The last macOS release is 1.5.2: %s\n" \
+                "https://github.com/${REPO}/releases/tag/v1.5.2" >&2
+            exit 1
+            ;;
     esac
     case "$(uname -m)" in
         x86_64|amd64) arch="x86_64" ;;
         aarch64|arm64) arch="aarch64" ;;
-        *)            arch="x86_64" ;;
+        *)
+            printf "Unsupported CPU: %s. Release builds are x86_64 and aarch64.\n" \
+                "$(uname -m)" >&2
+            exit 1
+            ;;
     esac
-    printf '%s-%s%s' "$os" "$arch" "$suffix"
+    printf 'linux-%s' "$arch"
 }
 
 verify_sha256() {
@@ -38,14 +46,11 @@ verify_sha256() {
         printf "  ${RED}[FAIL]${NC} No SHA256 for %s in SHA256SUMS.\n" "$name" >&2
         return 1
     fi
-    if command -v sha256sum >/dev/null 2>&1; then
-        actual=$(sha256sum "$file" | awk '{print $1}')
-    elif command -v shasum >/dev/null 2>&1; then
-        actual=$(shasum -a 256 "$file" | awk '{print $1}')
-    else
-        printf "  ${RED}[FAIL]${NC} Neither sha256sum nor shasum available; cannot verify binary.\n" >&2
+    if ! command -v sha256sum >/dev/null 2>&1; then
+        printf "  ${RED}[FAIL]${NC} sha256sum not available; cannot verify binary.\n" >&2
         return 1
     fi
+    actual=$(sha256sum "$file" | awk '{print $1}')
     if [ "$expected" != "$actual" ]; then
         printf "  ${RED}[FAIL]${NC} SHA256 mismatch for %s:\n  expected: %s\n  actual:   %s\n" \
             "$name" "$expected" "$actual" >&2
@@ -95,6 +100,7 @@ main() {
 
     chmod +x "$tmp"
 
+    printf "  ${YELLOW}[~]${NC} Installing to /usr/local/bin (sudo may ask for your password; if it fails, ~/.local/bin is used)\n"
     if sudo mv "$tmp" /usr/local/bin/secret-stripper 2>/dev/null; then
         bin_path="/usr/local/bin/secret-stripper"
     else
@@ -108,12 +114,26 @@ main() {
     fi
     printf "  ${GREEN}[OK]${NC} Installed to ${bin_path}\n\n"
 
-    if ! "$bin_path" init; then
+    # An older copy earlier in PATH would shadow the new binary.
+    local on_path
+    on_path=$(command -v secret-stripper 2>/dev/null || true)
+    if [ -n "$on_path" ] && [ "$on_path" != "$bin_path" ]; then
+        printf "  ${YELLOW}[!]${NC} %s is another copy and runs first. Remove it: rm %s\n\n" \
+            "$on_path" "$on_path"
+    fi
+
+    # init may ask before running sudo; under `curl | bash` stdin is the script.
+    local input=/dev/null
+    if (: </dev/tty) 2>/dev/null; then
+        input=/dev/tty
+    fi
+
+    if ! "$bin_path" init <"$input"; then
         printf "  ${YELLOW}[!]${NC} Init had warnings. Run '${bin_path} menu' to fix.\n"
     fi
 
     printf "\n  ${BOLD}Secret Stripper is ready.${NC}\n"
-    printf "  Copy text with Ctrl+C, then press your hotkey to redact it.\n"
+    printf "  Copy text as usual, then press your hotkey to paste a redacted copy.\n"
     printf "  ${CYAN}secret-stripper menu${NC}    - settings, hotkey, notifications\n"
     printf "  ${CYAN}secret-stripper status${NC}  - show current state\n\n"
 }

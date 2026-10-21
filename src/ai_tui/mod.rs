@@ -3,15 +3,15 @@ use std::path::PathBuf;
 
 /// One AI TUI tool secret-stripper knows how to wrap with `paste-guard`.
 /// `binary` is the executable name to look up on PATH; `label` is the
-/// human-readable name shown in the init prompt.
+/// human-readable name `paste-guard` prints with the aliases.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AiTui {
     pub binary: &'static str,
     pub label: &'static str,
 }
 
-/// Add a new entry here to teach `init` about another AI TUI. The matching
-/// binary name must be what users actually invoke from a shell prompt.
+/// Add an entry to teach `paste-guard` about another AI TUI. `binary` must be
+/// what users actually invoke from a shell prompt.
 pub const KNOWN: &[AiTui] = &[
     AiTui {
         binary: "claude",
@@ -51,39 +51,23 @@ pub fn detect() -> Vec<AiTui> {
 
 /// Minimal `which` reimplementation - we already shell out for OS integration
 /// but adding a `which` crate just to walk PATH is not worth it.
-fn which_on_path(name: &str) -> Option<PathBuf> {
+pub(crate) fn which_on_path(name: &str) -> Option<PathBuf> {
     let path = env::var_os("PATH")?;
     for dir in env::split_paths(&path) {
         let candidate = dir.join(name);
         if is_executable(&candidate) {
             return Some(candidate);
         }
-        #[cfg(target_os = "windows")]
-        {
-            for ext in ["exe", "cmd", "bat", "ps1"] {
-                let mut p = candidate.clone();
-                p.set_extension(ext);
-                if p.is_file() {
-                    return Some(p);
-                }
-            }
-        }
     }
     None
 }
 
-#[cfg(unix)]
 fn is_executable(path: &std::path::Path) -> bool {
     use std::os::unix::fs::PermissionsExt;
     match path.metadata() {
         Ok(m) => m.is_file() && (m.permissions().mode() & 0o111 != 0),
         Err(_) => false,
     }
-}
-
-#[cfg(not(unix))]
-fn is_executable(path: &std::path::Path) -> bool {
-    path.is_file()
 }
 
 #[cfg(test)]
@@ -104,7 +88,6 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let bin_path = dir.path().join("claude");
         std::fs::write(&bin_path, "#!/bin/sh\nexit 0\n").unwrap();
-        #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let mut perms = std::fs::metadata(&bin_path).unwrap().permissions();

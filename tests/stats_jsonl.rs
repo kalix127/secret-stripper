@@ -187,10 +187,9 @@ fn malformed_lines_are_skipped() {
     });
 }
 
-#[cfg(unix)]
 #[test]
 #[serial(config_env)]
-fn append_creates_file_0o600_on_unix() {
+fn append_creates_file_0o600() {
     use std::os::unix::fs::PermissionsExt;
     with_isolated_home(|home| {
         stats::append(1);

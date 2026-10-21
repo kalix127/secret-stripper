@@ -13,8 +13,16 @@ pub enum RedactStyle {
     Placeholder,
 }
 
+/// Bumped when an upgrade has to change saved settings or OS integration.
+/// Configs written by 1.x have no version and load as 0.
+pub const CONFIG_VERSION: u32 = 2;
+
+const V1_DEFAULT_HOTKEY: &str = "Ctrl+Alt+X";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    #[serde(default)]
+    pub config_version: u32,
     pub lang: Lang,
     pub notification_timeout_secs: u64,
     pub onboarding_done: bool,
@@ -29,19 +37,25 @@ pub struct Config {
     pub enable_deep_scan: bool,
     /// Shannon-entropy scanner. Off by default - the named-pattern catalogue
     /// covers the high-precision cases; entropy is a safety net for unknown
-    /// secret shapes that costs a moderate false-positive rate. Users can
-    /// flip it on from the menu or by setting `enable_entropy = true` in
-    /// `config.toml`. `serde(default)` matches the new-install default so a
-    /// config.toml missing the field also loads as off.
+    /// secret shapes that costs a moderate false-positive rate. Turned on by
+    /// setting `enable_entropy = true` in `config.toml`.
     #[serde(default = "default_enable_entropy")]
     pub enable_entropy: bool,
-    /// Redact secrets visible in a clipboard image (screenshot) via OCR when the
-    /// clipboard holds no text. On by default; needs the `tesseract` CLI present.
+    /// Redact secrets visible in a clipboard image (screenshot) via OCR, unless
+    /// text on the clipboard was already redacted. Off by default; needs the
+    /// `tesseract` CLI.
     #[serde(default = "default_enable_image_scan")]
     pub enable_image_scan: bool,
     pub silent: bool,
     #[serde(default = "default_hotkey")]
     pub hotkey: String,
+    /// Keys sent to the focused app to paste the redacted copy.
+    #[serde(default = "default_paste_keys")]
+    pub paste_keys: String,
+    /// Used instead of `paste_keys` by `paste --terminal` (the hotkey plus
+    /// Shift), and on X11 when the focused window is a known terminal.
+    #[serde(default = "default_terminal_paste_keys")]
+    pub terminal_paste_keys: String,
     #[serde(default = "default_check_for_updates")]
     pub check_for_updates: bool,
     #[serde(default)]
@@ -54,6 +68,9 @@ pub struct Config {
     /// successful swap (the running binary IS that version).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_seen_version: Option<String>,
+    /// When the last "update available" notification was shown.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_update_notice: Option<chrono::DateTime<chrono::Utc>>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disabled_categories: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -113,7 +130,6 @@ pub fn atomic_write(dest: &Path, bytes: &[u8]) -> anyhow::Result<()> {
     };
     fs::create_dir_all(&parent)?;
     let mut tmp = tempfile::NamedTempFile::new_in(&parent)?;
-    #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(tmp.path(), fs::Permissions::from_mode(0o600))?;
@@ -142,18 +158,15 @@ pub fn purge_config_dir() -> Vec<String> {
 }
 
 fn default_hotkey() -> String {
-    #[cfg(target_os = "macos")]
-    {
-        "Cmd+Shift+C".to_string()
-    }
-    #[cfg(target_os = "windows")]
-    {
-        "Ctrl+Alt+C".to_string()
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    {
-        "Ctrl+Alt+X".to_string()
-    }
+    "Ctrl+Alt+V".to_string()
+}
+
+fn default_paste_keys() -> String {
+    "Ctrl+V".to_string()
+}
+
+fn default_terminal_paste_keys() -> String {
+    "Ctrl+Shift+V".to_string()
 }
 
 fn default_check_for_updates() -> bool {
@@ -175,6 +188,7 @@ fn default_redact_style() -> RedactStyle {
 impl Default for Config {
     fn default() -> Self {
         Self {
+            config_version: CONFIG_VERSION,
             lang: Lang::EN,
             notification_timeout_secs: 5,
             onboarding_done: false,
@@ -186,12 +200,15 @@ impl Default for Config {
             enable_deep_scan: false,
             enable_entropy: false,
             enable_image_scan: false,
-            silent: true,
+            silent: false,
             hotkey: default_hotkey(),
+            paste_keys: default_paste_keys(),
+            terminal_paste_keys: default_terminal_paste_keys(),
             check_for_updates: true,
             auto_install: false,
             skip_version: None,
             last_seen_version: None,
+            last_update_notice: None,
             disabled_categories: Vec::new(),
             allowlist_regex: Vec::new(),
         }
@@ -262,8 +279,70 @@ impl Config {
         }
     }
 
+    pub fn needs_migration(&self) -> bool {
+        self.onboarding_done && self.config_version < CONFIG_VERSION
+    }
+
+    /// Settings half of the 1.x upgrade. 1.x defaulted to Ctrl+Alt+X and to
+    /// silent; 2.x defaults to Ctrl+Alt+V and shows the redaction notice.
+    /// Returns true when the hotkey changed.
+    pub fn migrate_from_v1(&mut self) -> bool {
+        let moved = self.hotkey == V1_DEFAULT_HOTKEY;
+        if moved {
+            self.hotkey = default_hotkey();
+        }
+        self.silent = false;
+        self.config_version = CONFIG_VERSION;
+        moved
+    }
+
     pub fn save(&self) -> anyhow::Result<()> {
         let data = toml::to_string_pretty(self)?;
         atomic_write(&Self::path(), data.as_bytes())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn v1_config(hotkey: &str) -> Config {
+        let toml = format!(
+            "lang = \"EN\"\nnotification_timeout_secs = 5\n\
+             onboarding_done = true\nredact_pattern = \"[REDACTED]\"\n\
+             sensitivity = 3\nenable_deep_scan = false\nsilent = true\n\
+             hotkey = \"{hotkey}\"\n"
+        );
+        toml::from_str(&toml).unwrap()
+    }
+
+    #[test]
+    fn v1_config_loads_as_version_zero() {
+        let c = v1_config("Ctrl+Alt+X");
+        assert_eq!(c.config_version, 0);
+        assert!(c.needs_migration());
+    }
+
+    #[test]
+    fn new_config_needs_no_migration() {
+        assert!(!Config::first_run(Lang::EN).needs_migration());
+        assert!(!Config::default().needs_migration());
+    }
+
+    #[test]
+    fn migration_moves_the_v1_default_hotkey() {
+        let mut c = v1_config("Ctrl+Alt+X");
+        assert!(c.migrate_from_v1());
+        assert_eq!(c.hotkey, "Ctrl+Alt+V");
+        assert!(!c.silent);
+        assert!(!c.needs_migration());
+    }
+
+    #[test]
+    fn migration_keeps_a_chosen_hotkey() {
+        let mut c = v1_config("Super+Shift+K");
+        assert!(!c.migrate_from_v1());
+        assert_eq!(c.hotkey, "Super+Shift+K");
+        assert!(!c.silent);
     }
 }

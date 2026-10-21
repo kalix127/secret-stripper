@@ -1,59 +1,6 @@
 use crate::config::RedactStyle;
 
-use super::patterns::SecretPattern;
-
 const ENTROPY_NAME: &str = "High Entropy";
-
-pub fn redact_text(
-    text: &str,
-    patterns: &[&SecretPattern],
-    entropy_tokens: &[&str],
-    deep_spans: &[(usize, usize, &str)],
-    style: RedactStyle,
-    marker: &str,
-) -> String {
-    redact_text_with_allowlist(
-        text,
-        patterns,
-        entropy_tokens,
-        deep_spans,
-        &[],
-        style,
-        marker,
-    )
-}
-
-/// Same as `redact_text` but drops any span fully covered by an allowlist
-/// regex before merging, so documented-safe values are not redacted.
-///
-/// Pattern-taking wrapper: re-runs each pattern to derive its spans. The
-/// trigger/preview/corpus paths instead reuse the spans `Detector::scan`
-/// already computed and call `redact_with_spans` directly.
-pub fn redact_text_with_allowlist(
-    text: &str,
-    patterns: &[&SecretPattern],
-    entropy_tokens: &[&str],
-    deep_spans: &[(usize, usize, &str)],
-    allowlist: &[regex::Regex],
-    style: RedactStyle,
-    marker: &str,
-) -> String {
-    let mut pattern_spans: Vec<(usize, usize, &str)> = Vec::new();
-    for p in patterns {
-        for m in p.regex.find_iter(text) {
-            pattern_spans.push((m.start(), m.end(), p.name));
-        }
-    }
-    redact_with_spans(
-        text,
-        &pattern_spans,
-        entropy_tokens,
-        deep_spans,
-        allowlist,
-        style,
-        marker,
-    )
-}
 
 /// Redaction core. `pattern_spans` are already-located secret byte ranges in
 /// `text` (from `Detector::scan`); no regex is re-run here. The third tuple
@@ -204,6 +151,33 @@ mod tests {
     use super::*;
     use crate::detector::patterns;
     use crate::detector::Severity;
+
+    // Re-runs each pattern to get its spans; production reuses the spans
+    // `Detector::scan` already found.
+    fn redact_text(
+        text: &str,
+        patterns: &[&patterns::SecretPattern],
+        entropy_tokens: &[&str],
+        deep_spans: &[(usize, usize, &str)],
+        style: RedactStyle,
+        marker: &str,
+    ) -> String {
+        let mut pattern_spans: Vec<(usize, usize, &str)> = Vec::new();
+        for p in patterns {
+            for m in p.regex.find_iter(text) {
+                pattern_spans.push((m.start(), m.end(), p.name));
+            }
+        }
+        redact_with_spans(
+            text,
+            &pattern_spans,
+            entropy_tokens,
+            deep_spans,
+            &[],
+            style,
+            marker,
+        )
+    }
 
     fn pat(name: &'static str, regex: &str) -> patterns::SecretPattern {
         patterns::SecretPattern {

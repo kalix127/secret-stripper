@@ -8,9 +8,8 @@
 # 4. Creates the release commit + tag.
 # 5. Optionally pushes (off by default).
 #
-# The Cloudflare Worker is intentionally NOT touched here - it only needs a
-# redeploy when the embedded installer scripts change. Run `wrangler deploy`
-# manually for that, independently of version cuts.
+# The Cloudflare Worker is not deployed here: it only needs `wrangler deploy`
+# when web/installer/install.sh changes.
 
 set -euo pipefail
 

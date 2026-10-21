@@ -22,9 +22,7 @@ pub enum ShortcutBackend {
     Mate,
     Xfce,
     Kde,
-    Skhd,
-    Hammerspoon,
-    WindowsAhk,
+    Hyprland,
 }
 
 // Return type for a generated string method: no args => &'static str,
@@ -190,19 +188,6 @@ impl Lang {
         }
     }
 
-    pub fn notify_write_failed_body(&self, cleared: bool) -> &'static str {
-        match (self, cleared) {
-            (Lang::EN, true) => "Original content was cleared from the clipboard.",
-            (Lang::EN, false) => "Original content may still be in the clipboard.",
-            (Lang::FR, true) => "Le contenu original a été effacé du presse-papiers.",
-            (Lang::FR, false) => "Le contenu original peut encore être dans le presse-papiers.",
-            (Lang::IT, true) => "Il contenuto originale è stato rimosso dagli appunti.",
-            (Lang::IT, false) => "Il contenuto originale potrebbe essere ancora negli appunti.",
-            (Lang::ES, true) => "El contenido original fue eliminado del portapapeles.",
-            (Lang::ES, false) => "El contenido original puede seguir en el portapapeles.",
-        }
-    }
-
     /// Localized confirmation that a hotkey was bound via a given DE backend.
     /// Exhaustive over (Lang, ShortcutBackend) with no wildcard.
     pub fn shortcut_bound(&self, backend: &ShortcutBackend, chord: &str) -> String {
@@ -223,16 +208,9 @@ impl Lang {
                 "Custom shortcut bound to '{}' via kglobalshortcutsrc. You may need to log out and back in for the binding to take effect.",
                 chord
             ),
-            (Lang::EN, ShortcutBackend::Skhd) => {
-                format!("Custom shortcut bound to '{}' via skhd (~/.skhdrc).", chord)
+            (Lang::EN, ShortcutBackend::Hyprland) => {
+                format!("Custom shortcut bound to '{}' via hyprland.conf.", chord)
             }
-            (Lang::EN, ShortcutBackend::Hammerspoon) => {
-                format!("Custom shortcut bound to '{}' via Hammerspoon (~/.hammerspoon/init.lua).", chord)
-            }
-            (Lang::EN, ShortcutBackend::WindowsAhk) => format!(
-                "Custom shortcut bound to '{}' via AutoHotkey (secret-stripper.ahk). Press it from any app to redact.",
-                chord
-            ),
             (Lang::FR, ShortcutBackend::Gnome) => {
                 format!("Raccourci personnalisé lié à '{}' via le schéma GNOME (gsettings).", chord)
             }            (Lang::FR, ShortcutBackend::Cinnamon) => {
@@ -245,16 +223,9 @@ impl Lang {
                 "Raccourci personnalisé lié à '{}' via kglobalshortcutsrc. Vous devrez peut-être vous déconnecter et vous reconnecter pour que la liaison prenne effet.",
                 chord
             ),
-            (Lang::FR, ShortcutBackend::Skhd) => {
-                format!("Raccourci personnalisé lié à '{}' via skhd (~/.skhdrc).", chord)
+            (Lang::FR, ShortcutBackend::Hyprland) => {
+                format!("Raccourci personnalisé lié à '{}' via hyprland.conf.", chord)
             }
-            (Lang::FR, ShortcutBackend::Hammerspoon) => {
-                format!("Raccourci personnalisé lié à '{}' via Hammerspoon (~/.hammerspoon/init.lua).", chord)
-            }
-            (Lang::FR, ShortcutBackend::WindowsAhk) => format!(
-                "Raccourci personnalisé lié à '{}' via AutoHotkey (secret-stripper.ahk). Appuyez dessus depuis n'importe quelle application pour masquer.",
-                chord
-            ),
             (Lang::IT, ShortcutBackend::Gnome) => {
                 format!("Scorciatoia personalizzata associata a '{}' tramite schema GNOME (gsettings).", chord)
             }            (Lang::IT, ShortcutBackend::Cinnamon) => {
@@ -267,16 +238,9 @@ impl Lang {
                 "Scorciatoia personalizzata associata a '{}' tramite kglobalshortcutsrc. Potrebbe essere necessario disconnettersi e riconnettersi affinché l'associazione abbia effetto.",
                 chord
             ),
-            (Lang::IT, ShortcutBackend::Skhd) => {
-                format!("Scorciatoia personalizzata associata a '{}' tramite skhd (~/.skhdrc).", chord)
+            (Lang::IT, ShortcutBackend::Hyprland) => {
+                format!("Scorciatoia personalizzata associata a '{}' tramite hyprland.conf.", chord)
             }
-            (Lang::IT, ShortcutBackend::Hammerspoon) => {
-                format!("Scorciatoia personalizzata associata a '{}' tramite Hammerspoon (~/.hammerspoon/init.lua).", chord)
-            }
-            (Lang::IT, ShortcutBackend::WindowsAhk) => format!(
-                "Scorciatoia personalizzata associata a '{}' tramite AutoHotkey (secret-stripper.ahk). Premila da qualsiasi app per oscurare.",
-                chord
-            ),
             (Lang::ES, ShortcutBackend::Gnome) => {
                 format!("Atajo personalizado vinculado a '{}' mediante el esquema GNOME (gsettings).", chord)
             }            (Lang::ES, ShortcutBackend::Cinnamon) => {
@@ -289,22 +253,14 @@ impl Lang {
                 "Atajo personalizado vinculado a '{}' mediante kglobalshortcutsrc. Es posible que tengas que cerrar sesión y volver a entrar para que el vínculo surta efecto.",
                 chord
             ),
-            (Lang::ES, ShortcutBackend::Skhd) => {
-                format!("Atajo personalizado vinculado a '{}' mediante skhd (~/.skhdrc).", chord)
+            (Lang::ES, ShortcutBackend::Hyprland) => {
+                format!("Atajo personalizado vinculado a '{}' mediante hyprland.conf.", chord)
             }
-            (Lang::ES, ShortcutBackend::Hammerspoon) => {
-                format!("Atajo personalizado vinculado a '{}' mediante Hammerspoon (~/.hammerspoon/init.lua).", chord)
-            }
-            (Lang::ES, ShortcutBackend::WindowsAhk) => format!(
-                "Atajo personalizado vinculado a '{}' mediante AutoHotkey (secret-stripper.ahk). Púlsalo desde cualquier app para ocultar.",
-                chord
-            ),
         }
     }
 }
 
 lang_strings! {
-    // ---- Notifications (migrated, human translations kept) ----
     notify_redacted(n: usize,) {
         EN => if n == 1 { "Redacted 1 item".to_string() } else { format!("Redacted {} items", n) },
         FR => if n == 1 { "1 élément masqué".to_string() } else { format!("{} éléments masqués", n) },
@@ -312,33 +268,32 @@ lang_strings! {
         ES => if n == 1 { "1 elemento redactado".to_string() } else { format!("{} elementos redactados", n) },
     }
 
-
-    notify_cleaned {
-        EN => "Clipboard has been cleaned",
-        FR => "Le presse-papiers a été nettoyé",
-        IT => "Gli appunti sono stati puliti",
-        ES => "El portapapeles ha sido limpiado",
+    notify_pasted {
+        EN => "Pasted a redacted copy",
+        FR => "Copie masquée collée",
+        IT => "Copia oscurata incollata",
+        ES => "Copia redactada pegada",
     }
 
-    notify_write_failed {
-        EN => "Clipboard write failed",
-        FR => "Échec d'écriture du presse-papiers",
-        IT => "Scrittura negli appunti fallita",
-        ES => "Fallo al escribir en el portapapeles",
+    notify_not_pasted {
+        EN => "Nothing was pasted",
+        FR => "Rien n'a été collé",
+        IT => "Non è stato incollato nulla",
+        ES => "No se pegó nada",
     }
 
-    notify_drop_fallback_title {
-        EN => "Clipboard cleared",
-        FR => "Presse-papiers vidé",
-        IT => "Appunti svuotati",
-        ES => "Portapapeles vaciado",
+    notify_hotkey_moved(old: &str, new: &str,) {
+        EN => format!("Updated to 2.0: the hotkey moved from {} to {}. Change it with 'secret-stripper menu'.", old, new),
+        FR => format!("Mise à jour vers 2.0 : le raccourci passe de {} à {}. Modifiez-le avec 'secret-stripper menu'.", old, new),
+        IT => format!("Aggiornato alla 2.0: la scorciatoia è passata da {} a {}. Cambiala con 'secret-stripper menu'.", old, new),
+        ES => format!("Actualizado a 2.0: el atajo pasó de {} a {}. Cámbialo con 'secret-stripper menu'.", old, new),
     }
 
-    notify_drop_fallback_body {
-        EN => "A secret was detected without an exact location. The clipboard was cleared to avoid leaking it.",
-        FR => "Un secret a été détecté sans emplacement exact. Le presse-papiers a été vidé pour éviter toute fuite.",
-        IT => "È stato rilevato un segreto senza una posizione esatta. Gli appunti sono stati svuotati per evitare fughe.",
-        ES => "Se detectó un secreto sin una ubicación exacta. Se vació el portapapeles para evitar filtraciones.",
+    cli_secret_without_location {
+        EN => "A secret was detected without an exact location. Nothing was pasted to avoid leaking it.",
+        FR => "Un secret a été détecté sans emplacement exact. Rien n'a été collé pour éviter toute fuite.",
+        IT => "È stato rilevato un segreto senza una posizione esatta. Non è stato incollato nulla per evitare fughe.",
+        ES => "Se detectó un secreto sin una ubicación exacta. No se pegó nada para evitar filtraciones.",
     }
 
     update_available_title {
@@ -349,10 +304,10 @@ lang_strings! {
     }
 
     update_available_body(current: &str, latest: &str,) {
-        EN => format!("Version {} is out (you have {}). Run 'secret-stripper upgrade' to install.", latest, current),
-        FR => format!("La version {} est sortie (vous avez {}). Lancez 'secret-stripper upgrade' pour l'installer.", latest, current),
-        IT => format!("È disponibile la versione {} (la tua è {}). Esegui 'secret-stripper upgrade' per installarla.", latest, current),
-        ES => format!("La versión {} está disponible (tu versión es {}). Ejecuta 'secret-stripper upgrade' para instalarla.", latest, current),
+        EN => format!("Version {} is out (you have {}). Run 'secret-stripper upgrade' to install, with sudo if it is in /usr/local/bin.", latest, current),
+        FR => format!("La version {} est sortie (vous avez {}). Lancez 'secret-stripper upgrade' pour l'installer, avec sudo s'il est dans /usr/local/bin.", latest, current),
+        IT => format!("È disponibile la versione {} (la tua è {}). Esegui 'secret-stripper upgrade' per installarla, con sudo se è in /usr/local/bin.", latest, current),
+        ES => format!("La versión {} está disponible (tu versión es {}). Ejecuta 'secret-stripper upgrade' para instalarla, con sudo si está en /usr/local/bin.", latest, current),
     }
 
     update_installed_title {
@@ -363,24 +318,17 @@ lang_strings! {
     }
 
     update_installed_body(version: &str,) {
-        EN => format!("Successfully installed {}.", version),
-        FR => format!("Version {} installée avec succès.", version),
-        IT => format!("Versione {} installata con successo.", version),
-        ES => format!("Versión {} instalada correctamente.", version),
+        EN => format!("Version {} is installed and used from the next paste.", version),
+        FR => format!("La version {} est installée et servira dès le prochain collage.", version),
+        IT => format!("La versione {} è installata e verrà usata dal prossimo incolla.", version),
+        ES => format!("La versión {} está instalada y se usará desde el próximo pegado.", version),
     }
 
-    // ---- Shared field labels (init / menu) ----
     lbl_config {
         EN => "Config",
         FR => "Configuration",
         IT => "Configurazione",
         ES => "Configuración",
-    }
-    lbl_language {
-        EN => "Language",
-        FR => "Langue",
-        IT => "Lingua",
-        ES => "Idioma",
     }
     lbl_hotkey {
         EN => "Hotkey",
@@ -389,10 +337,10 @@ lang_strings! {
         ES => "Atajo",
     }
     lbl_de_binding {
-        EN => "DE binding",
-        FR => "Liaison DE",
-        IT => "Associazione DE",
-        ES => "Vínculo DE",
+        EN => "Desktop shortcut",
+        FR => "Raccourci du bureau",
+        IT => "Scorciatoia desktop",
+        ES => "Atajo del escritorio",
     }
     lbl_sensitivity {
         EN => "Sensitivity",
@@ -400,53 +348,53 @@ lang_strings! {
         IT => "Sensibilità",
         ES => "Sensibilidad",
     }
-    lbl_redact_as {
-        EN => "Redact as",
-        FR => "Masquer par",
-        IT => "Oscura come",
-        ES => "Redactar como",
-    }
-    lbl_deep_scan {
-        EN => "Deep scan",
-        FR => "Analyse approfondie",
-        IT => "Scansione profonda",
-        ES => "Análisis profundo",
-    }
-    lbl_entropy {
-        EN => "Entropy scan",
-        FR => "Analyse d'entropie",
-        IT => "Scansione entropia",
-        ES => "Análisis de entropía",
-    }
-    lbl_notifications {
-        EN => "Notifications",
-        FR => "Notifications",
-        IT => "Notifiche",
-        ES => "Notificaciones",
-    }
-    lbl_notif_timeout {
-        EN => "Notif timeout",
-        FR => "Délai de notification",
-        IT => "Durata notifica",
-        ES => "Tiempo de notificación",
-    }
     lbl_silent {
         EN => "Silent",
         FR => "Silencieux",
         IT => "Silenzioso",
         ES => "Silencioso",
     }
-    lbl_onboarding_done {
-        EN => "Onboarding done",
-        FR => "Configuration initiale faite",
-        IT => "Configurazione iniziale completata",
-        ES => "Configuración inicial hecha",
-    }
     lbl_config_path {
         EN => "Config path",
         FR => "Chemin de configuration",
         IT => "Percorso configurazione",
         ES => "Ruta de configuración",
+    }
+    lbl_terminal_chord {
+        EN => "Terminal hotkey",
+        FR => "Raccourci terminal",
+        IT => "Scorciatoia terminale",
+        ES => "Atajo de terminal",
+    }
+    lbl_desktop {
+        EN => "Desktop",
+        FR => "Bureau",
+        IT => "Desktop",
+        ES => "Escritorio",
+    }
+    lbl_session {
+        EN => "Session",
+        FR => "Session",
+        IT => "Sessione",
+        ES => "Sesión",
+    }
+    lbl_uinput_access {
+        EN => "uinput access",
+        FR => "Accès uinput",
+        IT => "Accesso uinput",
+        ES => "Acceso a uinput",
+    }
+    uinput_state(ok: bool,) {
+        EN => if ok { "yes".to_string() } else { "no, run 'secret-stripper init'".to_string() },
+        FR => if ok { "oui".to_string() } else { "non, lancez 'secret-stripper init'".to_string() },
+        IT => if ok { "sì".to_string() } else { "no, esegui 'secret-stripper init'".to_string() },
+        ES => if ok { "sí".to_string() } else { "no, ejecuta 'secret-stripper init'".to_string() },
+    }
+    status_not_set_up {
+        EN => "Not set up. Run 'secret-stripper init'.",
+        FR => "Non configuré. Lancez 'secret-stripper init'.",
+        IT => "Non configurato. Esegui 'secret-stripper init'.",
+        ES => "No configurado. Ejecuta 'secret-stripper init'.",
     }
     status_title {
         EN => "Secret Stripper Status",
@@ -461,7 +409,6 @@ lang_strings! {
         ES => format!("FALLÓ ({})", err),
     }
 
-    // ---- CLI: menu / generic ----
     cli_no_config {
         EN => "No configuration found. Run 'secret-stripper init' first.",
         FR => "Aucune configuration trouvée. Lancez d'abord 'secret-stripper init'.",
@@ -487,18 +434,41 @@ lang_strings! {
         ES => format!("Error al acceder al portapapeles: {}", err),
     }
 
-    // ---- CLI: uninstall ----
     cli_uninstall_done {
-        EN => "Secret Stripper fully removed.",
-        FR => "Secret Stripper entièrement supprimé.",
-        IT => "Secret Stripper rimosso completamente.",
-        ES => "Secret Stripper eliminado por completo.",
+        EN => "Secret Stripper settings removed.",
+        FR => "Paramètres de Secret Stripper supprimés.",
+        IT => "Impostazioni di Secret Stripper rimosse.",
+        ES => "Configuración de Secret Stripper eliminada.",
     }
     cli_uninstall_de_cleared {
-        EN => "  - DE shortcut binding: cleared",
-        FR => "  - Liaison du raccourci DE : supprimée",
-        IT => "  - Associazione scorciatoia DE: rimossa",
-        ES => "  - Vínculo de atajo DE: eliminado",
+        EN => "  - Keyboard shortcut: removed",
+        FR => "  - Raccourci clavier : supprimé",
+        IT => "  - Scorciatoia da tastiera: rimossa",
+        ES => "  - Atajo de teclado: eliminado",
+    }
+    cli_uninstall_de_failed(err: &str,) {
+        EN => format!("  - Keyboard shortcut: not removed ({}); delete it in your desktop's keyboard settings", err),
+        FR => format!("  - Raccourci clavier : non supprimé ({}) ; supprimez-le dans les paramètres clavier du bureau", err),
+        IT => format!("  - Scorciatoia da tastiera: non rimossa ({}); eliminala nelle impostazioni tastiera del desktop", err),
+        ES => format!("  - Atajo de teclado: no eliminado ({}); bórralo en la configuración de teclado del escritorio", err),
+    }
+    cli_uninstall_timer_removed {
+        EN => "  - Update check timer: removed",
+        FR => "  - Minuteur de vérification des mises à jour : supprimé",
+        IT => "  - Timer di controllo aggiornamenti: rimosso",
+        ES => "  - Temporizador de comprobación de actualizaciones: eliminado",
+    }
+    cli_uninstall_timer_failed(err: &str,) {
+        EN => format!("  - Update check timer: not removed ({})", err),
+        FR => format!("  - Minuteur de vérification des mises à jour : non supprimé ({})", err),
+        IT => format!("  - Timer di controllo aggiornamenti: non rimosso ({})", err),
+        ES => format!("  - Temporizador de comprobación de actualizaciones: no eliminado ({})", err),
+    }
+    cli_uninstall_binary_left(exe: &str,) {
+        EN => format!("The program itself stays at {}; delete it to finish.", exe),
+        FR => format!("Le programme reste dans {} ; supprimez-le pour terminer.", exe),
+        IT => format!("Il programma resta in {}; eliminalo per completare.", exe),
+        ES => format!("El programa sigue en {}; bórralo para terminar.", exe),
     }
     cli_uninstall_nothing {
         EN => "  - Config dir: nothing to clean",
@@ -513,18 +483,17 @@ lang_strings! {
         ES => format!("  - Archivos de configuración: {}", list),
     }
 
-    // ---- CLI: register / unregister shortcut ----
     cli_no_hotkey {
         EN => "No hotkey configured. Run 'secret-stripper init' first.",
         FR => "Aucun raccourci configuré. Lancez d'abord 'secret-stripper init'.",
         IT => "Nessuna scorciatoia configurata. Esegui prima 'secret-stripper init'.",
         ES => "No hay atajo configurado. Ejecuta primero 'secret-stripper init'.",
     }
-    cli_press_to_redact(hotkey: &str,) {
-        EN => format!("Press {} on selected text after copying it (Ctrl+C) to redact in place.", hotkey),
-        FR => format!("Appuyez sur {} sur le texte sélectionné après l'avoir copié (Ctrl+C) pour le masquer sur place.", hotkey),
-        IT => format!("Premi {} sul testo selezionato dopo averlo copiato (Ctrl+C) per oscurarlo sul posto.", hotkey),
-        ES => format!("Pulsa {} sobre el texto seleccionado tras copiarlo (Ctrl+C) para redactarlo en el sitio.", hotkey),
+    cli_press_to_paste(hotkey: &str,) {
+        EN => format!("Copy text as usual, then press {} to paste a redacted copy.", hotkey),
+        FR => format!("Copiez du texte comme d'habitude, puis appuyez sur {} pour coller une copie masquée.", hotkey),
+        IT => format!("Copia il testo come al solito, poi premi {} per incollarne una copia oscurata.", hotkey),
+        ES => format!("Copia texto como siempre y luego pulsa {} para pegar una copia redactada.", hotkey),
     }
     cli_register_failed(err: &str,) {
         EN => format!("Could not auto-register the shortcut: {}", err),
@@ -533,10 +502,22 @@ lang_strings! {
         ES => format!("No se pudo registrar automáticamente el atajo: {}", err),
     }
     cli_register_workaround(exe: &str, hotkey: &str,) {
-        EN => format!("Workaround: bind '{} trigger' manually to {} in your desktop's keyboard settings.", exe, hotkey),
-        FR => format!("Solution : liez '{} trigger' manuellement à {} dans les paramètres clavier de votre bureau.", exe, hotkey),
-        IT => format!("Soluzione: associa manualmente '{} trigger' a {} nelle impostazioni della tastiera del desktop.", exe, hotkey),
-        ES => format!("Solución: vincula '{} trigger' manualmente a {} en la configuración de teclado de tu escritorio.", exe, hotkey),
+        EN => format!("Workaround: bind '{} paste' manually to {} in your desktop's keyboard settings.", exe, hotkey),
+        FR => format!("Solution : liez '{} paste' manuellement à {} dans les paramètres clavier de votre bureau.", exe, hotkey),
+        IT => format!("Soluzione: associa manualmente '{} paste' a {} nelle impostazioni della tastiera del desktop.", exe, hotkey),
+        ES => format!("Solución: vincula '{} paste' manualmente a {} en la configuración de teclado de tu escritorio.", exe, hotkey),
+    }
+    cli_register_workaround_terminal(exe: &str, chord: &str,) {
+        EN => format!("For terminals, also bind '{} paste --terminal' to {}.", exe, chord),
+        FR => format!("Pour les terminaux, liez aussi '{} paste --terminal' à {}.", exe, chord),
+        IT => format!("Per i terminali, associa anche '{} paste --terminal' a {}.", exe, chord),
+        ES => format!("Para terminales, vincula también '{} paste --terminal' a {}.", exe, chord),
+    }
+    cli_bind_examples {
+        EN => "Example config lines:",
+        FR => "Exemples de lignes de configuration :",
+        IT => "Esempi di righe di configurazione:",
+        ES => "Ejemplos de líneas de configuración:",
     }
     cli_unregister_failed(err: &str,) {
         EN => format!("Could not auto-unregister the shortcut: {}", err),
@@ -551,45 +532,68 @@ lang_strings! {
         ES => "Atajo personalizado eliminado.",
     }
 
-    // ---- CLI: trigger ----
-    cli_nothing_to_redact {
-        EN => "Nothing to redact: no selection and clipboard is empty.",
-        FR => "Rien à masquer : aucune sélection et le presse-papiers est vide.",
-        IT => "Niente da oscurare: nessuna selezione e appunti vuoti.",
-        ES => "Nada que redactar: sin selección y el portapapeles está vacío.",
-    }
     cli_clipboard_too_large(len: usize, cap: usize,) {
-        EN => format!("Clipboard too large to scan: {} bytes (cap {} bytes). Skipping.", len, cap),
-        FR => format!("Presse-papiers trop volumineux à analyser : {} octets (limite {} octets). Ignoré.", len, cap),
-        IT => format!("Appunti troppo grandi da analizzare: {} byte (limite {} byte). Saltato.", len, cap),
-        ES => format!("Portapapeles demasiado grande para analizar: {} bytes (límite {} bytes). Omitido.", len, cap),
+        EN => format!("Clipboard too large to scan: {} bytes (cap {} bytes). Nothing was pasted.", len, cap),
+        FR => format!("Presse-papiers trop volumineux à analyser : {} octets (limite {} octets). Rien n'a été collé.", len, cap),
+        IT => format!("Appunti troppo grandi da analizzare: {} byte (limite {} byte). Non è stato incollato nulla.", len, cap),
+        ES => format!("Portapapeles demasiado grande para analizar: {} bytes (límite {} bytes). No se pegó nada.", len, cap),
     }
     cli_no_secrets {
-        EN => "No secrets detected in clipboard.",
-        FR => "Aucun secret détecté dans le presse-papiers.",
-        IT => "Nessun segreto rilevato negli appunti.",
-        ES => "No se detectaron secretos en el portapapeles.",
+        EN => "No secrets detected; pasted the clipboard as is.",
+        FR => "Aucun secret détecté ; presse-papiers collé tel quel.",
+        IT => "Nessun segreto rilevato; appunti incollati così come sono.",
+        ES => "No se detectaron secretos; se pegó el portapapeles tal cual.",
     }
 
     cli_image_scan_failed {
-        EN => "Could not scan the clipboard image. Clipboard left untouched.",
-        FR => "Impossible d'analyser l'image du presse-papiers. Presse-papiers inchangé.",
-        IT => "Impossibile analizzare l'immagine degli appunti. Appunti invariati.",
-        ES => "No se pudo analizar la imagen del portapapeles. Portapapeles sin cambios.",
+        EN => "Could not scan the clipboard image. Nothing was pasted.",
+        FR => "Impossible d'analyser l'image du presse-papiers. Rien n'a été collé.",
+        IT => "Impossibile analizzare l'immagine degli appunti. Non è stato incollato nulla.",
+        ES => "No se pudo analizar la imagen del portapapeles. No se pegó nada.",
+    }
+    cli_ocr_missing {
+        EN => "tesseract is not installed. Install it, or turn off screenshot redaction in 'secret-stripper menu'.",
+        FR => "tesseract n'est pas installé. Installez-le ou désactivez l'expurgation des captures dans 'secret-stripper menu'.",
+        IT => "tesseract non è installato. Installalo o disattiva l'oscuramento degli screenshot in 'secret-stripper menu'.",
+        ES => "tesseract no está instalado. Instálalo o desactiva la redacción de capturas en 'secret-stripper menu'.",
     }
 
     cli_image_detected_unmappable {
-        EN => "Detected a secret in the image but could not locate it to redact. Clipboard left untouched.",
-        FR => "Secret détecté dans l'image mais impossible de le localiser pour le masquer. Presse-papiers inchangé.",
-        IT => "Segreto rilevato nell'immagine ma impossibile localizzarlo per oscurarlo. Appunti invariati.",
-        ES => "Se detectó un secreto en la imagen pero no se pudo localizar para redactarlo. Portapapeles sin cambios.",
+        EN => "Detected a secret in the image but could not locate it to redact. Nothing was pasted.",
+        FR => "Secret détecté dans l'image mais impossible de le localiser pour le masquer. Rien n'a été collé.",
+        IT => "Segreto rilevato nell'immagine ma impossibile localizzarlo per oscurarlo. Non è stato incollato nulla.",
+        ES => "Se detectó un secreto en la imagen pero no se pudo localizar para redactarlo. No se pegó nada.",
     }
 
-    cli_clipboard_write_failed(cleared: bool, err: &str,) {
-        EN => format!("Clipboard write failed{}: {}", if cleared { " (clipboard cleared)" } else { " (and clipboard could NOT be cleared)" }, err),
-        FR => format!("Échec d'écriture du presse-papiers{} : {}", if cleared { " (presse-papiers vidé)" } else { " (et le presse-papiers n'a PAS pu être vidé)" }, err),
-        IT => format!("Scrittura negli appunti fallita{}: {}", if cleared { " (appunti svuotati)" } else { " (e gli appunti NON sono stati svuotati)" }, err),
-        ES => format!("Fallo al escribir en el portapapeles{}: {}", if cleared { " (portapapeles vaciado)" } else { " (y el portapapeles NO se pudo vaciar)" }, err),
+    cli_paste_failed(err: &str,) {
+        EN => format!("Redacted paste failed: {}", err),
+        FR => format!("Échec du collage masqué : {}", err),
+        IT => format!("Incolla oscurato non riuscito: {}", err),
+        ES => format!("Falló el pegado redactado: {}", err),
+    }
+    cli_input_unavailable(err: &str,) {
+        EN => format!("Cannot simulate the paste keys: {}. On Wayland, run 'secret-stripper init' to set up /dev/uinput access.", err),
+        FR => format!("Impossible de simuler les touches de collage : {}. Sous Wayland, lancez 'secret-stripper init' pour configurer l'accès à /dev/uinput.", err),
+        IT => format!("Impossibile simulare i tasti di incolla: {}. Su Wayland, esegui 'secret-stripper init' per configurare l'accesso a /dev/uinput.", err),
+        ES => format!("No se pueden simular las teclas de pegado: {}. En Wayland, ejecuta 'secret-stripper init' para configurar el acceso a /dev/uinput.", err),
+    }
+    cli_lock_failed(err: &str,) {
+        EN => format!("Cannot create the paste lock file: {}", err),
+        FR => format!("Impossible de créer le fichier de verrou de collage : {}", err),
+        IT => format!("Impossibile creare il file di blocco per l'incolla: {}", err),
+        ES => format!("No se puede crear el archivo de bloqueo de pegado: {}", err),
+    }
+    cli_chord_held {
+        EN => "The shortcut keys were still held, so the paste kept triggering the shortcut again. Release them right after pressing.",
+        FR => "Les touches du raccourci étaient encore enfoncées, le collage relançait donc le raccourci. Relâchez-les juste après l'appui.",
+        IT => "I tasti della scorciatoia erano ancora premuti, quindi l'incolla riattivava la scorciatoia. Rilasciali subito dopo averli premuti.",
+        ES => "Las teclas del atajo seguían pulsadas, así que el pegado volvía a activar el atajo. Suéltalas justo después de pulsarlas.",
+    }
+    cli_restore_skipped {
+        EN => "No app read the redacted copy within 3s, so it stays on the clipboard.",
+        FR => "Aucune application n'a lu la copie masquée en 3 s ; elle reste dans le presse-papiers.",
+        IT => "Nessuna app ha letto la copia oscurata entro 3 s; resta negli appunti.",
+        ES => "Ninguna app leyó la copia redactada en 3 s; permanece en el portapapeles.",
     }
     cli_redacted(n: usize,) {
         EN => if n == 1 { "Redacted 1 item.".to_string() } else { format!("Redacted {} items.", n) },
@@ -598,12 +602,65 @@ lang_strings! {
         ES => if n == 1 { "1 elemento redactado.".to_string() } else { format!("{} elementos redactados.", n) },
     }
 
-    // ---- CLI: init ----
-    cli_already_configured(path: &str,) {
-        EN => format!("Secret Stripper is already configured at {}", path),
-        FR => format!("Secret Stripper est déjà configuré dans {}", path),
-        IT => format!("Secret Stripper è già configurato in {}", path),
-        ES => format!("Secret Stripper ya está configurado en {}", path),
+    uinput_intro {
+        EN => "Pasting on Wayland needs access to /dev/uinput. These commands grant it once, with sudo:",
+        FR => "Coller sous Wayland nécessite l'accès à /dev/uinput. Ces commandes l'accordent une fois, avec sudo :",
+        IT => "Incollare su Wayland richiede l'accesso a /dev/uinput. Questi comandi lo concedono una volta, con sudo:",
+        ES => "Pegar en Wayland requiere acceso a /dev/uinput. Estos comandos lo conceden una vez, con sudo:",
+    }
+    cli_uinput_denied {
+        EN => "No access to /dev/uinput. Run 'secret-stripper init'.",
+        FR => "Pas d'accès à /dev/uinput. Lancez 'secret-stripper init'.",
+        IT => "Nessun accesso a /dev/uinput. Esegui 'secret-stripper init'.",
+        ES => "Sin acceso a /dev/uinput. Ejecuta 'secret-stripper init'.",
+    }
+    uinput_confirm {
+        EN => "Run them now? [Y/n] ",
+        FR => "Les exécuter maintenant ? [O/n] ",
+        IT => "Eseguirli ora? [S/n] ",
+        ES => "¿Ejecutarlos ahora? [S/n] ",
+    }
+    uinput_done {
+        EN => "Virtual keyboard access granted.",
+        FR => "Accès au clavier virtuel accordé.",
+        IT => "Accesso alla tastiera virtuale concesso.",
+        ES => "Acceso al teclado virtual concedido.",
+    }
+    uinput_relogin {
+        EN => "Setup finished, but /dev/uinput is not writable yet. Log out and back in, then try the shortcut.",
+        FR => "Configuration terminée, mais /dev/uinput n'est pas encore accessible en écriture. Déconnectez-vous puis reconnectez-vous, puis essayez le raccourci.",
+        IT => "Configurazione completata, ma /dev/uinput non è ancora scrivibile. Esci e rientra nella sessione, poi prova la scorciatoia.",
+        ES => "Configuración terminada, pero /dev/uinput aún no tiene permiso de escritura. Cierra sesión y vuelve a entrar, luego prueba el atajo.",
+    }
+    uinput_failed(err: &str,) {
+        EN => format!("Virtual keyboard setup failed ({}). Run the commands above yourself, then rerun 'secret-stripper init'.", err),
+        FR => format!("Échec de la configuration du clavier virtuel ({}). Exécutez vous-même les commandes ci-dessus, puis relancez 'secret-stripper init'.", err),
+        IT => format!("Configurazione della tastiera virtuale non riuscita ({}). Esegui tu i comandi qui sopra, poi riesegui 'secret-stripper init'.", err),
+        ES => format!("Falló la configuración del teclado virtual ({}). Ejecuta tú los comandos de arriba y vuelve a ejecutar 'secret-stripper init'.", err),
+    }
+    uinput_declined {
+        EN => "Skipped. Pasting on Wayland will not work until you run the commands above or rerun 'secret-stripper init'.",
+        FR => "Ignoré. Le collage sous Wayland ne fonctionnera pas tant que vous n'aurez pas exécuté les commandes ci-dessus ou relancé 'secret-stripper init'.",
+        IT => "Saltato. L'incolla su Wayland non funzionerà finché non esegui i comandi qui sopra o riesegui 'secret-stripper init'.",
+        ES => "Omitido. El pegado en Wayland no funcionará hasta que ejecutes los comandos de arriba o vuelvas a ejecutar 'secret-stripper init'.",
+    }
+    uinput_no_tty {
+        EN => "Not running in a terminal, so nothing was run. Run the commands above yourself, or rerun 'secret-stripper init' in a terminal.",
+        FR => "Pas de terminal, rien n'a été exécuté. Exécutez vous-même les commandes ci-dessus, ou relancez 'secret-stripper init' dans un terminal.",
+        IT => "Nessun terminale, quindi non è stato eseguito nulla. Esegui tu i comandi qui sopra, o riesegui 'secret-stripper init' in un terminale.",
+        ES => "No hay terminal, así que no se ejecutó nada. Ejecuta tú los comandos de arriba, o vuelve a ejecutar 'secret-stripper init' en una terminal.",
+    }
+    uinput_uninstall_hint(cmd: &str,) {
+        EN => format!("Your session still has virtual keyboard access. To revoke it, run: {}", cmd),
+        FR => format!("Votre session a toujours accès au clavier virtuel. Pour le révoquer, lancez : {}", cmd),
+        IT => format!("La tua sessione ha ancora accesso alla tastiera virtuale. Per revocarlo, esegui: {}", cmd),
+        ES => format!("Tu sesión aún tiene acceso al teclado virtual. Para revocarlo, ejecuta: {}", cmd),
+    }
+    cli_already_configured {
+        EN => "Secret Stripper is already set up.",
+        FR => "Secret Stripper est déjà configuré.",
+        IT => "Secret Stripper è già configurato.",
+        ES => "Secret Stripper ya está configurado.",
     }
     cli_init_done_hint {
         EN => "Run 'secret-stripper menu' to change settings, or 'secret-stripper uninstall' to start over.",
@@ -612,58 +669,22 @@ lang_strings! {
         ES => "Ejecuta 'secret-stripper menu' para cambiar la configuración, o 'secret-stripper uninstall' para empezar de nuevo.",
     }
     cli_init_header {
-        EN => "Secret Stripper initialized with defaults:",
-        FR => "Secret Stripper initialisé avec les valeurs par défaut :",
-        IT => "Secret Stripper inizializzato con i valori predefiniti:",
-        ES => "Secret Stripper inicializado con valores predeterminados:",
+        EN => "Secret Stripper is set up.",
+        FR => "Secret Stripper est configuré.",
+        IT => "Secret Stripper è configurato.",
+        ES => "Secret Stripper está configurado.",
     }
-    suffix_autodetected {
-        EN => "auto-detected",
-        FR => "détecté automatiquement",
-        IT => "rilevato automaticamente",
-        ES => "detectado automáticamente",
-    }
-    sensitivity_balanced {
-        EN => "Balanced",
-        FR => "Équilibré",
-        IT => "Bilanciato",
-        ES => "Equilibrado",
-    }
-    deep_scan_on_desc {
-        EN => "on (8 heuristic scanners)",
-        FR => "activé (8 scanners heuristiques)",
-        IT => "attivo (8 scanner euristici)",
-        ES => "activado (8 escáneres heurísticos)",
-    }
-    entropy_state_desc(on: bool,) {
-        EN => format!(
-            "{} (Shannon-entropy catch-all; edit config.toml)",
-            if on { "on" } else { "off" }
-        ),
-        FR => format!(
-            "{} (filet de sécurité par entropie ; modifier config.toml)",
-            if on { "activé" } else { "désactivé" }
-        ),
-        IT => format!(
-            "{} (rete di sicurezza a entropia; modifica config.toml)",
-            if on { "attivo" } else { "disattivo" }
-        ),
-        ES => format!(
-            "{} (red de seguridad por entropía; editar config.toml)",
-            if on { "activado" } else { "desactivado" }
-        ),
-    }
-    notif_silent_hint {
-        EN => "silent (toggle via 'secret-stripper menu')",
-        FR => "silencieux (basculer via 'secret-stripper menu')",
-        IT => "silenzioso (commuta tramite 'secret-stripper menu')",
-        ES => "silencioso (alternar con 'secret-stripper menu')",
+    cli_terminal_hint(chord: &str, keys: &str,) {
+        EN => format!("In a terminal, press {} instead (it sends {}).", chord, keys),
+        FR => format!("Dans un terminal, appuyez plutôt sur {} (il envoie {}).", chord, keys),
+        IT => format!("In un terminale, premi invece {} (invia {}).", chord, keys),
+        ES => format!("En una terminal, pulsa {} en su lugar (envía {}).", chord, keys),
     }
     cli_init_usage(hotkey: &str,) {
-        EN => format!("Normal Ctrl+C / Ctrl+V are untouched. Press {} to copy a redacted version of the current selection.", hotkey),
-        FR => format!("Ctrl+C / Ctrl+V normaux ne sont pas modifiés. Appuyez sur {} pour copier une version masquée de la sélection actuelle.", hotkey),
-        IT => format!("I normali Ctrl+C / Ctrl+V non sono modificati. Premi {} per copiare una versione oscurata della selezione corrente.", hotkey),
-        ES => format!("Ctrl+C / Ctrl+V normales no se modifican. Pulsa {} para copiar una versión redactada de la selección actual.", hotkey),
+        EN => format!("Copy text as usual, then press {} to paste a redacted copy.", hotkey),
+        FR => format!("Copiez comme d'habitude, puis appuyez sur {} pour coller une copie masquée.", hotkey),
+        IT => format!("Copia come al solito, poi premi {} per incollare una copia oscurata.", hotkey),
+        ES => format!("Copia como siempre y luego pulsa {} para pegar una copia redactada.", hotkey),
     }
     cli_warn_no_hotkey {
         EN => "Warning: no hotkey could be registered. Run 'secret-stripper menu' and rebind the hotkey to capture a working chord.",
@@ -678,22 +699,16 @@ lang_strings! {
         ES => format!("Último error: {}", err),
     }
     cli_tweak_later {
-        EN => "Tweak any setting later with 'secret-stripper menu'.",
-        FR => "Ajustez n'importe quel réglage plus tard avec 'secret-stripper menu'.",
-        IT => "Modifica qualsiasi impostazione in seguito con 'secret-stripper menu'.",
-        ES => "Ajusta cualquier opción más tarde con 'secret-stripper menu'.",
-    }
-    hk_available(key: &str,) {
-        EN => format!("{} (available)", key),
-        FR => format!("{} (disponible)", key),
-        IT => format!("{} (disponibile)", key),
-        ES => format!("{} (disponible)", key),
+        EN => "Change settings with 'secret-stripper menu'.",
+        FR => "Modifiez les réglages avec 'secret-stripper menu'.",
+        IT => "Cambia le impostazioni con 'secret-stripper menu'.",
+        ES => "Cambia la configuración con 'secret-stripper menu'.",
     }
     hk_fallback(active: &str, preferred: &str,) {
-        EN => format!("{} (fallback: {} was unavailable)", active, preferred),
-        FR => format!("{} (repli : {} était indisponible)", active, preferred),
-        IT => format!("{} (ripiego: {} non disponibile)", active, preferred),
-        ES => format!("{} (alternativa: {} no estaba disponible)", active, preferred),
+        EN => format!("{} (fallback: {} was invalid)", active, preferred),
+        FR => format!("{} (repli : {} était invalide)", active, preferred),
+        IT => format!("{} (ripiego: {} non valida)", active, preferred),
+        ES => format!("{} (alternativa: {} no era válida)", active, preferred),
     }
     hk_none(tried: &str,) {
         EN => format!("none available (tried {})", tried),
@@ -701,20 +716,7 @@ lang_strings! {
         IT => format!("nessuno disponibile (provato {})", tried),
         ES => format!("ninguno disponible (probado {})", tried),
     }
-    err_rebind_failed(hotkey: &str,) {
-        EN => format!("re-binding '{}' failed: no desktop-environment backend accepted the binding. Fix the DE state and rerun 'secret-stripper init', or pick another chord via 'secret-stripper menu'.", hotkey),
-        FR => format!("la reliaison de '{}' a échoué : aucun backend d'environnement de bureau n'a accepté la liaison. Corrigez l'état du DE et relancez 'secret-stripper init', ou choisissez une autre combinaison via 'secret-stripper menu'.", hotkey),
-        IT => format!("la riassociazione di '{}' è fallita: nessun backend dell'ambiente desktop ha accettato l'associazione. Correggi lo stato del DE e riesegui 'secret-stripper init', o scegli un'altra combinazione tramite 'secret-stripper menu'.", hotkey),
-        ES => format!("la revinculación de '{}' falló: ningún backend del entorno de escritorio aceptó el vínculo. Corrige el estado del DE y vuelve a ejecutar 'secret-stripper init', o elige otra combinación con 'secret-stripper menu'.", hotkey),
-    }
-    err_autobind_failed(hotkey: &str,) {
-        EN => format!("auto-binding '{}' failed: no desktop-environment backend accepted the binding. Config has been saved; fix the DE state and rerun 'secret-stripper init', or pick another chord via 'secret-stripper menu'.", hotkey),
-        FR => format!("la liaison automatique de '{}' a échoué : aucun backend d'environnement de bureau n'a accepté la liaison. La configuration a été enregistrée ; corrigez l'état du DE et relancez 'secret-stripper init', ou choisissez une autre combinaison via 'secret-stripper menu'.", hotkey),
-        IT => format!("l'associazione automatica di '{}' è fallita: nessun backend dell'ambiente desktop ha accettato l'associazione. La configurazione è stata salvata; correggi lo stato del DE e riesegui 'secret-stripper init', o scegli un'altra combinazione tramite 'secret-stripper menu'.", hotkey),
-        ES => format!("el vínculo automático de '{}' falló: ningún backend del entorno de escritorio aceptó el vínculo. La configuración se guardó; corrige el estado del DE y vuelve a ejecutar 'secret-stripper init', o elige otra combinación con 'secret-stripper menu'.", hotkey),
-    }
 
-    // ---- updater: run_upgrade progress ----
     up_checking {
         EN => "Checking for updates...",
         FR => "Recherche de mises à jour...",
@@ -758,27 +760,18 @@ lang_strings! {
         ES => format!("Ya tienes la última versión ({}).", current),
     }
     svc_update_desc {
-        EN => "Secret Stripper daily update check",
-        FR => "Vérification quotidienne des mises à jour de Secret Stripper",
-        IT => "Controllo giornaliero degli aggiornamenti di Secret Stripper",
-        ES => "Comprobación diaria de actualizaciones de Secret Stripper",
+        EN => "Secret Stripper update check",
+        FR => "Vérification des mises à jour de Secret Stripper",
+        IT => "Controllo degli aggiornamenti di Secret Stripper",
+        ES => "Comprobación de actualizaciones de Secret Stripper",
     }
     svc_timer_desc {
-        EN => "Daily Secret Stripper update check",
-        FR => "Vérification quotidienne de Secret Stripper",
-        IT => "Controllo giornaliero di Secret Stripper",
-        ES => "Comprobación diaria de Secret Stripper",
+        EN => "Secret Stripper update check at login and daily",
+        FR => "Vérification de Secret Stripper à la connexion et chaque jour",
+        IT => "Controllo di Secret Stripper all'accesso e ogni giorno",
+        ES => "Comprobación de Secret Stripper al iniciar sesión y cada día",
     }
 
-    // ---- TUI: menu ----
-    menu_exit {
-        EN => "Exit",
-        FR => "Quitter",
-        IT => "Esci",
-        ES => "Salir",
-    }
-
-    // ---- TUI: status + activity panel ----
     status_panel_title {
         EN => "Status",
         FR => "Statut",
@@ -924,16 +917,16 @@ lang_strings! {
         ES => "¿Te gusta Secret Stripper? Danos una estrella en GitHub",
     }
     help_notifications {
-        EN => "Turn desktop notifications on or off when a secret is redacted",
-        FR => "Activer ou désactiver les notifications lors d'une expurgation",
-        IT => "Attiva o disattiva le notifiche quando un segreto viene oscurato",
-        ES => "Activa o desactiva las notificaciones al redactar un secreto",
+        EN => "Turn desktop notifications on or off: redactions and updates (failed pastes always notify)",
+        FR => "Activer ou désactiver les notifications : expurgations et mises à jour (les collages échoués notifient toujours)",
+        IT => "Attiva o disattiva le notifiche: oscuramenti e aggiornamenti (gli incolla non riusciti notificano sempre)",
+        ES => "Activa o desactiva las notificaciones: redacciones y actualizaciones (los pegados fallidos siempre notifican)",
     }
     help_rebind_hotkey {
-        EN => "Change the keyboard shortcut that triggers a clipboard scan",
-        FR => "Modifier le raccourci clavier qui déclenche une analyse",
-        IT => "Cambia la scorciatoia che avvia una scansione degli appunti",
-        ES => "Cambia el atajo que inicia un escaneo del portapapeles",
+        EN => "Change the keyboard shortcut that pastes a redacted copy",
+        FR => "Modifier le raccourci clavier qui colle une copie masquée",
+        IT => "Cambia la scorciatoia che incolla una copia oscurata",
+        ES => "Cambia el atajo que pega una copia redactada",
     }
     help_language {
         EN => "Choose the interface language",
@@ -1026,10 +1019,10 @@ lang_strings! {
         ES => "Buscar actualizaciones",
     }
     lbl_uninstall {
-        EN => "Uninstall (remove all)",
-        FR => "Désinstaller (tout supprimer)",
-        IT => "Disinstalla (rimuovi tutto)",
-        ES => "Desinstalar (eliminar todo)",
+        EN => "Uninstall",
+        FR => "Désinstaller",
+        IT => "Disinstalla",
+        ES => "Desinstalar",
     }
     lbl_back {
         EN => "Back",
@@ -1044,10 +1037,10 @@ lang_strings! {
         ES => "Descargar e instalar la última versión de Secret Stripper",
     }
     help_uninstall {
-        EN => "Remove the shortcut, config files, and Secret Stripper data",
-        FR => "Supprimer le raccourci, les fichiers de configuration et les données",
-        IT => "Rimuovi la scorciatoia, i file di configurazione e i dati",
-        ES => "Eliminar el atajo, los archivos de configuración y los datos",
+        EN => "Remove the shortcut, update timer, config and data; the program file stays",
+        FR => "Supprimer le raccourci, le minuteur, la configuration et les données ; le programme reste",
+        IT => "Rimuovi scorciatoia, timer, configurazione e dati; il programma resta",
+        ES => "Eliminar el atajo, el temporizador, la configuración y los datos; el programa se queda",
     }
     help_back {
         EN => "Return to the main menu",
@@ -1056,7 +1049,6 @@ lang_strings! {
         ES => "Volver al menú principal",
     }
 
-    // ---- TUI: detection settings (Phase 2) ----
     lbl_detection_settings {
         EN => "Detection Settings",
         FR => "Paramètres de détection",
@@ -1105,7 +1097,7 @@ lang_strings! {
         IT => "Indietro",
         ES => "Atrás",
     }
-    dm_image_scan(on: bool,) {
+    menu_image_scan(on: bool,) {
         EN => format!("Screenshot redaction: {}", if on { "on" } else { "off" }),
         FR => format!(
             "Expurgation des captures d'écran : {}",
@@ -1150,7 +1142,13 @@ lang_strings! {
         IT => "Torna al menu principale",
         ES => "Volver al menú principal",
     }
-    help_dm_image_scan {
+    flash_tesseract_missing {
+        EN => "tesseract is not installed: screenshots will not paste.",
+        FR => "tesseract n'est pas installé : les captures ne seront pas collées.",
+        IT => "tesseract non è installato: gli screenshot non verranno incollati.",
+        ES => "tesseract no está instalado: las capturas no se pegarán.",
+    }
+    help_menu_image_scan {
         EN => "Redact secrets in clipboard screenshots (needs tesseract)",
         FR => "Expurger les secrets des captures du presse-papiers (requiert tesseract)",
         IT => "Oscura i segreti negli screenshot degli appunti (richiede tesseract)",
@@ -1192,13 +1190,13 @@ lang_strings! {
         IT => "Personalizzato (selezione manuale)",
         ES => "Personalizado (selección manual)",
     }
-    dm_redact_style {
+    menu_redact_style {
         EN => "Redaction Style",
         FR => "Style d'expurgation",
         IT => "Stile di oscuramento",
         ES => "Estilo de redacción",
     }
-    help_dm_redact_style {
+    help_menu_redact_style {
         EN => "Choose how detected secrets are replaced",
         FR => "Choisir comment les secrets détectés sont remplacés",
         IT => "Scegli come sostituire i segreti rilevati",
@@ -1469,7 +1467,6 @@ lang_strings! {
         ES => format!("¿Eliminar la entrada '{}'?", n),
     }
 
-    // ---- TUI: manage installation (updates) ----
     state_on {
         EN => "on",
         FR => "activé",
@@ -1495,16 +1492,16 @@ lang_strings! {
         ES => format!("Actualización automática ({})", state),
     }
     help_auto_check {
-        EN => "Check once a day and notify when a new version is available",
-        FR => "Vérifier une fois par jour et notifier si une version est disponible",
-        IT => "Controlla una volta al giorno e notifica se c'è una nuova versione",
-        ES => "Comprobar una vez al día y notificar si hay una versión nueva",
+        EN => "Check at each login and notify, at most once a day, when a new version is out",
+        FR => "Vérifier à chaque connexion et notifier, au plus une fois par jour, si une version sort",
+        IT => "Controlla a ogni accesso e notifica, al massimo una volta al giorno, se c'è una nuova versione",
+        ES => "Comprobar en cada inicio de sesión y avisar, como mucho una vez al día, si hay una versión nueva",
     }
     help_auto_upgrade {
-        EN => "Also download and install new versions automatically, then notify",
-        FR => "Télécharger et installer aussi les nouvelles versions, puis notifier",
-        IT => "Scarica e installa anche le nuove versioni, poi notifica",
-        ES => "Descargar e instalar también las versiones nuevas y notificar",
+        EN => "Also install new versions automatically; needs a binary your user can write",
+        FR => "Installer aussi les nouvelles versions ; le binaire doit être modifiable par votre utilisateur",
+        IT => "Installa anche le nuove versioni; il binario deve essere scrivibile dal tuo utente",
+        ES => "Instalar también las versiones nuevas; el binario debe poder escribirlo tu usuario",
     }
     mi_checking {
         EN => "Checking for updates...",
@@ -1536,20 +1533,7 @@ lang_strings! {
         IT => format!("È disponibile la versione {}. Aggiornare ora?", latest),
         ES => format!("La versión {} está disponible. ¿Actualizar ahora?", latest),
     }
-    notify_uninstalled_title {
-        EN => "Secret Stripper removed",
-        FR => "Secret Stripper supprimé",
-        IT => "Secret Stripper rimosso",
-        ES => "Secret Stripper eliminado",
-    }
-    notify_uninstalled_body {
-        EN => "Everything about Secret Stripper has been removed from your system.",
-        FR => "Tout ce qui concerne Secret Stripper a été supprimé de votre système.",
-        IT => "Tutto ciò che riguarda Secret Stripper è stato rimosso dal sistema.",
-        ES => "Todo lo relacionado con Secret Stripper se ha eliminado del sistema.",
-    }
 
-    // ---- TUI: hotkey capture ----
     hk_placeholder {
         EN => "(press a combination)",
         FR => "(appuyez sur une combinaison)",
@@ -1567,6 +1551,18 @@ lang_strings! {
         FR => "  Maintenez un ou plusieurs modificateurs (Ctrl, Alt, Shift, Super) et appuyez sur une touche.",
         IT => "  Tieni premuti uno o più modificatori (Ctrl, Alt, Shift, Super) e premi un tasto.",
         ES => "  Mantén uno o más modificadores (Ctrl, Alt, Shift, Super) y pulsa una tecla.",
+    }
+    hk_warn_slow_paste(keys: &str,) {
+        EN => format!("  On Wayland, chords that do not include {} paste after a short delay, so you can release the keys.", keys),
+        FR => format!("  Sous Wayland, les combinaisons qui ne contiennent pas {} collent après un court délai, le temps de relâcher les touches.", keys),
+        IT => format!("  Su Wayland, le combinazioni che non contengono {} incollano dopo una breve attesa, per darti il tempo di rilasciare i tasti.", keys),
+        ES => format!("  En Wayland, las combinaciones que no contienen {} pegan tras una breve espera, para que puedas soltar las teclas.", keys),
+    }
+    hk_terminal(chord: &str,) {
+        EN => format!("  Terminals: {} (added automatically)", chord),
+        FR => format!("  Terminaux : {} (ajouté automatiquement)", chord),
+        IT => format!("  Terminali: {} (aggiunta automaticamente)", chord),
+        ES => format!("  Terminales: {} (añadido automáticamente)", chord),
     }
     hk_current(value: &str,) {
         EN => format!("  Current: {}", value),
@@ -1604,6 +1600,12 @@ lang_strings! {
         IT => format!("Combinazione non valida: {}", err),
         ES => format!("Combinación no válida: {}", err),
     }
+    hk_err_paste_keys(chord: &str,) {
+        EN => format!("{} is also a paste shortcut, so every paste would trigger it again. Pick another hotkey in 'secret-stripper menu'.", chord),
+        FR => format!("{} est aussi un raccourci de collage : chaque collage le relancerait. Choisissez un autre raccourci dans 'secret-stripper menu'.", chord),
+        IT => format!("{} è anche una scorciatoia di incolla, quindi ogni incolla la riattiverebbe. Scegli un'altra scorciatoia in 'secret-stripper menu'.", chord),
+        ES => format!("{} también es un atajo de pegado, así que cada pegado lo volvería a activar. Elige otro atajo en 'secret-stripper menu'.", chord),
+    }
     hk_err_press_first {
         EN => "Press a combination first.",
         FR => "Appuyez d'abord sur une combinaison.",
@@ -1617,7 +1619,6 @@ lang_strings! {
         ES => format!("No compatible: {}", err),
     }
 
-    // ---- TUI: language picker ----
     lang_title {
         EN => " Select Language ",
         FR => " Choisir la langue ",
@@ -1631,53 +1632,35 @@ lang_strings! {
         ES => "Cambia el idioma de la interfaz",
     }
 
-    ai_tui_detected_title {
-        EN => "Detected AI TUIs on this system:",
-        FR => "Outils TUI d'IA détectés sur ce système :",
-        IT => "TUI di IA rilevate su questo sistema:",
-        ES => "TUI de IA detectadas en este sistema:",
-    }
-    ai_tui_why {
-        EN => "Add the snippet below to your shell config so each tool runs through 'paste-guard'. The wrapper sits between your terminal and the AI TUI, intercepting clipboard pastes and redacting any secrets or PII before they reach the prompt. Typing and normal output stay untouched.",
-        FR => "Ajoutez le bloc ci-dessous à la configuration de votre shell pour que chaque outil passe par 'paste-guard'. Ce wrapper se place entre votre terminal et l'outil d'IA, intercepte les collages du presse-papiers et masque les secrets ou les données personnelles avant qu'ils n'atteignent l'invite. La frappe et la sortie normale ne sont pas modifiées.",
-        IT => "Aggiungi il blocco qui sotto alla configurazione della shell così ogni strumento passa attraverso 'paste-guard'. Il wrapper si frappone tra il terminale e la TUI di IA, intercetta gli incolla dagli appunti e oscura segreti o dati personali prima che raggiungano il prompt. La digitazione e l'output normale restano invariati.",
-        ES => "Añade el bloque siguiente a la configuración de tu shell para que cada herramienta pase por 'paste-guard'. El envoltorio se sitúa entre tu terminal y la TUI de IA, intercepta los pegados del portapapeles y redacta los secretos o datos personales antes de que lleguen al prompt. La escritura y la salida normal no se ven afectadas.",
+    ai_tui_detected(tools: &str,) {
+        EN => format!("AI tools found: {}.", tools),
+        FR => format!("Outils d'IA trouvés : {}.", tools),
+        IT => format!("Strumenti di IA trovati: {}.", tools),
+        ES => format!("Herramientas de IA encontradas: {}.", tools),
     }
     ai_tui_add_to_file(path: &str,) {
-        EN => format!("Add the lines below to {} (then open a new shell or run 'source {}'):", path, path),
-        FR => format!("Ajoutez les lignes ci-dessous à {} (puis ouvrez un nouveau shell ou exécutez 'source {}') :", path, path),
-        IT => format!("Aggiungi le righe sottostanti a {} (poi apri una nuova shell o esegui 'source {}'):", path, path),
-        ES => format!("Añade las líneas siguientes a {} (después abre un nuevo shell o ejecuta 'source {}'):", path, path),
+        EN => format!("To redact pastes into them, add these lines to {} and open a new shell:", path),
+        FR => format!("Pour masquer les collages dans ces outils, ajoutez ces lignes à {} et ouvrez un nouveau shell :", path),
+        IT => format!("Per oscurare gli incolla in questi strumenti, aggiungi queste righe a {} e apri una nuova shell:", path),
+        ES => format!("Para redactar lo que pegas en ellas, añade estas líneas a {} y abre un nuevo shell:", path),
     }
     ai_tui_add_to_unknown_shell {
-        EN => "Could not detect your shell from $SHELL. Add the lines below to your shell's startup file (e.g. ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, or the PowerShell profile on Windows):",
-        FR => "Impossible de détecter votre shell via $SHELL. Ajoutez les lignes ci-dessous au fichier de démarrage de votre shell (par ex. ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, ou le profil PowerShell sous Windows) :",
-        IT => "Impossibile rilevare la shell da $SHELL. Aggiungi le righe sottostanti al file di avvio della tua shell (ad es. ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, oppure il profilo PowerShell su Windows):",
-        ES => "No se pudo detectar tu shell desde $SHELL. Añade las líneas siguientes al archivo de inicio de tu shell (por ejemplo ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish, o el perfil de PowerShell en Windows):",
+        EN => "To redact pastes into them, add these lines to your shell config (~/.bashrc, ~/.zshrc or ~/.config/fish/config.fish) and open a new shell:",
+        FR => "Pour masquer les collages dans ces outils, ajoutez ces lignes à la configuration de votre shell (~/.bashrc, ~/.zshrc ou ~/.config/fish/config.fish) et ouvrez un nouveau shell :",
+        IT => "Per oscurare gli incolla in questi strumenti, aggiungi queste righe alla configurazione della shell (~/.bashrc, ~/.zshrc o ~/.config/fish/config.fish) e apri una nuova shell:",
+        ES => "Para redactar lo que pegas en ellas, añade estas líneas a la configuración de tu shell (~/.bashrc, ~/.zshrc o ~/.config/fish/config.fish) y abre un nuevo shell:",
     }
     ai_tui_none_detected {
-        EN => "No supported AI TUIs detected on PATH. If you install one later, re-run 'secret-stripper init' to see the alias snippet.",
-        FR => "Aucun outil TUI d'IA pris en charge détecté dans le PATH. Si vous en installez un plus tard, relancez 'secret-stripper init' pour obtenir le bloc d'alias.",
-        IT => "Nessuna TUI di IA supportata rilevata nel PATH. Se ne installi una in seguito, rilancia 'secret-stripper init' per vedere lo snippet di alias.",
-        ES => "No se detectó ninguna TUI de IA compatible en el PATH. Si instalas una más adelante, vuelve a ejecutar 'secret-stripper init' para ver el bloque de alias.",
-    }
-    ai_tui_remove_hint {
-        EN => "To stop routing through paste-guard, delete the block above (between the dashed comment lines) from your shell config, or run 'secret-stripper uninstall' to clean up everything at once.",
-        FR => "Pour cesser d'utiliser paste-guard, supprimez le bloc ci-dessus (entre les lignes de commentaire en tirets) de la configuration de votre shell, ou exécutez 'secret-stripper uninstall' pour tout nettoyer en une fois.",
-        IT => "Per non far più passare il pasting da paste-guard, elimina il blocco qui sopra (tra le righe di commento tratteggiate) dalla configurazione della tua shell, oppure esegui 'secret-stripper uninstall' per ripulire tutto in una volta.",
-        ES => "Para dejar de pasar por paste-guard, elimina el bloque de arriba (entre las líneas de comentario con guiones) de la configuración de tu shell, o ejecuta 'secret-stripper uninstall' para limpiar todo de una vez.",
+        EN => "No supported AI tools found on PATH. Wrap any command with 'secret-stripper paste-guard -- <cmd>'.",
+        FR => "Aucun outil d'IA pris en charge trouvé dans le PATH. Enveloppez n'importe quelle commande avec 'secret-stripper paste-guard -- <cmd>'.",
+        IT => "Nessuno strumento di IA supportato trovato nel PATH. Avvolgi qualsiasi comando con 'secret-stripper paste-guard -- <cmd>'.",
+        ES => "No se encontró ninguna herramienta de IA compatible en el PATH. Envuelve cualquier comando con 'secret-stripper paste-guard -- <cmd>'.",
     }
     ai_tui_alias_removed(path: &str,) {
         EN => format!("Removed paste-guard alias block from {}", path),
         FR => format!("Bloc d'alias paste-guard supprimé de {}", path),
         IT => format!("Blocco di alias paste-guard rimosso da {}", path),
         ES => format!("Bloque de alias paste-guard eliminado de {}", path),
-    }
-    pg_no_child {
-        EN => "paste-guard: no child command provided. Usage: secret-stripper paste-guard -- <cmd> [args...]",
-        FR => "paste-guard : aucune commande enfant fournie. Usage : secret-stripper paste-guard -- <cmd> [args...]",
-        IT => "paste-guard: nessun comando figlio fornito. Uso: secret-stripper paste-guard -- <cmd> [args...]",
-        ES => "paste-guard: no se proporcionó ningún comando hijo. Uso: secret-stripper paste-guard -- <cmd> [args...]",
     }
 }
 
@@ -1688,7 +1671,7 @@ mod tests {
     #[test]
     fn every_language_returns_non_empty() {
         for l in Lang::all() {
-            assert!(!l.notify_cleaned().is_empty());
+            assert!(!l.notify_pasted().is_empty());
             assert!(!l.notify_redacted(2).is_empty());
             assert!(!l.cli_no_config().is_empty());
             assert!(!l.cli_redacted(1).is_empty());
@@ -1697,25 +1680,7 @@ mod tests {
             assert!(!l.up_checking().is_empty());
             assert!(!l.svc_update_desc().is_empty());
             assert!(!l.endonym().is_empty());
-            assert!(!l.notify_write_failed_body(true).is_empty());
-            assert!(!l.notify_write_failed_body(false).is_empty());
         }
-    }
-
-    #[test]
-    fn severity_label_covers_all_pairs() {
-        let sevs = [
-            Severity::Critical,
-            Severity::High,
-            Severity::Medium,
-            Severity::Low,
-        ];
-        for l in Lang::all() {
-            for s in &sevs {
-                assert!(!l.severity_label(s).is_empty());
-            }
-        }
-        assert_eq!(Lang::EN.severity_label(&Severity::Critical), "Critical");
     }
 
     #[test]
@@ -1738,24 +1703,13 @@ mod tests {
             ShortcutBackend::Mate,
             ShortcutBackend::Xfce,
             ShortcutBackend::Kde,
-            ShortcutBackend::Skhd,
-            ShortcutBackend::Hammerspoon,
-            ShortcutBackend::WindowsAhk,
+            ShortcutBackend::Hyprland,
         ];
         for l in Lang::all() {
             for b in &backends {
-                let s = l.shortcut_bound(b, "Ctrl+Alt+X");
-                assert!(s.contains("Ctrl+Alt+X"));
+                let s = l.shortcut_bound(b, "Ctrl+Alt+V");
+                assert!(s.contains("Ctrl+Alt+V"));
             }
         }
-    }
-
-    #[test]
-    fn endonyms_are_distinct() {
-        let names: Vec<&str> = Lang::all().iter().map(|l| l.endonym()).collect();
-        let mut dedup = names.clone();
-        dedup.sort_unstable();
-        dedup.dedup();
-        assert_eq!(names.len(), dedup.len());
     }
 }

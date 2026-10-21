@@ -24,7 +24,7 @@ A fixture is a sequence of sections. Lines are interpreted as:
 - `corpus_<bucket>_detects_all`: every `# expect:` pattern in every section
   actually fires.
 - `corpus_<bucket>_redaction_round_trip_clean`: after redacting a section the
-  way the trigger flow does, re-scanning yields no pattern matches and no deep
+  way `paste` does, re-scanning yields no pattern matches and no deep
   findings. High-entropy-only tokens are intentionally not asserted here: a
   high-entropy substring can legitimately survive inside redacted prose.
 - `corpus_negatives_zero_detections`: every section in `negatives.txt`

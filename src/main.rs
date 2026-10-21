@@ -1,7 +1,9 @@
 mod cli;
 mod clipboard;
 mod hotkey;
+mod migrate;
 mod notify;
+mod paste;
 mod paste_guard;
 mod proc;
 mod shortcut;
@@ -14,18 +16,49 @@ pub use secret_stripper::{ai_tui, config, detector, lang, redact_cli, shell_rc, 
 /// consistent; deliberately not localized (it is a proper noun).
 pub const APP_NAME: &str = "Secret Stripper";
 
-use anyhow::Context;
 use clap::Parser;
 use config::Config;
-use detector::Detector;
 
 fn main() -> anyhow::Result<()> {
     let args = cli::Cli::parse();
     setup_logging(&args);
 
+    // Exit quietly when stdout closes early (`status | head`) instead of
+    // panicking. Not for paste, serve-clipboard and paste-guard: they write
+    // to pipes whose reader may exit first and must survive that.
+    if matches!(
+        args.command,
+        cli::Command::Init
+            | cli::Command::Status
+            | cli::Command::RegisterShortcut
+            | cli::Command::UnregisterShortcut
+            | cli::Command::Uninstall
+            | cli::Command::Upgrade
+            | cli::Command::Redact
+    ) {
+        // SAFETY: called before any other thread exists.
+        unsafe {
+            libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+        }
+    }
+
+    // Not from `upgrade-check`: systemd runs it without $XDG_CURRENT_DESKTOP,
+    // so the shortcut could not be re-registered. The 1.x shortcut runs
+    // `trigger`, an alias of `paste`, which migrates from the desktop session.
+    if matches!(
+        args.command,
+        cli::Command::Init
+            | cli::Command::Paste { .. }
+            | cli::Command::Menu
+            | cli::Command::Status
+            | cli::Command::RegisterShortcut
+    ) {
+        migrate::run();
+    }
+
     match args.command {
         cli::Command::Init => run_init()?,
-        cli::Command::Trigger => run_trigger()?,
+        cli::Command::Paste { terminal } => paste::run(terminal)?,
         cli::Command::Menu => run_menu()?,
         cli::Command::Status => print_status()?,
         cli::Command::RegisterShortcut => run_register_shortcut()?,
@@ -39,7 +72,6 @@ fn main() -> anyhow::Result<()> {
             let code = paste_guard::run(&argv, &cfg)?;
             std::process::exit(code);
         }
-        #[cfg(target_os = "linux")]
         cli::Command::ServeClipboard => clipboard::serve_from_stdin()?,
     }
 
@@ -61,20 +93,6 @@ fn setup_logging(args: &cli::Cli) {
         .filter_level(level)
         .filter_module("arboard", log::LevelFilter::Error)
         .try_init();
-}
-
-fn init_monitor() -> Option<clipboard::ClipboardMonitor> {
-    match clipboard::ClipboardMonitor::new(0) {
-        Ok(m) => Some(m),
-        Err(e) => {
-            log::error!("Failed to access clipboard: {}", e);
-            eprintln!(
-                "{}",
-                lang::Lang::active().cli_clipboard_access_failed(&e.to_string())
-            );
-            None
-        }
-    }
 }
 
 fn run_menu() -> anyhow::Result<()> {
@@ -104,8 +122,8 @@ fn run_menu() -> anyhow::Result<()> {
 
 fn run_uninstall() -> anyhow::Result<()> {
     let lang = lang::Lang::active();
-    let _ = shortcut::unregister();
-    let _ = updater::uninstall_update_check_timer();
+    let shortcut_result = shortcut::unregister();
+    let timer_result = updater::uninstall_update_check_timer();
 
     // Trim our managed alias block from the user's shell rc. Best effort:
     // unknown shell, missing rc, or unreadable rc just skips silently.
@@ -121,15 +139,28 @@ fn run_uninstall() -> anyhow::Result<()> {
     let removed = config::purge_config_dir();
 
     println!("{}", lang.cli_uninstall_done());
-    println!("{}", lang.cli_uninstall_de_cleared());
+    match shortcut_result {
+        Ok(()) => println!("{}", lang.cli_uninstall_de_cleared()),
+        Err(e) => println!("{}", lang.cli_uninstall_de_failed(&e.to_string())),
+    }
+    match timer_result {
+        Ok(()) => println!("{}", lang.cli_uninstall_timer_removed()),
+        Err(e) => println!("{}", lang.cli_uninstall_timer_failed(&e.to_string())),
+    }
     if removed.is_empty() {
         println!("{}", lang.cli_uninstall_nothing());
     } else {
         println!("{}", lang.cli_uninstall_files(&removed.join(", ")));
     }
+    paste::access::print_uninstall_hint(lang);
+    if let Ok(exe) = std::env::current_exe() {
+        println!(
+            "{}",
+            lang.cli_uninstall_binary_left(&exe.display().to_string())
+        );
+    }
     println!();
     println!("{}", lang.cli_run_init_again());
-    notify::uninstalled_notification(5, lang);
     Ok(())
 }
 
@@ -143,17 +174,44 @@ fn run_register_shortcut() -> anyhow::Result<()> {
     match shortcut::register(&config.hotkey) {
         Ok(backend) => {
             println!("{}", lang.shortcut_bound(&backend, &config.hotkey));
-            println!("{}", lang.cli_press_to_redact(&config.hotkey));
+            println!("{}", lang.cli_press_to_paste(&config.hotkey));
+            print_terminal_hint(&config);
         }
         Err(e) => {
             eprintln!("{}", lang.cli_register_failed(&e.to_string()));
-            let exe = std::env::current_exe()
-                .map(|p| p.display().to_string())
-                .unwrap_or_else(|_| "secret-stripper".to_string());
-            eprintln!("{}", lang.cli_register_workaround(&exe, &config.hotkey));
+            print_manual_bind(lang, &config.hotkey);
         }
     }
     Ok(())
+}
+
+fn print_terminal_hint(config: &Config) {
+    if let Some(terminal) = hotkey::terminal_chord(&config.hotkey) {
+        println!(
+            "{}",
+            config
+                .lang
+                .cli_terminal_hint(&terminal, &config.terminal_paste_keys)
+        );
+    }
+}
+
+/// Tell the user how to bind the chord themselves when no backend could.
+fn print_manual_bind(lang: lang::Lang, chord: &str) {
+    let exe = std::env::current_exe()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|_| "secret-stripper".to_string());
+    println!("{}", lang.cli_register_workaround(&exe, chord));
+    if let Some(terminal) = hotkey::terminal_chord(chord) {
+        println!("{}", lang.cli_register_workaround_terminal(&exe, &terminal));
+    }
+    let examples = shortcut::manual_examples(&exe, chord);
+    if !examples.is_empty() {
+        println!("{}", lang.cli_bind_examples());
+        for line in examples {
+            println!("  {line}");
+        }
+    }
 }
 
 fn run_unregister_shortcut() -> anyhow::Result<()> {
@@ -162,219 +220,6 @@ fn run_unregister_shortcut() -> anyhow::Result<()> {
         eprintln!("{}", lang.cli_unregister_failed(&e.to_string()));
     } else {
         println!("{}", lang.cli_unregister_done());
-    }
-    Ok(())
-}
-
-fn run_trigger() -> anyhow::Result<()> {
-    let config = Config::load();
-    if !config.onboarding_done {
-        eprintln!("{}", lang::Lang::active().cli_run_init_first());
-        return Ok(());
-    }
-
-    let detector = Detector::from_config(&config);
-    let mut monitor = match init_monitor() {
-        Some(m) => m,
-        None => return Ok(()),
-    };
-
-    // A clipboard image never goes through the text path below: reading it as text
-    // yields raw bytes that the detector can mistake for secrets, which would
-    // overwrite the screenshot. When an image is present we own the outcome here -
-    // redact it if the feature is on, otherwise leave it untouched.
-    if let Some((width, height, bytes)) = monitor.read_image() {
-        if config.enable_image_scan {
-            run_image_redaction(&mut monitor, &detector, &config, width, height, bytes)?;
-        } else {
-            eprintln!("{}", config.lang.cli_nothing_to_redact());
-        }
-        return Ok(());
-    }
-
-    // Source order: prefer the PRIMARY selection (highlighted text). Most Linux apps
-    // populate it automatically when the user selects text with the mouse, so no Ctrl+C
-    // is needed. If PRIMARY is empty (some Electron apps skip it, or the user is on a
-    // platform without primary selection), fall back to the regular CLIPBOARD which
-    // assumes the user pre-copied with Ctrl+C.
-    let text = monitor
-        .read_primary()
-        .filter(|s| !s.is_empty())
-        .or_else(|| monitor.read_text())
-        .filter(|s| !s.is_empty());
-
-    let text = match text {
-        Some(t) => t,
-        None => {
-            eprintln!("{}", config.lang.cli_nothing_to_redact());
-            return Ok(());
-        }
-    };
-
-    // Hard size cap: a multi-MB clipboard runs every regex over the whole text
-    // and can stall the engine. Skip rather than truncate: truncating could
-    // split a multi-byte char or, worse, split a secret span and leave half of
-    // it in the clipboard.
-    const MAX_INPUT_BYTES: usize = 1024 * 1024;
-    if text.len() > MAX_INPUT_BYTES {
-        eprintln!(
-            "{}",
-            config
-                .lang
-                .cli_clipboard_too_large(text.len(), MAX_INPUT_BYTES)
-        );
-        return Ok(());
-    }
-
-    // Best-effort zeroization for buffers we own. arboard hands us a String we
-    // cannot zero from outside, so anything before this point may linger; from
-    // here on the local copy is wiped on drop.
-    let text: zeroize::Zeroizing<String> = zeroize::Zeroizing::new(text);
-
-    let result = detector.scan(&text);
-    if !result.has_secrets {
-        eprintln!("{}", config.lang.cli_no_secrets());
-        return Ok(());
-    }
-
-    let entropy_tokens: Vec<&str> = result
-        .high_entropy_tokens
-        .iter()
-        .map(|(t, _)| t.as_str())
-        .collect();
-    let mut deep_spans: Vec<(usize, usize, &'static str)> = result
-        .deep_findings
-        .iter()
-        .filter_map(|f| f.span.map(|(s, e)| (s, e, f.finding_type)))
-        .collect();
-    deep_spans.extend(result.extra_spans.iter().copied());
-    let redacted: zeroize::Zeroizing<String> =
-        zeroize::Zeroizing::new(detector::redact::redact_with_spans(
-            &text,
-            &result.matched_spans,
-            &entropy_tokens,
-            &deep_spans,
-            detector.allowlist(),
-            config.redact_style,
-            &config.redact_pattern,
-        ));
-
-    let total = result.matched_patterns.len()
-        + result.deep_findings.len()
-        + result.high_entropy_tokens.len();
-
-    // Fallback: detection found something but the redactor produced an
-    // identical string. For Marker/Typed/Drop that only happens when no span was
-    // located (a deep-scan-only hit, since DeepFinding may carry no span), so
-    // fail closed. Placeholder sample values can legitimately equal the original
-    // secret (a fixed point), so for that style only fail closed when there was
-    // genuinely no span to redact. Drop empties the clipboard and force-notifies
-    // regardless of `silent` so an empty clipboard does not look like breakage.
-    let had_spans =
-        !result.matched_spans.is_empty() || !entropy_tokens.is_empty() || !deep_spans.is_empty();
-    let redaction_noop = *redacted == *text
-        && !(matches!(config.redact_style, config::RedactStyle::Placeholder) && had_spans);
-    let drop_fallback_fired =
-        redaction_noop && matches!(config.redact_style, config::RedactStyle::Drop);
-    let to_write: zeroize::Zeroizing<String> = if redaction_noop {
-        let fallback = match config.redact_style {
-            config::RedactStyle::Marker => config.redact_pattern.clone(),
-            config::RedactStyle::Typed => "[SECRET]".to_string(),
-            config::RedactStyle::Drop => String::new(),
-            config::RedactStyle::Placeholder => detector::placeholders::GENERIC.to_string(),
-        };
-        zeroize::Zeroizing::new(fallback)
-    } else {
-        redacted
-    };
-
-    // The high-entropy token plaintext lives in `result` as a plain String;
-    // it is no longer needed past this point, so drop it before the clipboard
-    // round-trip rather than letting it linger to function end.
-    drop(entropy_tokens);
-    drop(result);
-
-    if let Err(e) = monitor.replace_text(&to_write) {
-        log::error!("clipboard write failed: {}", e);
-        let clear_ok = monitor.replace_text("").is_ok();
-        // Safety override: notify on write failure regardless of config.silent.
-        notify::write_failed_notification(config.notification_timeout_secs, config.lang, clear_ok);
-        eprintln!(
-            "{}",
-            config
-                .lang
-                .cli_clipboard_write_failed(clear_ok, &e.to_string())
-        );
-        return Ok(());
-    }
-
-    eprintln!("{}", config.lang.cli_redacted(total));
-
-    stats::append(total as u64);
-
-    if drop_fallback_fired {
-        notify::drop_fallback_notification(config.notification_timeout_secs, config.lang);
-    } else if !config.silent {
-        notify::redacted_notification(total, config.notification_timeout_secs, config.lang);
-    }
-    Ok(())
-}
-
-#[cfg(not(target_os = "linux"))]
-fn run_image_redaction(
-    _monitor: &mut clipboard::ClipboardMonitor,
-    _detector: &Detector,
-    _config: &Config,
-    _width: usize,
-    _height: usize,
-    _bytes: Vec<u8>,
-) -> anyhow::Result<()> {
-    Ok(())
-}
-
-#[cfg(target_os = "linux")]
-fn run_image_redaction(
-    monitor: &mut clipboard::ClipboardMonitor,
-    detector: &Detector,
-    config: &Config,
-    width: usize,
-    height: usize,
-    bytes: Vec<u8>,
-) -> anyhow::Result<()> {
-    use secret_stripper::image_scan::{self, ImageResult, TesseractOcr};
-
-    match image_scan::redact_image(&bytes, width as u32, height as u32, &TesseractOcr, detector) {
-        ImageResult::Unavailable => {
-            eprintln!("{}", config.lang.cli_image_scan_failed());
-        }
-        ImageResult::NoSecrets => {
-            eprintln!("{}", config.lang.cli_no_secrets());
-        }
-        ImageResult::DetectedUnmappable => {
-            eprintln!("{}", config.lang.cli_image_detected_unmappable());
-        }
-        ImageResult::Redacted { bytes, w, h, count } => {
-            if let Err(e) = monitor.replace_image(w as usize, h as usize, bytes) {
-                log::error!("clipboard image write failed: {}", e);
-                notify::write_failed_notification(
-                    config.notification_timeout_secs,
-                    config.lang,
-                    false,
-                );
-                eprintln!(
-                    "{}",
-                    config
-                        .lang
-                        .cli_clipboard_write_failed(false, &e.to_string())
-                );
-                return Ok(());
-            }
-            stats::append(count as u64);
-            eprintln!("{}", config.lang.cli_redacted(count));
-            if !config.silent {
-                notify::redacted_notification(count, config.notification_timeout_secs, config.lang);
-            }
-        }
     }
     Ok(())
 }
@@ -396,99 +241,42 @@ fn print_aligned(rows: &[(&str, String)]) {
 
 fn run_init() -> anyhow::Result<()> {
     let path = Config::path();
-    if path.exists() {
-        let existing = Config::load();
-        if existing.onboarding_done {
-            // Idempotent path: config is already there. Re-register the DE binding to
-            // recover from any state where the gsettings entry got removed (manual cleanup,
-            // user upgrades, etc). Don't touch the config so user preferences are preserved.
-            if existing.check_for_updates {
-                let _ = updater::install_update_check_timer();
-            }
-            let lang = existing.lang;
-            let register_result = shortcut::register(&existing.hotkey);
-            let de_status = match &register_result {
-                Ok(backend) => lang.shortcut_bound(backend, &existing.hotkey),
-                Err(e) => lang.de_status_failed(&e.to_string()),
-            };
-            println!(
-                "{}",
-                lang.cli_already_configured(&path.display().to_string())
-            );
-            print_aligned(&[
-                (lang.lbl_hotkey(), existing.hotkey.clone()),
-                (lang.lbl_de_binding(), de_status),
-            ]);
-            println!();
-            if let Err(e) = register_result {
-                return Err(e).context(lang.err_rebind_failed(&existing.hotkey));
-            }
-            println!("{}", lang.cli_init_done_hint());
-            return Ok(());
+    let existing = path.exists().then(Config::load);
+    if let Some(config) = existing.filter(|c| c.onboarding_done) {
+        // Already set up: restore the binding and timer if they were
+        // removed, but leave the config as the user set it.
+        if config.check_for_updates {
+            let _ = updater::install_update_check_timer();
         }
+        let lang = config.lang;
+        println!("{}", lang.cli_already_configured());
+        print_setup(&config, config.hotkey.clone());
+        println!("{}", lang.cli_init_done_hint());
+        return Ok(());
     }
 
     let mut config = Config::first_run(lang::Lang::detect_from_env());
-
     let outcome = hotkey::probe(&config.hotkey);
     let preferred = config.hotkey.clone();
     let hotkey_status = match outcome.active {
         Some(ref active) => {
             config.hotkey = active.clone();
             if active == &preferred {
-                config.lang.hk_available(active)
+                active.clone()
             } else {
                 config.lang.hk_fallback(active, &preferred)
             }
         }
         None => config.lang.hk_none(&outcome.tried.join(", ")),
     };
-
     config.save()?;
-
     if config.check_for_updates {
         let _ = updater::install_update_check_timer();
     }
 
     let lang = config.lang;
-    let register_result = shortcut::register(&config.hotkey);
-    let de_status = match &register_result {
-        Ok(backend) => lang.shortcut_bound(backend, &config.hotkey),
-        Err(e) => lang.de_status_failed(&e.to_string()),
-    };
-
     println!("{}", lang.cli_init_header());
-    print_aligned(&[
-        (lang.lbl_config(), path.display().to_string()),
-        (
-            lang.lbl_language(),
-            format!("{} ({})", config.lang.endonym(), lang.suffix_autodetected()),
-        ),
-        (lang.lbl_hotkey(), hotkey_status),
-        (lang.lbl_de_binding(), de_status),
-        (
-            lang.lbl_sensitivity(),
-            format!("{} ({})", config.sensitivity, lang.sensitivity_balanced()),
-        ),
-        (lang.lbl_redact_as(), format!("'{}'", config.redact_pattern)),
-        (lang.lbl_deep_scan(), lang.deep_scan_on_desc().to_string()),
-        (
-            lang.lbl_entropy(),
-            lang.entropy_state_desc(config.enable_entropy),
-        ),
-        (
-            lang.lbl_notifications(),
-            lang.notif_silent_hint().to_string(),
-        ),
-        (
-            lang.lbl_notif_timeout(),
-            format!("{}s", config.notification_timeout_secs),
-        ),
-    ]);
-    println!();
-    if let Err(e) = register_result {
-        return Err(e).context(lang.err_autobind_failed(&config.hotkey));
-    }
+    print_setup(&config, hotkey_status);
     if outcome.active.is_some() {
         println!("{}", lang.cli_init_usage(&config.hotkey));
     } else {
@@ -497,52 +285,34 @@ fn run_init() -> anyhow::Result<()> {
             eprintln!("{}", lang.cli_last_error(&err.to_string()));
         }
     }
-    // Print the general settings hint here, before the paste-guard section,
-    // so the "tweak settings" line clearly applies to the defaults above
-    // (sensitivity, redact pattern, notifications, etc.) and not to the
-    // paste-guard alias snippet that follows.
     println!("{}", lang.cli_tweak_later());
-    print_paste_guard_hint(lang);
     Ok(())
 }
 
-/// Show the user the alias snippet for paste-guard, explain why, and tell
-/// them which file to paste it into. We never edit the file ourselves -
-/// shell rc files belong to the user.
-fn print_paste_guard_hint(lang: lang::Lang) {
-    let detected = ai_tui::detect();
-    if detected.is_empty() {
+/// Bind both shortcuts, then print them with the config path and set up
+/// uinput access. Shared by a first run and a rerun of `init`.
+fn print_setup(config: &Config, hotkey_status: String) {
+    let lang = config.lang;
+    let register_result = shortcut::register(&config.hotkey);
+    let mut rows = vec![(lang.lbl_hotkey(), hotkey_status)];
+    if let Some(terminal) = hotkey::terminal_chord(&config.hotkey) {
+        rows.push((lang.lbl_terminal_chord(), terminal));
+    }
+    rows.push((
+        lang.lbl_de_binding(),
+        match &register_result {
+            Ok(backend) => lang.shortcut_bound(backend, &config.hotkey),
+            Err(e) => lang.de_status_failed(&e.to_string()),
+        },
+    ));
+    rows.push((lang.lbl_config(), Config::path().display().to_string()));
+    print_aligned(&rows);
+    println!();
+    if register_result.is_err() {
+        print_manual_bind(lang, &config.hotkey);
         println!();
-        println!("{}", lang.ai_tui_none_detected());
-        return;
     }
-
-    let shell = shell_rc::Shell::from_env();
-    let bins: Vec<&str> = detected.iter().map(|t| t.binary).collect();
-
-    println!();
-    println!("{}", lang.ai_tui_detected_title());
-    for t in &detected {
-        println!("  - {} ({})", t.label, t.binary);
-    }
-    println!();
-    println!("{}", lang.ai_tui_why());
-    println!();
-
-    let snippet_shell = shell.unwrap_or(shell_rc::Shell::Bash);
-    match shell.and_then(|s| s.rc_path().map(|p| (s, p))) {
-        Some((_, path)) => {
-            let path_str = path.display().to_string();
-            println!("{}", lang.ai_tui_add_to_file(&path_str));
-        }
-        None => {
-            println!("{}", lang.ai_tui_add_to_unknown_shell());
-        }
-    }
-    println!();
-    print!("{}", shell_rc::render_alias_snippet(snippet_shell, &bins));
-    println!();
-    println!("{}", lang.ai_tui_remove_hint());
+    paste::access::setup(lang);
 }
 
 fn print_status() -> anyhow::Result<()> {
@@ -550,21 +320,39 @@ fn print_status() -> anyhow::Result<()> {
 
     let lang = lang::Lang::active();
     println!("{}", lang.status_title());
-    println!("===================");
-    print_aligned(&[
+    println!("{}", "=".repeat(lang.status_title().chars().count()));
+    if !config.onboarding_done {
+        println!("  {}", lang.status_not_set_up());
+        return Ok(());
+    }
+    let wayland = std::env::var_os("WAYLAND_DISPLAY").is_some();
+    let mut rows = vec![
         (lang.lbl_hotkey(), config.hotkey.clone()),
-        (lang.lbl_de_binding(), shortcut::detect_desktop()),
+        (
+            lang.lbl_terminal_chord(),
+            hotkey::terminal_chord(&config.hotkey).unwrap_or_else(|| "-".to_string()),
+        ),
+        (lang.lbl_desktop(), shortcut::detect_desktop()),
+        (
+            lang.lbl_session(),
+            if wayland { "Wayland" } else { "X11" }.to_string(),
+        ),
+    ];
+    if wayland {
+        rows.push((
+            lang.lbl_uinput_access(),
+            lang.uinput_state(paste::access::writable()),
+        ));
+    }
+    rows.extend([
         (lang.lbl_sensitivity(), config.sensitivity.to_string()),
         (lang.lbl_silent(), config.silent.to_string()),
         (
-            lang.lbl_onboarding_done(),
-            config.onboarding_done.to_string(),
-        ),
-        (
             lang.lbl_config_path(),
-            format!("{:?}", config::Config::path()),
+            config::Config::path().display().to_string(),
         ),
     ]);
+    print_aligned(&rows);
 
     Ok(())
 }

@@ -8,7 +8,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::Paragraph,
+    widgets::{Paragraph, Wrap},
 };
 
 const SEVERITIES: [&str; 4] = ["critical", "high", "medium", "low"];
@@ -234,7 +234,7 @@ pub fn manage(
                             Constraint::Length(3),
                             Constraint::Length(3),
                             Constraint::Length(1),
-                            Constraint::Length(1),
+                            Constraint::Min(1),
                         ])
                         .split(body);
                     form.name.render(
@@ -293,7 +293,8 @@ pub fn manage(
                             Paragraph::new(Span::styled(
                                 err.clone(),
                                 Style::new().fg(theme::warn()),
-                            )),
+                            ))
+                            .wrap(Wrap { trim: false }),
                             parts[6],
                         );
                     }

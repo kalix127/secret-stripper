@@ -125,7 +125,7 @@ pub fn run_bucket(file: &str) {
     }
 }
 
-/// Redact each section the way the trigger flow does, then re-scan and assert
+/// Redact each section the way the paste flow does, then re-scan and assert
 /// no pattern or deep finding survives. high_entropy_tokens are intentionally
 /// NOT asserted: a high-entropy substring can legitimately remain inside
 /// surrounding prose after pattern redaction.

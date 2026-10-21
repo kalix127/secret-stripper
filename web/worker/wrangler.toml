@@ -3,9 +3,8 @@ main = "src/worker.js"
 compatibility_date = "2024-11-01"
 workers_dev = true
 
-# Codegen runs before bundling: it base64-encodes installer/*.{sh,ps1} into
-# src/installers.gen.js so the uploaded bundle has no raw shell text (the
-# upload-time abuse scanner 403s a verbatim curl|sudo|bash installer).
+# Codegen base64-encodes installer/install.sh into src/installers.gen.js:
+# the upload-time abuse scanner 403s a verbatim curl|sudo|bash installer.
 [build]
 command = "node build.mjs"
 

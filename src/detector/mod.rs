@@ -19,7 +19,7 @@ pub struct DetectionResult {
     /// allowlist + validator, so the redactor never has to re-run the
     /// catalog. The third tuple element carries the originating pattern's
     /// name so the redactor can emit a typed marker per span. Soft-wrap-only
-    /// hits travel via `extra_spans` as before.
+    /// hits travel via `extra_spans`.
     pub matched_spans: Vec<(usize, usize, &'static str)>,
     pub high_entropy_tokens: Vec<(String, f64)>,
     pub deep_findings: Vec<deep_scan::DeepFinding>,
@@ -58,12 +58,7 @@ fn is_secret_body(b: u8) -> bool {
     b.is_ascii_alphanumeric() || matches!(b, b'+' | b'/' | b'=' | b'_' | b'.' | b'-')
 }
 
-/// Compile every entry of `BUILTIN_ALLOWLIST` exactly once per process. These
-/// strings are constant and the compile cost (~tens of microseconds per regex,
-/// ~13 entries = ~hundreds of microseconds) was previously paid by every
-/// `Detector::from_config` / `Detector::for_preview` call - i.e. every TUI
-/// preview repaint and every `secret-stripper trigger` invocation. Returning
-/// a slice of clones is sub-microsecond (`Regex` is Arc-backed).
+/// Compile every entry of `BUILTIN_ALLOWLIST` once per process.
 fn builtin_allowlist_compiled() -> &'static [regex::Regex] {
     static CACHE: OnceLock<Vec<regex::Regex>> = OnceLock::new();
     CACHE.get_or_init(|| {
@@ -224,25 +219,9 @@ pub(crate) fn span_allowlisted(allowlist: &[regex::Regex], text: &str, s: usize,
 }
 
 impl Detector {
+    /// Built-ins plus custom patterns; a custom pattern that fails to compile
+    /// is skipped.
     pub fn from_config(cfg: &crate::config::Config) -> Self {
-        Self::from_config_verbose(cfg).0
-    }
-
-    /// Like `from_config` but also returns custom-pattern load errors for the
-    /// settings UI to surface. `from_config` discards them.
-    pub fn from_config_verbose(cfg: &crate::config::Config) -> (Self, Vec<String>) {
-        Self::build(cfg, true)
-    }
-
-    /// Detector for the TUI live-preview only: built-ins + allowlist, NO
-    /// custom patterns. Custom loading leaks strings to `'static` (fine once
-    /// per process), so it must not run on the preview's per-keystroke
-    /// rebuild path.
-    pub fn for_preview(cfg: &crate::config::Config) -> Self {
-        Self::build(cfg, false).0
-    }
-
-    fn build(cfg: &crate::config::Config, with_custom: bool) -> (Self, Vec<String>) {
         let sens_threshold = match cfg.sensitivity {
             1 => 5.0,
             2 => 4.5,
@@ -270,17 +249,15 @@ impl Detector {
 
         let disabled: HashSet<&str> = cfg.disabled_categories.iter().map(|s| s.as_str()).collect();
         let mut all = patterns::builtin_patterns_filtered(&disabled);
-        let errs = if with_custom {
-            let (custom, errs) = custom::load();
-            all.extend(
-                custom
-                    .into_iter()
-                    .filter(|p| !disabled.contains(p.category)),
-            );
-            errs
-        } else {
-            Vec::new()
-        };
+        let (custom, errs) = custom::load();
+        for e in errs {
+            log::warn!("{e}");
+        }
+        all.extend(
+            custom
+                .into_iter()
+                .filter(|p| !disabled.contains(p.category)),
+        );
         // Allowlist regexes are bounded by validate_regex (same 1 MiB size
         // limit as custom patterns) so a hand-edited / migrated config can't
         // stall Detector construction with a pathological pattern. Built-ins
@@ -317,20 +294,17 @@ impl Detector {
 
         let prefilter = regex::RegexSet::new(all.iter().map(|p| p.regex.as_str())).ok();
 
-        (
-            Self {
-                patterns: all,
-                prefilter,
-                single_line_patterns,
-                allowlist,
-                entropy_threshold: threshold,
-                entropy_min_len: min_len,
-                entropy_max_len: 256,
-                enable_deep_scan: cfg.enable_deep_scan,
-                enable_entropy: cfg.enable_entropy,
-            },
-            errs,
-        )
+        Self {
+            patterns: all,
+            prefilter,
+            single_line_patterns,
+            allowlist,
+            entropy_threshold: threshold,
+            entropy_min_len: min_len,
+            entropy_max_len: 256,
+            enable_deep_scan: cfg.enable_deep_scan,
+            enable_entropy: cfg.enable_entropy,
+        }
     }
 
     pub fn allowlist(&self) -> &[regex::Regex] {

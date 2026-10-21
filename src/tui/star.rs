@@ -6,26 +6,9 @@ pub const REPO_URL: &str = "https://github.com/kalix127/secret-stripper";
 pub fn open_url(url: &str) -> std::io::Result<()> {
     use std::process::{Command, Stdio};
 
-    #[cfg(target_os = "linux")]
-    let mut cmd = {
-        let mut c = Command::new("xdg-open");
-        c.arg(url);
-        c
-    };
-    #[cfg(target_os = "macos")]
-    let mut cmd = {
-        let mut c = Command::new("open");
-        c.arg(url);
-        c
-    };
-    #[cfg(target_os = "windows")]
-    let mut cmd = {
-        let mut c = Command::new("cmd");
-        c.args(["/C", "start", "", url]);
-        c
-    };
-
-    cmd.stdin(Stdio::null())
+    Command::new("xdg-open")
+        .arg(url)
+        .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()

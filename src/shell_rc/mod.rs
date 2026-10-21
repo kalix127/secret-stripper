@@ -24,7 +24,7 @@ pub enum Shell {
 }
 
 impl Shell {
-    /// Pick the shell from `$SHELL`. `None` on Windows, an unknown shell, or
+    /// Pick the shell from `$SHELL`. `None` on an unknown shell or
     /// when the variable is missing - the caller falls back to printing
     /// generic instructions in those cases.
     pub fn from_env() -> Option<Self> {
@@ -45,14 +45,6 @@ impl Shell {
             Shell::Zsh => home.join(".zshrc"),
             Shell::Fish => home.join(".config/fish/config.fish"),
         })
-    }
-
-    pub fn display_name(&self) -> &'static str {
-        match self {
-            Shell::Bash => "bash",
-            Shell::Zsh => "zsh",
-            Shell::Fish => "fish",
-        }
     }
 
     /// Fish uses `alias name 'target'` instead of POSIX `alias name='target'`.
@@ -93,8 +85,8 @@ pub fn render_alias_snippet(shell: Shell, binaries: &[&str]) -> String {
 /// without writing to the developer's real shell rc.
 ///
 /// Detection strategy, in order:
-/// 1. Two adjacent lines both equal to `BLOCK_BEGIN` (the labelled fence) -
-///    everything between them is removed, fences included.
+/// 1. A pair of fence lines (`BLOCK_BEGIN` ... `BLOCK_END`): both fences and
+///    everything between them are removed.
 /// 2. Fallback: any line containing `ALIAS_MARKER` is removed individually.
 ///    Catches the case where the user kept the alias line but deleted the
 ///    fence comments.
@@ -120,10 +112,12 @@ pub fn strip_paste_guard_block(contents: &str) -> (String, bool) {
     let lines: Vec<&str> = contents.split_inclusive('\n').collect();
     let mut out: Vec<&str> = Vec::with_capacity(lines.len());
     let mut changed = false;
+    // Only the blank lines where a block was cut are collapsed; blank runs
+    // elsewhere belong to the user and stay as they are.
+    let mut at_seam = false;
     let mut i = 0;
     while i < lines.len() {
         if lines[i].trim_end() == BLOCK_BEGIN {
-            // Find the matching closing fence at the same trimmed value.
             // `BLOCK_BEGIN` and `BLOCK_END` are identical strings so the
             // pair is just the next occurrence.
             let mut j = i + 1;
@@ -131,8 +125,8 @@ pub fn strip_paste_guard_block(contents: &str) -> (String, bool) {
                 j += 1;
             }
             if j < lines.len() {
-                // Skip lines [i, j] inclusive.
                 changed = true;
+                at_seam = true;
                 i = j + 1;
                 continue;
             }
@@ -141,35 +135,22 @@ pub fn strip_paste_guard_block(contents: &str) -> (String, bool) {
         }
         if lines[i].contains(ALIAS_MARKER) {
             changed = true;
+            at_seam = true;
             i += 1;
             continue;
+        }
+        let blank = lines[i].trim().is_empty();
+        if at_seam && blank && out.last().is_some_and(|l| l.trim().is_empty()) {
+            i += 1;
+            continue;
+        }
+        if !blank {
+            at_seam = false;
         }
         out.push(lines[i]);
         i += 1;
     }
-    // Collapse a run of consecutive blank lines that the removal may have
-    // produced. Conservative: keep at most one blank between non-blank
-    // lines.
-    let joined: String = out.into_iter().collect();
-    let collapsed = collapse_blank_runs(&joined);
-    (collapsed, changed)
-}
-
-fn collapse_blank_runs(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    let mut blank_run = 0;
-    for line in s.split_inclusive('\n') {
-        if line.trim().is_empty() {
-            blank_run += 1;
-            if blank_run <= 1 {
-                out.push_str(line);
-            }
-        } else {
-            blank_run = 0;
-            out.push_str(line);
-        }
-    }
-    out
+    (out.concat(), changed)
 }
 
 #[cfg(test)]
@@ -189,13 +170,6 @@ mod tests {
     fn snippet_fish_format_differs() {
         let s = render_alias_snippet(Shell::Fish, &["claude"]);
         assert!(s.contains("alias claude 'secret-stripper paste-guard -- claude'"));
-    }
-
-    #[test]
-    fn display_name_round_trip() {
-        assert_eq!(Shell::Bash.display_name(), "bash");
-        assert_eq!(Shell::Zsh.display_name(), "zsh");
-        assert_eq!(Shell::Fish.display_name(), "fish");
     }
 
     #[test]
@@ -234,14 +208,23 @@ mod tests {
     }
 
     #[test]
-    fn strip_collapses_blank_runs() {
-        let input = "export FOO=1\n\n\n\n# ---- secret-stripper paste-guard ----\n\
+    fn strip_collapses_blank_lines_at_the_cut() {
+        let input = "export FOO=1\n\n# ---- secret-stripper paste-guard ----\n\
                      alias x='secret-stripper paste-guard -- x'\n\
-                     # ---- secret-stripper paste-guard ----\n\n\n\nexport BAR=2\n";
+                     # ---- secret-stripper paste-guard ----\n\nexport BAR=2\n";
         let (out, changed) = strip_paste_guard_block(input);
         assert!(changed);
-        // No more than one consecutive blank line remains.
-        assert!(!out.contains("\n\n\n"));
+        assert_eq!(out, "export FOO=1\n\nexport BAR=2\n");
+    }
+
+    #[test]
+    fn strip_keeps_blank_runs_elsewhere() {
+        let input = "a\n\n\n\nb\n# ---- secret-stripper paste-guard ----\n\
+                     alias x='secret-stripper paste-guard -- x'\n\
+                     # ---- secret-stripper paste-guard ----\n";
+        let (out, changed) = strip_paste_guard_block(input);
+        assert!(changed);
+        assert_eq!(out, "a\n\n\n\nb\n");
     }
 
     #[test]

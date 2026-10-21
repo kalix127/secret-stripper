@@ -7,12 +7,9 @@
 //! the keyword-free path that lets numeric IDs / cards / IBAN ship without a
 //! proximity keyword.
 //!
-//! `validator_for` is intentionally empty right now (every pattern is
-//! unvalidated, so detector behaviour is unchanged). Each later block that
-//! adds a checksum-gated pattern registers its regex source here.
-//!
+//! A checksum-gated pattern registers its regex source in `validator_for`.
 //! All helpers are pure and unit-tested against authoritative reference
-//! values; the concrete per-country wrappers are added with their blocks.
+//! values.
 
 /// Keep only ASCII digits.
 fn digits(s: &str) -> Vec<u32> {

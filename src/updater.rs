@@ -38,10 +38,6 @@ fn current_asset_suffix() -> Option<&'static str> {
     match (std::env::consts::OS, std::env::consts::ARCH) {
         ("linux", "x86_64") => Some("linux-x86_64"),
         ("linux", "aarch64") => Some("linux-aarch64"),
-        ("macos", "x86_64") => Some("macos-x86_64"),
-        ("macos", "aarch64") => Some("macos-aarch64"),
-        ("windows", "x86_64") => Some("windows-x86_64.exe"),
-        ("windows", "aarch64") => Some("windows-aarch64.exe"),
         _ => None,
     }
 }
@@ -158,21 +154,15 @@ fn download_and_swap(
     let tmp = current_exe.with_file_name("secret-stripper-upgrade");
     let old = current_exe.with_file_name("secret-stripper-old");
 
-    // A previous swap on Windows can't unlink its own running image, so it
-    // leaves the old binary behind for the next run to reap.
+    // Leftover from an interrupted swap.
     let _ = fs::remove_file(&old);
 
     fs::write(&tmp, &bytes)?;
-    #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(&tmp, PermissionsExt::from_mode(0o755))?;
     }
 
-    // Rename the running binary aside (required on Windows: a running .exe
-    // can't be overwritten, only renamed), put the new one in place, then
-    // delete the old. On Unix the unlink succeeds immediately; on Windows it
-    // fails while the process holds the image and is reaped on the next run.
     fs::rename(current_exe, &old)?;
     fs::rename(&tmp, current_exe)?;
     let _ = fs::remove_file(&old);
@@ -190,14 +180,9 @@ pub(crate) fn is_newer(latest_tag: &str) -> bool {
         Err(_) => return false,
     };
     match parse_version(latest_tag) {
-        Some(latest) => offered(&current, &latest, cfg!(target_os = "linux")),
+        Some(latest) => latest > current,
         None => false,
     }
-}
-
-// 2.x is Linux only, so other platforms stay on the 1.x line.
-fn offered(current: &Version, latest: &Version, linux: bool) -> bool {
-    latest > current && (linux || latest.major == current.major)
 }
 
 pub enum UpdateStatus {
@@ -235,11 +220,10 @@ pub fn run_upgrade() -> anyhow::Result<()> {
     let release = fetch_latest_release(&agent).context("fetching latest release")?;
 
     let tag = release["tag_name"].as_str().unwrap_or("unknown");
-    let body = release["body"].as_str().unwrap_or("");
 
     println!("{}", lang.up_latest(tag));
-    if let Some(first_line) = body.lines().next() {
-        println!("  {}", first_line);
+    if let Some(notes) = release["html_url"].as_str() {
+        println!("  {}", notes);
     }
     println!(
         "{}",
@@ -266,10 +250,7 @@ pub fn run_upgrade() -> anyhow::Result<()> {
     let url = resolve_asset_url(&release, &asset_name)
         .ok_or_else(|| anyhow!("Asset '{}' not found in release {}", asset_name, tag))?;
 
-    println!(
-        "{}",
-        lang.up_downloading(url.split('/').next_back().unwrap_or(&url))
-    );
+    println!("{}", lang.up_downloading(&asset_name));
 
     download_and_swap(&agent, &url, &asset_name, &release, &current_exe)?;
     println!("{}", lang.up_updated(tag));
@@ -277,7 +258,7 @@ pub fn run_upgrade() -> anyhow::Result<()> {
 }
 
 /// Unattended update check. Silent on success-with-nothing-to-do AND on
-/// network failure: a daily cron / timer must never spam the user. Notifies
+/// network failure: a per-login timer must never spam the user. Notifies
 /// via desktop notification when a newer release is found, and optionally
 /// performs the swap when `auto_install` (CLI) or `config.auto_install` is
 /// set.
@@ -332,26 +313,41 @@ pub fn run_upgrade_check(auto_install_flag: bool) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let do_install = auto_install_flag || config.auto_install;
+    let installed = (auto_install_flag || config.auto_install) && install(&agent, &release, &tag);
 
-    // Update notifications are independent of `config.silent`: that flag only
-    // mutes clipboard-redaction toasts, not "a new version is available".
-    notify::update_available_notification(
-        config.notification_timeout_secs,
-        config.lang,
-        env!("CARGO_PKG_VERSION"),
-        &tag,
-    );
-
-    if !do_install {
-        return Ok(());
+    let now: chrono::DateTime<chrono::Utc> = std::time::SystemTime::now().into();
+    let due = notice_due(config.last_update_notice, now);
+    if (due || installed) && !config.silent {
+        if installed {
+            notify::update_installed(&config, &tag);
+        } else {
+            notify::update_available(&config, env!("CARGO_PKG_VERSION"), &tag);
+        }
+        let mut updated = Config::load();
+        updated.last_update_notice = Some(now);
+        let _ = updated.save();
     }
 
+    Ok(())
+}
+
+/// The timer fires on login and daily; this also covers repeated logins and
+/// manual runs, so at most one notice per 24h. A notice dated in the future
+/// means the clock went back, and must not block notices until it catches up.
+fn notice_due(
+    last: Option<chrono::DateTime<chrono::Utc>>,
+    now: chrono::DateTime<chrono::Utc>,
+) -> bool {
+    last.is_none_or(|last| last > now || now - last >= chrono::Duration::hours(24))
+}
+
+/// Download, verify and swap in `tag`'s binary; false when any step fails.
+fn install(agent: &ureq::Agent, release: &Value, tag: &str) -> bool {
     let current_exe = match std::env::current_exe() {
         Ok(p) => p,
         Err(e) => {
             log::debug!("upgrade-check: current_exe failed: {}", e);
-            return Ok(());
+            return false;
         }
     };
 
@@ -363,48 +359,39 @@ pub fn run_upgrade_check(auto_install_flag: bool) -> anyhow::Result<()> {
                 std::env::consts::OS,
                 std::env::consts::ARCH
             );
-            return Ok(());
+            return false;
         }
     };
     let asset_name = format!("secret-stripper-{}", suffix);
-    let url = match resolve_asset_url(&release, &asset_name) {
+    let url = match resolve_asset_url(release, &asset_name) {
         Some(u) => u,
         None => {
             log::debug!("upgrade-check: asset {} missing in {}", asset_name, tag);
-            return Ok(());
+            return false;
         }
     };
 
-    match download_and_swap(&agent, &url, &asset_name, &release, &current_exe) {
+    match download_and_swap(agent, &url, &asset_name, release, &current_exe) {
         Ok(_) => {
-            notify::update_installed_notification(
-                config.notification_timeout_secs,
-                config.lang,
-                &tag,
-            );
+            log::debug!("upgrade-check: installed {}", tag);
+            true
         }
-        Err(e) => log::debug!("upgrade-check: install failed: {}", e),
+        Err(e) => {
+            log::debug!("upgrade-check: install failed: {}", e);
+            false
+        }
     }
-
-    Ok(())
 }
 
-#[cfg(target_os = "linux")]
 const TIMER_NAME: &str = "secret-stripper-update-check.timer";
-#[cfg(target_os = "linux")]
 const SERVICE_NAME: &str = "secret-stripper-update-check.service";
-
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-const BUNDLE_ID: &str = "com.kalix127.secret-stripper-update-check";
 
 /// Tests and CI runners set `SECRET_STRIPPER_NO_OS_SIDE_EFFECTS` so an
 /// `init`/`uninstall` cannot mutate the host's real scheduler.
-#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 fn os_side_effects_disabled() -> bool {
     std::env::var_os("SECRET_STRIPPER_NO_OS_SIDE_EFFECTS").is_some()
 }
 
-#[cfg(target_os = "linux")]
 pub fn install_update_check_timer() -> anyhow::Result<()> {
     use crate::proc;
 
@@ -431,16 +418,16 @@ Nice=10
         exe.display()
     );
 
-    // RandomizedDelaySec spreads the GitHub API load across users instead of
-    // having every install fire at 00:00 UTC.
+    // OnStartupSec counts from the start of the user's systemd manager, i.e.
+    // the login session; OnUnitActiveSec repeats it in sessions left open
+    // for days.
     let timer = format!(
         r#"[Unit]
 Description={}
 
 [Timer]
-OnCalendar=daily
-Persistent=true
-RandomizedDelaySec=1h
+OnStartupSec=2min
+OnUnitActiveSec=1d
 Unit=secret-stripper-update-check.service
 
 [Install]
@@ -458,94 +445,6 @@ WantedBy=timers.target
     Ok(())
 }
 
-#[cfg(target_os = "macos")]
-pub fn install_update_check_timer() -> anyhow::Result<()> {
-    use crate::proc;
-
-    if os_side_effects_disabled() {
-        return Ok(());
-    }
-
-    let exe = std::env::current_exe()?;
-    let exe_str = exe
-        .to_str()
-        .ok_or_else(|| anyhow!("non-UTF8 binary path"))?;
-    let home = dirs::home_dir().ok_or_else(|| anyhow!("no home dir"))?;
-    let agents = home.join("Library").join("LaunchAgents");
-    fs::create_dir_all(&agents)?;
-    let plist_path = agents.join(format!("{}.plist", BUNDLE_ID));
-
-    // launchd has no RandomizedDelaySec; a fixed off-peak hour is the closest
-    // equivalent to the Linux timer's load spreading.
-    let plist = format!(
-        r#"<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>{label}</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>{exe}</string>
-        <string>upgrade-check</string>
-    </array>
-    <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>11</integer>
-        <key>Minute</key>
-        <integer>0</integer>
-    </dict>
-    <key>RunAtLoad</key>
-    <false/>
-    <key>Nice</key>
-    <integer>10</integer>
-</dict>
-</plist>
-"#,
-        label = BUNDLE_ID,
-        exe = exe_str
-    );
-    fs::write(&plist_path, plist)?;
-
-    let plist_arg = plist_path
-        .to_str()
-        .ok_or_else(|| anyhow!("non-UTF8 plist path"))?;
-    // Unload first so a rewritten plist is picked up on re-install.
-    proc::run_optional("launchctl", &["unload", "-w", plist_arg]);
-    proc::run_optional("launchctl", &["load", "-w", plist_arg]);
-    Ok(())
-}
-
-#[cfg(target_os = "windows")]
-pub fn install_update_check_timer() -> anyhow::Result<()> {
-    use crate::proc;
-
-    if os_side_effects_disabled() {
-        return Ok(());
-    }
-
-    let exe = std::env::current_exe()?;
-    let exe_str = exe
-        .to_str()
-        .ok_or_else(|| anyhow!("non-UTF8 binary path"))?;
-    let tr = format!("\"{}\" upgrade-check", exe_str);
-    // /F overwrites an existing task so re-install is idempotent.
-    proc::run(
-        "schtasks",
-        &[
-            "/Create", "/F", "/SC", "DAILY", "/TN", BUNDLE_ID, "/TR", &tr, "/ST", "11:00",
-        ],
-        "schtasks /Create",
-    )
-}
-
-#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
-pub fn install_update_check_timer() -> anyhow::Result<()> {
-    Ok(())
-}
-
-#[cfg(target_os = "linux")]
 pub fn uninstall_update_check_timer() -> anyhow::Result<()> {
     use crate::proc;
 
@@ -562,44 +461,6 @@ pub fn uninstall_update_check_timer() -> anyhow::Result<()> {
     }
 
     proc::run_optional("systemctl", &["--user", "daemon-reload"]);
-    Ok(())
-}
-
-#[cfg(target_os = "macos")]
-pub fn uninstall_update_check_timer() -> anyhow::Result<()> {
-    use crate::proc;
-
-    if os_side_effects_disabled() {
-        return Ok(());
-    }
-
-    if let Some(home) = dirs::home_dir() {
-        let plist_path = home
-            .join("Library")
-            .join("LaunchAgents")
-            .join(format!("{}.plist", BUNDLE_ID));
-        if let Some(plist_arg) = plist_path.to_str() {
-            proc::run_optional("launchctl", &["unload", "-w", plist_arg]);
-        }
-        let _ = fs::remove_file(&plist_path);
-    }
-    Ok(())
-}
-
-#[cfg(target_os = "windows")]
-pub fn uninstall_update_check_timer() -> anyhow::Result<()> {
-    use crate::proc;
-
-    if os_side_effects_disabled() {
-        return Ok(());
-    }
-
-    proc::run_optional("schtasks", &["/Delete", "/F", "/TN", BUNDLE_ID]);
-    Ok(())
-}
-
-#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
-pub fn uninstall_update_check_timer() -> anyhow::Result<()> {
     Ok(())
 }
 
@@ -644,17 +505,6 @@ mod tests {
     }
 
     #[test]
-    fn next_major_is_offered_on_linux_only() {
-        let cur = Version::new(1, 5, 2);
-        let patch = Version::new(1, 5, 3);
-        let major = Version::new(2, 0, 0);
-        assert!(offered(&cur, &patch, true));
-        assert!(offered(&cur, &patch, false));
-        assert!(offered(&cur, &major, true));
-        assert!(!offered(&cur, &major, false));
-    }
-
-    #[test]
     fn current_asset_suffix_matches_host() {
         // Whatever host runs the test must hit a known arm or None; never
         // panic. Trade-off: this is mostly a smoke test that the match is
@@ -669,7 +519,7 @@ mod tests {
                 "tag_name": "v1.2.3",
                 "assets": [
                     {"name": "secret-stripper-linux-x86_64", "url": "https://api.github.com/asset/1"},
-                    {"name": "secret-stripper-macos-aarch64", "url": "https://api.github.com/asset/2"}
+                    {"name": "secret-stripper-linux-aarch64", "url": "https://api.github.com/asset/2"}
                 ]
             }"#,
         )
@@ -685,6 +535,27 @@ mod tests {
     fn resolve_asset_url_handles_no_assets_array() {
         let release: serde_json::Value = serde_json::from_str(r#"{"tag_name": "v1"}"#).unwrap();
         assert_eq!(resolve_asset_url(&release, "anything"), None);
+    }
+
+    #[test]
+    fn notice_is_due_once_a_day() {
+        let now = chrono::DateTime::parse_from_rfc3339("2026-10-21T12:00:00Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc);
+        let hours = chrono::Duration::hours;
+        assert!(notice_due(None, now));
+        assert!(!notice_due(Some(now), now));
+        assert!(!notice_due(Some(now - hours(23)), now));
+        assert!(notice_due(Some(now - hours(24)), now));
+        assert!(notice_due(Some(now - hours(24 * 30)), now));
+    }
+
+    #[test]
+    fn notice_from_the_future_does_not_block() {
+        let now = chrono::DateTime::parse_from_rfc3339("2026-10-21T12:00:00Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc);
+        assert!(notice_due(Some(now + chrono::Duration::days(365)), now));
     }
 
     #[test]

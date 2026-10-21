@@ -13,10 +13,6 @@ build-release:
 test:
     cargo test --all-targets
 
-# Filesystem seam integration tests (what CI runs on macOS/Windows)
-test-fs:
-    cargo test --test config_fs
-
 # Clippy with warnings as errors
 lint:
     cargo clippy --all-targets --all-features -- -D warnings

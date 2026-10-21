@@ -2,14 +2,14 @@ use crate::config::Config;
 use crate::shortcut;
 use crate::tui::chrome::scaffold;
 use crate::tui::theme;
-use crate::tui::widgets::{confirm, render_menu, MenuRow};
+use crate::tui::widgets::{confirm, render_menu, wrapped_height, MenuRow};
 use crate::updater::{self, UpdateStatus};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Modifier, Style},
     text::{Line, Span},
-    widgets::Paragraph,
+    widgets::{Paragraph, Wrap},
 };
 
 pub enum Outcome {
@@ -94,10 +94,6 @@ pub fn show(
 
         terminal.draw(|f| {
             let body = scaffold(f, config.lang.mi_title(), footer, config);
-            let parts = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Length(5), Constraint::Min(1)])
-                .split(body);
             let status_line = match &status {
                 Some((msg, true)) => {
                     Line::from(Span::styled(msg.clone(), Style::new().fg(theme::warn())))
@@ -123,7 +119,14 @@ pub fn show(
                 status_line,
                 Line::from(""),
             ];
-            f.render_widget(Paragraph::new(info), parts[0]);
+            let parts = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(wrapped_height(&info, body.width)),
+                    Constraint::Min(1),
+                ])
+                .split(body);
+            f.render_widget(Paragraph::new(info).wrap(Wrap { trim: false }), parts[0]);
             render_menu(
                 f,
                 parts[1],
