@@ -220,11 +220,10 @@ pub fn run_upgrade() -> anyhow::Result<()> {
     let release = fetch_latest_release(&agent).context("fetching latest release")?;
 
     let tag = release["tag_name"].as_str().unwrap_or("unknown");
-    let body = release["body"].as_str().unwrap_or("");
 
     println!("{}", lang.up_latest(tag));
-    if let Some(first_line) = body.lines().next() {
-        println!("  {}", first_line);
+    if let Some(notes) = release["html_url"].as_str() {
+        println!("  {}", notes);
     }
     println!(
         "{}",
@@ -251,10 +250,7 @@ pub fn run_upgrade() -> anyhow::Result<()> {
     let url = resolve_asset_url(&release, &asset_name)
         .ok_or_else(|| anyhow!("Asset '{}' not found in release {}", asset_name, tag))?;
 
-    println!(
-        "{}",
-        lang.up_downloading(url.split('/').next_back().unwrap_or(&url))
-    );
+    println!("{}", lang.up_downloading(&asset_name));
 
     download_and_swap(&agent, &url, &asset_name, &release, &current_exe)?;
     println!("{}", lang.up_updated(tag));
