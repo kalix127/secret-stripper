@@ -32,7 +32,7 @@ _e.g. `Closes #123`, or `None`._
 - [ ] Added or updated tests for this change
 - [ ] Manually verified the behavior end-to-end
 
-Verified on:
+Verified on (name the desktop, e.g. GNOME 48, KDE Plasma 6, Hyprland):
 
-- [ ] X11
-- [ ] Wayland
+- [ ] X11:
+- [ ] Wayland:

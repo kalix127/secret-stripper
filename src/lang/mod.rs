@@ -850,10 +850,10 @@ lang_strings! {
         ES => "Comprobación de actualizaciones de Secret Stripper",
     }
     svc_timer_desc {
-        EN => "Secret Stripper update check at login",
-        FR => "Vérification de Secret Stripper à la connexion",
-        IT => "Controllo di Secret Stripper all'accesso",
-        ES => "Comprobación de Secret Stripper al iniciar sesión",
+        EN => "Secret Stripper update check at login and daily",
+        FR => "Vérification de Secret Stripper à la connexion et chaque jour",
+        IT => "Controllo di Secret Stripper all'accesso e ogni giorno",
+        ES => "Comprobación de Secret Stripper al iniciar sesión y cada día",
     }
 
     status_panel_title {

@@ -19,17 +19,20 @@ body:
         ## Environment
 
         Run this block and paste the output in the Environment field below.
-        It prints only versions, OS, arch, and desktop/session - no
-        usernames, hostnames, or paths.
+        It prints versions, desktop and session, the Secret Stripper status
+        and the uinput setup. `status` shows your config path, which
+        contains your home directory; remove it if you prefer.
 
         ```bash
         { secret-stripper --version
           uname -srmo
           ( . /etc/os-release 2>/dev/null && echo "distro: $NAME $VERSION_ID" )
-          echo "session: ${XDG_SESSION_TYPE:-unknown}  desktop: ${XDG_CURRENT_DESKTOP:-unknown}"
-          command -v wl-copy >/dev/null && wl-copy --version
-          command -v xclip  >/dev/null && { xclip -version 2>&1 | head -n1; }
-          command -v cargo  >/dev/null && cargo --version
+          echo "session: ${XDG_SESSION_TYPE:-unknown}"
+          echo "desktop: ${XDG_CURRENT_DESKTOP:-unknown}"
+          secret-stripper status
+          ls -l /dev/uinput
+          ls /etc/udev/rules.d/60-secret-stripper-uinput.rules
+          command -v tesseract >/dev/null && tesseract --version | head -n1
         } 2>&1
         ```
   - type: textarea
