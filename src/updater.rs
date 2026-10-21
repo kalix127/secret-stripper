@@ -180,14 +180,9 @@ pub(crate) fn is_newer(latest_tag: &str) -> bool {
         Err(_) => return false,
     };
     match parse_version(latest_tag) {
-        Some(latest) => offered(&current, &latest, cfg!(target_os = "linux")),
+        Some(latest) => latest > current,
         None => false,
     }
-}
-
-// 2.x is Linux only, so other platforms stay on the 1.x line.
-fn offered(current: &Version, latest: &Version, linux: bool) -> bool {
-    latest > current && (linux || latest.major == current.major)
 }
 
 pub enum UpdateStatus {
@@ -507,17 +502,6 @@ mod tests {
         assert!(!is_newer(&format!("v{}", cur)));
         assert!(!is_newer(&format!("v{}", older)));
         assert!(!is_newer("not-semver"));
-    }
-
-    #[test]
-    fn next_major_is_offered_on_linux_only() {
-        let cur = Version::new(1, 5, 2);
-        let patch = Version::new(1, 5, 3);
-        let major = Version::new(2, 0, 0);
-        assert!(offered(&cur, &patch, true));
-        assert!(offered(&cur, &patch, false));
-        assert!(offered(&cur, &major, true));
-        assert!(!offered(&cur, &major, false));
     }
 
     #[test]
