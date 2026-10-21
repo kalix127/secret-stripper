@@ -319,12 +319,8 @@ pub fn run_upgrade_check(auto_install_flag: bool) -> anyhow::Result<()> {
 
     let installed = (auto_install_flag || config.auto_install) && install(&agent, &release, &tag);
 
-    // The timer fires on login and daily; this guard also covers repeated
-    // logins and manual runs, so at most one notice per 24h.
     let now: chrono::DateTime<chrono::Utc> = std::time::SystemTime::now().into();
-    let due = config
-        .last_update_notice
-        .is_none_or(|last| now - last >= chrono::Duration::hours(24));
+    let due = notice_due(config.last_update_notice, now);
     if (due || installed) && !config.silent {
         if installed {
             notify::update_installed(&config, &tag);
@@ -337,6 +333,16 @@ pub fn run_upgrade_check(auto_install_flag: bool) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+/// The timer fires on login and daily; this also covers repeated logins and
+/// manual runs, so at most one notice per 24h. A notice dated in the future
+/// means the clock went back, and must not block notices until it catches up.
+fn notice_due(
+    last: Option<chrono::DateTime<chrono::Utc>>,
+    now: chrono::DateTime<chrono::Utc>,
+) -> bool {
+    last.is_none_or(|last| last > now || now - last >= chrono::Duration::hours(24))
 }
 
 /// Download, verify and swap in `tag`'s binary; false when any step fails.
@@ -533,6 +539,27 @@ mod tests {
     fn resolve_asset_url_handles_no_assets_array() {
         let release: serde_json::Value = serde_json::from_str(r#"{"tag_name": "v1"}"#).unwrap();
         assert_eq!(resolve_asset_url(&release, "anything"), None);
+    }
+
+    #[test]
+    fn notice_is_due_once_a_day() {
+        let now = chrono::DateTime::parse_from_rfc3339("2026-10-21T12:00:00Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc);
+        let hours = chrono::Duration::hours;
+        assert!(notice_due(None, now));
+        assert!(!notice_due(Some(now), now));
+        assert!(!notice_due(Some(now - hours(23)), now));
+        assert!(notice_due(Some(now - hours(24)), now));
+        assert!(notice_due(Some(now - hours(24 * 30)), now));
+    }
+
+    #[test]
+    fn notice_from_the_future_does_not_block() {
+        let now = chrono::DateTime::parse_from_rfc3339("2026-10-21T12:00:00Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc);
+        assert!(notice_due(Some(now + chrono::Duration::days(365)), now));
     }
 
     #[test]
