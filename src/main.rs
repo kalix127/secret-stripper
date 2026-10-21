@@ -223,9 +223,8 @@ fn run_init() -> anyhow::Result<()> {
     if path.exists() {
         let existing = Config::load();
         if existing.onboarding_done {
-            // Idempotent path: config is already there. Re-register the DE binding to
-            // recover from any state where the gsettings entry got removed (manual cleanup,
-            // user upgrades, etc). Don't touch the config so user preferences are preserved.
+            // Already set up: restore the binding and timer if they were
+            // removed, but leave the config as the user set it.
             if existing.check_for_updates {
                 let _ = updater::install_update_check_timer();
             }
@@ -333,18 +332,15 @@ fn run_init() -> anyhow::Result<()> {
             eprintln!("{}", lang.cli_last_error(&err.to_string()));
         }
     }
-    // Print the general settings hint here, before the paste-guard section,
-    // so the "tweak settings" line clearly applies to the defaults above
-    // (sensitivity, redact pattern, notifications, etc.) and not to the
-    // paste-guard alias snippet that follows.
+    // Before the paste-guard section, so it reads as being about the
+    // settings above.
     println!("{}", lang.cli_tweak_later());
     print_paste_guard_hint(lang);
     Ok(())
 }
 
-/// Show the user the alias snippet for paste-guard, explain why, and tell
-/// them which file to paste it into. We never edit the file ourselves -
-/// shell rc files belong to the user.
+/// Show the alias snippet for paste-guard and which file to paste it into.
+/// Init never edits shell rc files; uninstall only removes the block.
 fn print_paste_guard_hint(lang: lang::Lang) {
     let detected = ai_tui::detect();
     if detected.is_empty() {

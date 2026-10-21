@@ -1,10 +1,9 @@
 use anyhow::{anyhow, Result};
 
-/// Validate that a chord string like "Ctrl+Alt+C" is syntactically usable.
-/// We do not need OS-level types here: the chord is passed straight through to the
-/// desktop environment's shortcut tool (gsettings/kwriteconfig/xfconf-query), which
-/// owns the actual key registration. This validates the user-typed string before we
-/// hand it off, so we catch garbage input at the menu/config layer.
+/// Validate that a chord string like "Ctrl+Alt+V" is syntactically usable.
+/// The desktop's shortcut backend (gsettings, kwriteconfig, xfconf-query or
+/// the Hyprland config) does the registration; this only catches garbage
+/// before it gets there.
 pub fn parse_chord(s: &str) -> Result<()> {
     let mut found_modifier = false;
     let mut key: Option<String> = None;
@@ -96,11 +95,9 @@ pub struct ProbeOutcome {
     pub last_error: Option<String>,
 }
 
-/// Pick the first candidate chord that parses cleanly. This is intentionally just a
-/// syntax check: we no longer attempt OS-level registration to test availability,
-/// because the desktop environment's shortcut tool (gsettings/kwriteconfig/xfconf)
-/// is the source of truth for "is this chord usable" and gracefully reports its own
-/// errors when we hand it the chord later.
+/// Pick the first candidate chord that parses cleanly. Only a syntax check:
+/// whether the chord is free is up to the desktop's shortcut backend, which
+/// reports its own errors at registration.
 pub fn probe(preferred: &str) -> ProbeOutcome {
     let candidates = candidates_for(preferred);
     let mut last_error: Option<String> = None;

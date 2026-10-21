@@ -95,8 +95,7 @@ type BucketFn = fn() -> Vec<SecretPattern>;
 
 /// Bucket stem -> pattern constructor. The stem is the module file name and
 /// is the stable key used by config `disabled_categories`. This is the single
-/// place that maps a stem to its `patterns()`; order is detection precedence
-/// and must match the historical `all_patterns()` order.
+/// place that maps a stem to its `patterns()`; order is detection precedence.
 pub(crate) const BUCKETS: &[(&str, BucketFn)] = &[
     ("legacy", legacy::patterns),
     ("cloud_aws", cloud_aws::patterns),

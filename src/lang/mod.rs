@@ -261,7 +261,6 @@ impl Lang {
 }
 
 lang_strings! {
-    // ---- Notifications (migrated, human translations kept) ----
     notify_redacted(n: usize,) {
         EN => if n == 1 { "Redacted 1 item".to_string() } else { format!("Redacted {} items", n) },
         FR => if n == 1 { "1 élément masqué".to_string() } else { format!("{} éléments masqués", n) },
@@ -325,7 +324,6 @@ lang_strings! {
         ES => format!("La versión {} está instalada y se usará desde el próximo pegado.", version),
     }
 
-    // ---- Shared field labels (init / menu) ----
     lbl_config {
         EN => "Config",
         FR => "Configuration",
@@ -447,7 +445,6 @@ lang_strings! {
         ES => format!("FALLÓ ({})", err),
     }
 
-    // ---- CLI: menu / generic ----
     cli_no_config {
         EN => "No configuration found. Run 'secret-stripper init' first.",
         FR => "Aucune configuration trouvée. Lancez d'abord 'secret-stripper init'.",
@@ -473,7 +470,6 @@ lang_strings! {
         ES => format!("Error al acceder al portapapeles: {}", err),
     }
 
-    // ---- CLI: uninstall ----
     cli_uninstall_done {
         EN => "Secret Stripper settings removed.",
         FR => "Paramètres de Secret Stripper supprimés.",
@@ -523,7 +519,6 @@ lang_strings! {
         ES => format!("  - Archivos de configuración: {}", list),
     }
 
-    // ---- CLI: register / unregister shortcut ----
     cli_no_hotkey {
         EN => "No hotkey configured. Run 'secret-stripper init' first.",
         FR => "Aucun raccourci configuré. Lancez d'abord 'secret-stripper init'.",
@@ -573,7 +568,6 @@ lang_strings! {
         ES => "Atajo personalizado eliminado.",
     }
 
-    // ---- CLI: paste ----
     cli_clipboard_too_large(len: usize, cap: usize,) {
         EN => format!("Clipboard too large to scan: {} bytes (cap {} bytes). Nothing was pasted.", len, cap),
         FR => format!("Presse-papiers trop volumineux à analyser : {} octets (limite {} octets). Rien n'a été collé.", len, cap),
@@ -638,7 +632,6 @@ lang_strings! {
         ES => if n == 1 { "1 elemento redactado.".to_string() } else { format!("{} elementos redactados.", n) },
     }
 
-    // ---- CLI: init ----
     uinput_intro {
         EN => "On Wayland, Secret Stripper presses the paste keys through a virtual keyboard (/dev/uinput). Granting your login session access needs root once; these commands run through sudo:",
         FR => "Sous Wayland, Secret Stripper appuie sur les touches de collage via un clavier virtuel (/dev/uinput). Donner l'accès à votre session nécessite root une seule fois ; ces commandes passent par sudo :",
@@ -808,7 +801,6 @@ lang_strings! {
         ES => format!("ninguno disponible (probado {})", tried),
     }
 
-    // ---- updater: run_upgrade progress ----
     up_checking {
         EN => "Checking for updates...",
         FR => "Recherche de mises à jour...",
@@ -864,7 +856,6 @@ lang_strings! {
         ES => "Comprobación de Secret Stripper al iniciar sesión",
     }
 
-    // ---- TUI: status + activity panel ----
     status_panel_title {
         EN => "Status",
         FR => "Statut",
@@ -1142,7 +1133,6 @@ lang_strings! {
         ES => "Volver al menú principal",
     }
 
-    // ---- TUI: detection settings (Phase 2) ----
     lbl_detection_settings {
         EN => "Detection Settings",
         FR => "Paramètres de détection",
@@ -1555,7 +1545,6 @@ lang_strings! {
         ES => format!("¿Eliminar la entrada '{}'?", n),
     }
 
-    // ---- TUI: manage installation (updates) ----
     state_on {
         EN => "on",
         FR => "activé",
@@ -1623,7 +1612,6 @@ lang_strings! {
         ES => format!("La versión {} está disponible. ¿Actualizar ahora?", latest),
     }
 
-    // ---- TUI: hotkey capture ----
     hk_placeholder {
         EN => "(press a combination)",
         FR => "(appuyez sur une combinaison)",
@@ -1709,7 +1697,6 @@ lang_strings! {
         ES => format!("No compatible: {}", err),
     }
 
-    // ---- TUI: language picker ----
     lang_title {
         EN => " Select Language ",
         FR => " Choisir la langue ",

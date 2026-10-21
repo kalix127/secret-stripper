@@ -19,7 +19,7 @@ pub struct DetectionResult {
     /// allowlist + validator, so the redactor never has to re-run the
     /// catalog. The third tuple element carries the originating pattern's
     /// name so the redactor can emit a typed marker per span. Soft-wrap-only
-    /// hits travel via `extra_spans` as before.
+    /// hits travel via `extra_spans`.
     pub matched_spans: Vec<(usize, usize, &'static str)>,
     pub high_entropy_tokens: Vec<(String, f64)>,
     pub deep_findings: Vec<deep_scan::DeepFinding>,

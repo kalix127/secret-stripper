@@ -108,9 +108,8 @@ fn uninstall_purges_files_and_dir() {
 #[serial(config_env)]
 fn category_add_then_remove_persists() {
     with_isolated_home(|_| {
-        // default() (not first_run) so disabled_categories starts empty -
-        // this test exercises the add/remove persistence seam, not the
-        // Balanced preset that first_run now seeds.
+        // default(), not first_run(), so disabled_categories starts empty
+        // instead of with the Balanced preset.
         Config::default().save().expect("save");
 
         let mut c = Config::load();

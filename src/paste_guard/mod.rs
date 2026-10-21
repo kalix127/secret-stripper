@@ -24,10 +24,7 @@ const ENV_NO_OS: &str = "SECRET_STRIPPER_NO_OS_SIDE_EFFECTS";
 
 /// Spawn `argv` in a PTY, intercept bracketed-paste payloads on the way in,
 /// redact them, and forward. Returns the child's exit code.
-///
-/// Long-lived for the lifetime of the child - this is the second carve-out
-/// from the one-shot model documented in CLAUDE.md (the first is the per-login
-/// update-check scheduler). Holds no global state, no PID file.
+/// Runs as long as the child does; holds no global state and no PID file.
 pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
     if argv.is_empty() {
         let lang = cfg.lang;
@@ -109,11 +106,9 @@ pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
     // grep, etc.).
     //
     // Feedback policy: never write to the parent's stderr while the wrapped
-    // child is rendering a TUI - it punches through the frame (see
-    // CLAUDE.md::tui-no-stdout). Instead, fire a desktop notification per
-    // redaction event (gated on `!config.silent` to match the paste
-    // flow). The visible proof is the AI TUI rendering `[REDACTED]` in
-    // place of the secret in its own input field.
+    // child is rendering a TUI - it punches through the frame. Instead, fire
+    // a desktop notification per redaction event (muted by `silent`, like
+    // the paste flow).
     let detector_for_parser = Arc::clone(&detector);
     let cfg_for_parser = Arc::clone(&cfg);
     let stdin_pump = thread::spawn(move || {
