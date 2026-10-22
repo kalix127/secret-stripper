@@ -24,7 +24,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "India Aadhaar (labeled)",
             category: "PII / Gov ID",
             severity: Severity::Medium,
-            regex: re(r"(?i)\baadhaar[:#\s]+[2-9]\d{3}\s?\d{4}\s?\d{4}\b"),
+            regex: re(r"(?i)\baadhaar[:#\s]+(?P<secret>[2-9]\d{3}\s?\d{4}\s?\d{4})\b"),
         },
         SecretPattern {
             name: "Brazil CPF",
@@ -108,7 +108,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "Indonesia NIK (labeled)",
             category: "PII / Gov ID",
             severity: Severity::Medium,
-            regex: re(r"(?i)\bnik[:#\s]+\d{16}\b"),
+            regex: re(r"(?i)\bnik[:#\s]+(?P<secret>\d{16})\b"),
         },
         SecretPattern {
             name: "UAE Emirates ID",
@@ -132,7 +132,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "South Africa ID (labeled)",
             category: "PII / Gov ID",
             severity: Severity::Medium,
-            regex: re(r"(?i)\bsouth africa id[:#\s]+\d{13}\b"),
+            regex: re(r"(?i)\bsouth africa id[:#\s]+(?P<secret>\d{13})\b"),
         },
         SecretPattern {
             name: "Turkey TC Kimlik No",
@@ -150,7 +150,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "Australia TFN (labeled)",
             category: "PII / Gov ID",
             severity: Severity::Medium,
-            regex: re(r"(?i)\btfn[:#\s]+\d{3}\s?\d{3}\s?\d{2,3}\b"),
+            regex: re(r"(?i)\btfn[:#\s]+(?P<secret>\d{3}\s?\d{3}\s?\d{2,3})\b"),
         },
         SecretPattern {
             name: "New Zealand NHI",

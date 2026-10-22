@@ -72,7 +72,9 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "EVM Private Key (labeled)",
             category: "Crypto Wallet",
             severity: Severity::Critical,
-            regex: re(r"(?i)\b(?:private[_ ]?key|privkey)\b\W{0,3}(?:0x)?[a-fA-F0-9]{64}\b"),
+            regex: re(
+                r"(?i)\b(?:private[_ ]?key|privkey)\b\W{0,3}(?:0x)?(?P<secret>[a-fA-F0-9]{64})\b",
+            ),
         },
         SecretPattern {
             name: "EVM Address",

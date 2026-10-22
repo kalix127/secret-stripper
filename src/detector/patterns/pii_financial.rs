@@ -71,7 +71,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "UATP Card (labeled)",
             category: "PII / Financial",
             severity: Severity::Critical,
-            regex: re(r"(?i)\buatp\b[:#=\s]+1\d{14}\b"),
+            regex: re(r"(?i)\buatp\b[:#=\s]+(?P<secret>1\d{14})\b"),
         },
         SecretPattern {
             name: "IBAN",
@@ -113,32 +113,34 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "BIC / SWIFT (labeled)",
             category: "PII / Financial",
             severity: Severity::Low,
-            regex: re(r"(?i)\b(?:bic|swift)\b[:=\s]+[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b"),
+            regex: re(
+                r"(?i)\b(?:bic|swift)\b[:=\s]+(?P<secret>[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)\b",
+            ),
         },
         SecretPattern {
             name: "US Bank Routing Number (labeled)",
             category: "PII / Financial",
             severity: Severity::Medium,
-            regex: re(r"(?i)routing(?:\s*number)?[:#=\s]+\d{9}\b"),
+            regex: re(r"(?i)routing(?:\s*number)?[:#=\s]+(?P<secret>\d{9})\b"),
         },
         SecretPattern {
             name: "US Bank Account Number (labeled)",
             category: "PII / Financial",
             severity: Severity::Medium,
-            regex: re(r"(?i)account(?:\s*(?:number|no))?[:#=\s]+\d{6,17}\b"),
+            regex: re(r"(?i)account(?:\s*(?:number|no))?[:#=\s]+(?P<secret>\d{6,17})\b"),
         },
         SecretPattern {
             name: "UK Sort Code (labeled)",
             category: "PII / Financial",
             severity: Severity::Medium,
-            regex: re(r"(?i)sort\s*code[:\s]+\d{2}-\d{2}-\d{2}\b"),
+            regex: re(r"(?i)sort\s*code[:\s]+(?P<secret>\d{2}-\d{2}-\d{2})\b"),
         },
         SecretPattern {
             name: "SEPA Creditor Identifier (labeled)",
             category: "PII / Financial",
             severity: Severity::Medium,
             regex: re(
-                r"(?i)\b(?:creditor[\s_-]?id|sepa[\s_-]?ci)\b[:=\s]+[A-Z]{2}\d{2}[A-Z0-9]{3}[A-Z0-9]{1,28}\b",
+                r"(?i)\b(?:creditor[\s_-]?id|sepa[\s_-]?ci)\b[:=\s]+(?P<secret>[A-Z]{2}\d{2}[A-Z0-9]{3}[A-Z0-9]{1,28})\b",
             ),
         },
     ]

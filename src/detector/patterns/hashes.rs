@@ -92,7 +92,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "NTLM Hash (labeled)",
             category: "Hashes",
             severity: Severity::High,
-            regex: re(r"(?i)\bNTLM[:=\s]+[a-fA-F0-9]{32}\b"),
+            regex: re(r"(?i)\bNTLM[:=\s]+(?P<secret>[a-fA-F0-9]{32})\b"),
         },
         SecretPattern {
             name: "pwdump Hash Line",

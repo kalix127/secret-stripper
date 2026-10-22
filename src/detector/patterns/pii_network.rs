@@ -72,7 +72,9 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "BSSID (labeled)",
             category: "PII / Network",
             severity: Severity::Low,
-            regex: re(r"(?i)\bbssid\s*[:=]?\s*(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b"),
+            regex: re(
+                r"(?i)\bbssid\s*[:=]?\s*(?P<secret>(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})\b",
+            ),
         },
         SecretPattern {
             name: "FCM Registration Token",

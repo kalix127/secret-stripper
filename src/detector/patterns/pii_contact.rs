@@ -67,7 +67,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             category: "PII / Contact",
             severity: Severity::Medium,
             regex: re(
-                r"(?i)\b(?:dob|date[_\s-]?of[_\s-]?birth|birth[_\s-]?date)\s*[:=]?\s*(?:19|20)[0-9]{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])\b",
+                r"(?i)\b(?:dob|date[_\s-]?of[_\s-]?birth|birth[_\s-]?date)\s*[:=]?\s*(?P<secret>(?:19|20)[0-9]{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01]))\b",
             ),
         },
     ]

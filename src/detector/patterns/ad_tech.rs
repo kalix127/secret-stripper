@@ -73,7 +73,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             category: "Ad Tech",
             severity: Severity::Critical,
             regex: re(
-                r"(?i)tiktok[A-Za-z0-9_]*(?:client|app)_secret['\x22]?\s*[:=]\s*['\x22]?[0-9a-f]{40}\b",
+                r"(?i)tiktok[A-Za-z0-9_]*(?:client|app)_secret['\x22]?\s*[:=]\s*['\x22]?(?P<secret>[0-9a-f]{40})\b",
             ),
         },
         SecretPattern {
@@ -81,7 +81,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             category: "Ad Tech",
             severity: Severity::Critical,
             regex: re(
-                r"(?i)(?:facebook|meta|fb)[A-Za-z0-9_]*app_secret['\x22]?\s*[:=]\s*['\x22]?[0-9a-f]{32}\b",
+                r"(?i)(?:facebook|meta|fb)[A-Za-z0-9_]*app_secret['\x22]?\s*[:=]\s*['\x22]?(?P<secret>[0-9a-f]{32})\b",
             ),
         },
         SecretPattern {
@@ -101,7 +101,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             category: "Ad Tech",
             severity: Severity::Low,
             regex: re(
-                r"(?i)applovin[A-Za-z0-9_]*sdk_key['\x22]?\s*[:=]\s*['\x22]?[A-Za-z0-9_-]{86}\b",
+                r"(?i)applovin[A-Za-z0-9_]*sdk_key['\x22]?\s*[:=]\s*['\x22]?(?P<secret>[A-Za-z0-9_-]{86})\b",
             ),
         },
         SecretPattern {
