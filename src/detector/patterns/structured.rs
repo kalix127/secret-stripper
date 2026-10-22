@@ -7,7 +7,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             category: "Structured",
             severity: Severity::Critical,
             regex: re(
-                r"(?im)^\s*[A-Z0-9_]*(?:SECRET|TOKEN|PASSWORD|PASSWD|APIKEY|API_KEY|PRIVATE_KEY|ACCESS_KEY)[A-Z0-9_]*\s*=\s*\S{6,}",
+                r"(?im)^\s*[A-Z0-9_]*(?:SECRET|TOKEN|PASSWORD|PASSWD|APIKEY|API_KEY|PRIVATE_KEY|ACCESS_KEY)[A-Z0-9_]*\s*=\s*(?P<secret>[^\s\[]\S{5,})",
             ),
         },
         SecretPattern {
@@ -20,7 +20,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "pypirc Password",
             category: "Structured",
             severity: Severity::Critical,
-            regex: re(r"(?im)^\s*password\s*=\s*\S{6,}"),
+            regex: re(r"(?im)^\s*password\s*=\s*(?P<secret>[^\s\[]\S{5,})"),
         },
         SecretPattern {
             name: "Git Credentials URL",
@@ -102,7 +102,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "AWS Secret Access Key (labeled)",
             category: "Structured",
             severity: Severity::Critical,
-            regex: re(r"(?i)aws_secret_access_key\s*=\s*[A-Za-z0-9/+]{40}"),
+            regex: re(r"(?i)aws_secret_access_key\s*=\s*(?P<secret>[A-Za-z0-9/+]{40})"),
         },
         SecretPattern {
             name: "kubeconfig client-key-data",
