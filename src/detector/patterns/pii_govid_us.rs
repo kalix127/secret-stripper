@@ -12,7 +12,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "US EIN (labeled)",
             category: "PII / Gov ID",
             severity: Severity::Medium,
-            regex: re(r"(?i)\bEIN[:#\s]+\d{2}-\d{7}\b"),
+            regex: re(r"(?i)\bEIN[:#\s]+(?P<secret>\d{2}-\d{7})\b"),
         },
         SecretPattern {
             name: "US PTIN",
@@ -38,7 +38,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "Canada SIN (labeled)",
             category: "PII / Gov ID",
             severity: Severity::Medium,
-            regex: re(r"(?i)\bSIN[:#\s]+\d{3}[-\s]?\d{3}[-\s]?\d{3}\b"),
+            regex: re(r"(?i)\bSIN[:#\s]+(?P<secret>\d{3}[-\s]?\d{3}[-\s]?\d{3})\b"),
         },
         SecretPattern {
             name: "Canada Quebec RAMQ",

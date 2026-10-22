@@ -31,14 +31,14 @@ pub fn patterns() -> Vec<SecretPattern> {
             category: "PII / Gov ID",
             severity: Severity::Medium,
             regex: re(
-                r"(?i)\b(?:NIR|INSEE)[:#\s]+[12]\d{2}(?:0[1-9]|1[0-2])\d{2}\d{3}\d{3}\d{2}\b",
+                r"(?i)\b(?:NIR|INSEE)[:#\s]+(?P<secret>[12]\d{2}(?:0[1-9]|1[0-2])\d{2}\d{3}\d{3}\d{2})\b",
             ),
         },
         SecretPattern {
             name: "Germany Steuer-ID (labeled)",
             category: "PII / Gov ID",
             severity: Severity::Medium,
-            regex: re(r"(?i)\b(?:Steuer-?ID|Steuernummer|tax[\s-]?ID)[:#\s]+\d{11}\b"),
+            regex: re(r"(?i)\b(?:Steuer-?ID|Steuernummer|tax[\s-]?ID)[:#\s]+(?P<secret>\d{11})\b"),
         },
         SecretPattern {
             name: "Germany Steuernummer",
@@ -56,7 +56,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "Italy Partita IVA (labeled)",
             category: "PII / Gov ID",
             severity: Severity::Medium,
-            regex: re(r"(?i)\b(?:Partita\s?IVA|P\.?IVA|VAT)[:#\s]+IT?\d{11}\b"),
+            regex: re(r"(?i)\b(?:Partita\s?IVA|P\.?IVA|VAT)[:#\s]+(?P<secret>IT?\d{11})\b"),
         },
         SecretPattern {
             name: "Italy Passport",
@@ -92,7 +92,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "Netherlands BSN (labeled)",
             category: "PII / Gov ID",
             severity: Severity::Medium,
-            regex: re(r"(?i)\bBSN[:#\s]+\d{8,9}\b"),
+            regex: re(r"(?i)\bBSN[:#\s]+(?P<secret>\d{8,9})\b"),
         },
         SecretPattern {
             name: "Belgium Rijksregisternummer",

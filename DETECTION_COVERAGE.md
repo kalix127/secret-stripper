@@ -601,10 +601,10 @@ NHS, NPI, DEA, Medicaid IDs and other healthcare identifiers.
 
 | Name | Severity | Regex |
 |---|---|---|
-| US NPI (labeled) | Medium | `(?i)\bNPI[:#\s]+\d{10}\b` |
+| US NPI (labeled) | Medium | `(?i)\bNPI[:#\s]+(?P<secret>\d{10})\b` |
 | US NPI Card Number | Medium | `\b80840\d{10}\b` |
 | US DEA Number | Medium | `\b[ABCDEFGHJKLMNPRSTUX][A-Z9]\d{7}\b` |
-| UK NHS Number (labeled) | Medium | `(?i)\bNHS[:#\s]+\d{3}[ -]?\d{3}[ -]?\d{4}\b` |
+| UK NHS Number (labeled) | Medium | `(?i)\bNHS[:#\s]+(?P<secret>\d{3}[ -]?\d{3}[ -]?\d{4})\b` |
 | FHIR Patient Resource ID | Medium | `\bPatient/[A-Za-z0-9\-]{1,64}\b` |
 | Doximity API Token | High | `\bdx_live_[A-Za-z0-9]{20,40}\b` |
 
@@ -624,7 +624,7 @@ Email addresses, phone numbers (E.164 with separator tolerance), full names.
 | Phone Number (Spain) | Medium | `\+34[ .\-]?(?:[ .\-]?\d){9,11}\b` |
 | Phone Number (Brazil) | Medium | `\+55[ .\-]?(?:[ .\-]?\d){10,12}\b` |
 | Phone Number (India) | Medium | `\+91[ .\-]?(?:[ .\-]?\d){10,12}\b` |
-| Date of Birth (labeled) | Medium | `(?i)\b(?:dob\|date[_\s-]?of[_\s-]?birth\|birth[_\s-]?date)\s*[:=]?\s*(?:19\|20)[0-9]{2}-(?:0[1-9]\|1[0-2])-(?:0[1-9]\|[12][0-9]\|3[01])\b` |
+| Date of Birth (labeled) | Medium | `(?i)\b(?:dob\|date[_\s-]?of[_\s-]?birth\|birth[_\s-]?date)\s*[:=]?\s*(?P<secret>(?:19\|20)[0-9]{2}-(?:0[1-9]\|1[0-2])-(?:0[1-9]\|[12][0-9]\|3[01]))\b` |
 
 ### `pii_financial`
 
@@ -642,18 +642,18 @@ Credit / debit cards (Luhn-validated), IBAN, BIC / SWIFT, ABA routing numbers.
 | Maestro Card | Critical | `\b(?:5018\|5020\|5038\|5893\|6304\|6759\|676[1-3])\d{8,15}\b` |
 | Dankort Card | Critical | `\b5019\d{12}\b` |
 | Mir Card | Critical | `\b220[0-4]\d{12}\b` |
-| UATP Card (labeled) | Critical | `(?i)\buatp\b[:#=\s]+1\d{14}\b` |
+| UATP Card (labeled) | Critical | `(?i)\buatp\b[:#=\s]+(?P<secret>1\d{14})\b` |
 | IBAN | Medium | `\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b` |
 | IBAN (Germany) | Medium | `\bDE\d{20}\b` |
 | IBAN (United Kingdom) | Medium | `\bGB\d{2}[A-Z]{4}\d{14}\b` |
 | IBAN (France) | Medium | `\bFR\d{12}[A-Z0-9]{11}\d{2}\b` |
 | IBAN (Italy) | Medium | `\bIT\d{2}[A-Z]\d{10}[A-Z0-9]{12}\b` |
 | IBAN (Spain) | Medium | `\bES\d{22}\b` |
-| BIC / SWIFT (labeled) | Low | `(?i)\b(?:bic\|swift)\b[:=\s]+[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b` |
-| US Bank Routing Number (labeled) | Medium | `(?i)routing(?:\s*number)?[:#=\s]+\d{9}\b` |
-| US Bank Account Number (labeled) | Medium | `(?i)account(?:\s*(?:number\|no))?[:#=\s]+\d{6,17}\b` |
-| UK Sort Code (labeled) | Medium | `(?i)sort\s*code[:\s]+\d{2}-\d{2}-\d{2}\b` |
-| SEPA Creditor Identifier (labeled) | Medium | `(?i)\b(?:creditor[\s_-]?id\|sepa[\s_-]?ci)\b[:=\s]+[A-Z]{2}\d{2}[A-Z0-9]{3}[A-Z0-9]{1,28}\b` |
+| BIC / SWIFT (labeled) | Low | `(?i)\b(?:bic\|swift)\b[:=\s]+(?P<secret>[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)\b` |
+| US Bank Routing Number (labeled) | Medium | `(?i)routing(?:\s*number)?[:#=\s]+(?P<secret>\d{9})\b` |
+| US Bank Account Number (labeled) | Medium | `(?i)account(?:\s*(?:number\|no))?[:#=\s]+(?P<secret>\d{6,17})\b` |
+| UK Sort Code (labeled) | Medium | `(?i)sort\s*code[:\s]+(?P<secret>\d{2}-\d{2}-\d{2})\b` |
+| SEPA Creditor Identifier (labeled) | Medium | `(?i)\b(?:creditor[\s_-]?id\|sepa[\s_-]?ci)\b[:=\s]+(?P<secret>[A-Z]{2}\d{2}[A-Z0-9]{3}[A-Z0-9]{1,28})\b` |
 
 ### `pii_govid_us`
 
@@ -662,11 +662,11 @@ US Social Security Number, ITIN, EIN, US passport, driver's license formats.
 | Name | Severity | Regex |
 |---|---|---|
 | US ITIN | Medium | `\b9\d{2}[-\s]?(?:5\d\|6[0-5]\|7\d\|8[0-8]\|9[0-2]\|9[4-9])[-\s]?\d{4}\b` |
-| US EIN (labeled) | Medium | `(?i)\bEIN[:#\s]+\d{2}-\d{7}\b` |
+| US EIN (labeled) | Medium | `(?i)\bEIN[:#\s]+(?P<secret>\d{2}-\d{7})\b` |
 | US PTIN | Medium | `\bP\d{8}\b` |
 | US Medicare MBI | Medium | `\b[1-9][ACDEFGHJKMNPQRTUVWXY][ACDEFGHJKMNPQRTUVWXY0-9]\d[ACDEFGHJKMNPQRTUVWXY][ACDEFGHJKMNPQRTUVWXY0-9]\d[ACDEFGHJKMNPQRTUVWXY]{2}\d{2}\b` |
 | US DEA Number | Medium | `\b[ABCDEFGHJKLMNPRSTUX][A-Z9]\d{7}\b` |
-| Canada SIN (labeled) | Medium | `(?i)\bSIN[:#\s]+\d{3}[-\s]?\d{3}[-\s]?\d{3}\b` |
+| Canada SIN (labeled) | Medium | `(?i)\bSIN[:#\s]+(?P<secret>\d{3}[-\s]?\d{3}[-\s]?\d{3})\b` |
 | Canada Quebec RAMQ | Medium | `\b[A-Z]{4}\d{8}\b` |
 | Canada Ontario OHIP | Medium | `\b\d{4}-\d{3}-\d{3}-[A-Z]{2}\b` |
 | Canadian Passport | Medium | `\b[A-Z]{2}\d{6}\b` |
@@ -681,20 +681,20 @@ EU national IDs (codice fiscale, NIE, DNI, BSN, etc.), EU passport, MRZ.
 | Name | Severity | Regex |
 |---|---|---|
 | UK NINO | Medium | `\b[ABCEGHJ-PRSTW-Z][ABEHJ-NPRSTW-Z]\d{6}[A-D]\b` |
-| UK NHS Number (labeled) | Medium | `(?i)\bNHS[:#\s]+\d{3}[ -]?\d{3}[ -]?\d{4}\b` |
+| UK NHS Number (labeled) | Medium | `(?i)\bNHS[:#\s]+(?P<secret>\d{3}[ -]?\d{3}[ -]?\d{4})\b` |
 | Ireland PPSN | Medium | `\b\d{7}[A-W][AHWTX]?\b` |
 | Ireland Eircode | Medium | `\b[A-Z]\d{2}\s?[A-Z0-9]{4}\b` |
-| France NIR (labeled) | Medium | `(?i)\b(?:NIR\|INSEE)[:#\s]+[12]\d{2}(?:0[1-9]\|1[0-2])\d{2}\d{3}\d{3}\d{2}\b` |
-| Germany Steuer-ID (labeled) | Medium | `(?i)\b(?:Steuer-?ID\|Steuernummer\|tax[\s-]?ID)[:#\s]+\d{11}\b` |
+| France NIR (labeled) | Medium | `(?i)\b(?:NIR\|INSEE)[:#\s]+(?P<secret>[12]\d{2}(?:0[1-9]\|1[0-2])\d{2}\d{3}\d{3}\d{2})\b` |
+| Germany Steuer-ID (labeled) | Medium | `(?i)\b(?:Steuer-?ID\|Steuernummer\|tax[\s-]?ID)[:#\s]+(?P<secret>\d{11})\b` |
 | Germany Steuernummer | Medium | `\b\d{2,3}/\d{3,4}/\d{4,5}\b` |
 | Italy Codice Fiscale | Medium | `\b[A-Z]{6}\d{2}[A-EHLMPRST]\d{2}[A-Z]\d{3}[A-Z]\b` |
-| Italy Partita IVA (labeled) | Medium | `(?i)\b(?:Partita\s?IVA\|P\.?IVA\|VAT)[:#\s]+IT?\d{11}\b` |
+| Italy Partita IVA (labeled) | Medium | `(?i)\b(?:Partita\s?IVA\|P\.?IVA\|VAT)[:#\s]+(?P<secret>IT?\d{11})\b` |
 | Italy Passport | Medium | `\b[A-Z]{2}\d{7}\b` |
-| Spain DNI/NIE (labeled) | Medium | `(?i)\b(?:DNI\|NIE)\b[:#=\s]+[XYZ]?\d{7,8}[A-Za-z]\b` |
+| Spain DNI/NIE (labeled) | Medium | `(?i)\b(?:DNI\|NIE)\b[:#=\s]+(?P<secret>[XYZ]?\d{7,8}[A-Za-z])\b` |
 | Spain NIE | Medium | `\b[XYZ]\d{7}[A-Z]\b` |
 | Spain NIF (business) | Medium | `\b[A-HJ-NP-SUVW]\d{7}[0-9A-J]\b` |
 | Spain SSN | Medium | `\b\d{2}/\d{8}/\d{2}\b` |
-| Netherlands BSN (labeled) | Medium | `(?i)\bBSN[:#\s]+\d{8,9}\b` |
+| Netherlands BSN (labeled) | Medium | `(?i)\bBSN[:#\s]+(?P<secret>\d{8,9})\b` |
 | Belgium Rijksregisternummer | Medium | `\b\d{2}\.\d{2}\.\d{2}-\d{3}\.\d{2}\b` |
 | Sweden Personnummer | Medium | `\b(?:19\|20)?\d{6}[-+]\d{4}\b` |
 | Finland HETU | Medium | `\b\d{6}[-+ABCDEFUVWXY]\d{3}[0-9A-Y]\b` |
@@ -702,10 +702,10 @@ EU national IDs (codice fiscale, NIE, DNI, BSN, etc.), EU passport, MRZ.
 | Czech/Slovak Rodne cislo | Medium | `\b\d{6}/\d{4}\b` |
 | Romania CNP | Medium | `\b[1-9]\d{2}(?:0[1-9]\|1[0-2])(?:0[1-9]\|[12]\d\|3[01])\d{6}\b` |
 | Russia SNILS | Medium | `\b\d{3}-\d{3}-\d{3}\s\d{2}\b` |
-| Poland PESEL (labeled) | Medium | `(?i)\bPESEL\b[:#=\s]+\d{11}\b` |
-| Netherlands BSN (labeled) | Medium | `(?i)\b(?:BSN\|burgerservicenummer)\b[:#=\s]+\d{9}\b` |
-| Belgium Rijksregisternummer (labeled) | Medium | `(?i)\b(?:rijksregisternummer\|RRN\|NISS)\b[:#=\s]+[\d.\-]{11,17}` |
-| France NIR (labeled) | Medium | `(?i)\b(?:NIR\|INSEE\|secu)\b[:#=\s]+[\d ]{15,25}` |
+| Poland PESEL (labeled) | Medium | `(?i)\bPESEL\b[:#=\s]+(?P<secret>\d{11})\b` |
+| Netherlands BSN (labeled) | Medium | `(?i)\b(?:BSN\|burgerservicenummer)\b[:#=\s]+(?P<secret>\d{9})\b` |
+| Belgium Rijksregisternummer (labeled) | Medium | `(?i)\b(?:rijksregisternummer\|RRN\|NISS)\b[:#=\s]+(?P<secret>[\d.\-]{11,17})` |
+| France NIR (labeled) | Medium | `(?i)\b(?:NIR\|INSEE\|secu)\b[:#=\s]+(?P<secret>[\d ]{15,25})` |
 
 ### `pii_govid_intl`
 
@@ -716,7 +716,7 @@ International passports, MRZ formats, ABN / CPF / Aadhaar / MyKad and similar.
 | India PAN | Medium | `\b[A-Z]{5}\d{4}[A-Z]\b` |
 | India GSTIN | Medium | `\b\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]Z[A-Z0-9]\b` |
 | India IFSC | Medium | `\b[A-Z]{4}0[A-Z0-9]{6}\b` |
-| India Aadhaar (labeled) | Medium | `(?i)\baadhaar[:#\s]+[2-9]\d{3}\s?\d{4}\s?\d{4}\b` |
+| India Aadhaar (labeled) | Medium | `(?i)\baadhaar[:#\s]+(?P<secret>[2-9]\d{3}\s?\d{4}\s?\d{4})\b` |
 | Brazil CPF | Medium | `\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b` |
 | Brazil CNPJ | Medium | `\b[0-9A-Z]{2}\.?[0-9A-Z]{3}\.?[0-9A-Z]{3}/?[0-9A-Z]{4}-?\d{2}\b` |
 | Chile RUT | Medium | `\b\d{1,2}\.\d{3}\.\d{3}-[\dkK]\b` |
@@ -730,14 +730,14 @@ International passports, MRZ formats, ABN / CPF / Aadhaar / MyKad and similar.
 | Singapore NRIC/FIN | Medium | `\b[STFGM]\d{7}[A-Z]\b` |
 | Malaysia MyKad | Medium | `\b\d{6}-\d{2}-\d{4}\b` |
 | Indonesia NPWP | Medium | `\b\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}\b` |
-| Indonesia NIK (labeled) | Medium | `(?i)\bnik[:#\s]+\d{16}\b` |
+| Indonesia NIK (labeled) | Medium | `(?i)\bnik[:#\s]+(?P<secret>\d{16})\b` |
 | UAE Emirates ID | Medium | `\b784-\d{4}-\d{7}-\d\b` |
 | Egypt National ID | Medium | `\b[23]\d{13}\b` |
 | Ghana Card PIN | Medium | `\bGHA-\d{9}-\d\b` |
-| South Africa ID (labeled) | Medium | `(?i)\bsouth africa id[:#\s]+\d{13}\b` |
+| South Africa ID (labeled) | Medium | `(?i)\bsouth africa id[:#\s]+(?P<secret>\d{13})\b` |
 | Turkey TC Kimlik No | Medium | `\b[1-9]\d{10}\b` |
-| Israel Teudat Zehut (labeled) | Medium | `(?i)\b(?:teudat[\s-]?zehut\|israeli?[\s-]?id)\b[:#=\s]+\d{8,9}\b` |
-| Australia TFN (labeled) | Medium | `(?i)\btfn[:#\s]+\d{3}\s?\d{3}\s?\d{2,3}\b` |
+| Israel Teudat Zehut (labeled) | Medium | `(?i)\b(?:teudat[\s-]?zehut\|israeli?[\s-]?id)\b[:#=\s]+(?P<secret>\d{8,9})\b` |
+| Australia TFN (labeled) | Medium | `(?i)\btfn[:#\s]+(?P<secret>\d{3}\s?\d{3}\s?\d{2,3})\b` |
 | New Zealand NHI | Medium | `\b[A-HJ-NP-Z]{3}\d{4}\b` |
 | Passport MRZ (TD3) | Critical | `P[A-Z<][A-Z]{3}[A-Z<]{39}[\r\n]+[A-Z0-9<]{44}` |
 | Canada Driver's License (distinctive province format) | Medium | `\b(?:[A-Z]\d{4}-?\d{5}\d[0156]\d[0123]\d\|[A-Z]\d{12}\|[A-Z]{5}\d{9})\b` |
@@ -787,7 +787,7 @@ IPv4, IPv6, MAC addresses, CIDR blocks, hostnames.
 | IMSI | Low | `(?i)\bimsi\s*[:=]?\s*\d{14,15}\b` |
 | ICCID | Low | `(?i)\biccid\s*[:=]?\s*89\d{17,18}\b` |
 | MEID | Low | `(?i)\bmeid\s*[:=]?\s*[0-9A-Fa-f]{14}\b` |
-| BSSID (labeled) | Low | `(?i)\bbssid\s*[:=]?\s*(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b` |
+| BSSID (labeled) | Low | `(?i)\bbssid\s*[:=]?\s*(?P<secret>(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})\b` |
 | FCM Registration Token | Medium | `\b[\w-]{8,22}:APA91b[\w-]{100,}\b` |
 | TLS SHA-256 Fingerprint | Low | `\b(?:[0-9A-Fa-f]{2}:){31}[0-9A-Fa-f]{2}\b` |
 | TLS SHA-1 Fingerprint | Low | `\b(?:[0-9A-Fa-f]{2}:){19}[0-9A-Fa-f]{2}\b` |
@@ -817,7 +817,7 @@ bcrypt, scrypt, argon2, MD5, SHA, NTLM password hashes.
 | Drupal7 Hash | High | `\$S\$[./A-Za-z0-9]{52}` |
 | Apache apr1 Hash | High | `\$apr1\$[./A-Za-z0-9]{1,8}\$[./A-Za-z0-9]{22}` |
 | Kerberos krb5 Hash | High | `\$krb5(?:asrep\|tgs)\$\d+\$[^\s]{20,512}` |
-| NTLM Hash (labeled) | High | `(?i)\bNTLM[:=\s]+[a-fA-F0-9]{32}\b` |
+| NTLM Hash (labeled) | High | `(?i)\bNTLM[:=\s]+(?P<secret>[a-fA-F0-9]{32})\b` |
 | pwdump Hash Line | Critical | `[^:\s]+:\d+:[A-Fa-f0-9]{32}:[A-Fa-f0-9]{32}:::` |
 | htpasswd Hash Line | Critical | `(?m)^[A-Za-z0-9._-]+:\$(?:2[aby]?\|apr1\|1\|5\|6\|y)\$[./A-Za-z0-9$,=+]+` |
 | shadow Hash Line | Critical | `(?m)^[A-Za-z0-9._-]+:\$[0-9a-z]+\$[^:]+:` |
@@ -874,7 +874,7 @@ BTC / ETH / SOL and other wallet addresses, BIP39 seed phrases, keystore JSON.
 | Bitcoin Bech32 Address | Low | `\bbc1[02-9ac-hj-np-z]{11,71}\b` |
 | Bitcoin Taproot Address (P2TR) | Low | `\bbc1p[02-9ac-hj-np-z]{58}\b` |
 | Litecoin Address | Low | `\b(?:ltc1[02-9ac-hj-np-z]{11,71}\|[LM][1-9A-HJ-NP-Za-km-z]{25,34})\b` |
-| EVM Private Key (labeled) | Critical | `(?i)\b(?:private[_ ]?key\|privkey)\b\W{0,3}(?:0x)?[a-fA-F0-9]{64}\b` |
+| EVM Private Key (labeled) | Critical | `(?i)\b(?:private[_ ]?key\|privkey)\b\W{0,3}(?:0x)?(?P<secret>[a-fA-F0-9]{64})\b` |
 | EVM Address | Low | `\b0x[a-fA-F0-9]{40}\b` |
 | Solana Keypair Byte Array | Critical | `\[\s*(?:\d{1,3}\s*,\s*){63}\d{1,3}\s*\]` |
 | Solana Address | Low | `\b[1-9A-HJ-NP-Za-km-z]{32,44}\b` |
@@ -1118,11 +1118,11 @@ Google Ads, Facebook Ads, AppNexus / Xandr, MoPub, Criteo API credentials.
 | Pinterest API Access Token | Critical | `\bpina_[A-Z0-9_-]{10,}\b` |
 | Google Ads Developer Token | Critical | `(?i)developer[_-]?token['\x22]?\s*[:=]\s*['\x22]?[A-Za-z0-9_-]{22}\b` |
 | Google Ads OAuth Refresh Token | Critical | `\b1//[A-Za-z0-9_-]{40,}` |
-| TikTok App Secret (labeled) | Critical | `(?i)tiktok[A-Za-z0-9_]*(?:client\|app)_secret['\x22]?\s*[:=]\s*['\x22]?[0-9a-f]{40}\b` |
-| Meta App Secret (labeled) | Critical | `(?i)(?:facebook\|meta\|fb)[A-Za-z0-9_]*app_secret['\x22]?\s*[:=]\s*['\x22]?[0-9a-f]{32}\b` |
+| TikTok App Secret (labeled) | Critical | `(?i)tiktok[A-Za-z0-9_]*(?:client\|app)_secret['\x22]?\s*[:=]\s*['\x22]?(?P<secret>[0-9a-f]{40})\b` |
+| Meta App Secret (labeled) | Critical | `(?i)(?:facebook\|meta\|fb)[A-Za-z0-9_]*app_secret['\x22]?\s*[:=]\s*['\x22]?(?P<secret>[0-9a-f]{32})\b` |
 | The Trade Desk Auth Token | Critical | `(?i)TTD-Auth:\s*[A-Za-z0-9]{20,}` |
 | Beeswax Instance Host | Low | `\b[a-z0-9][a-z0-9-]{1,30}\.api\.beeswax\.com\b` |
-| AppLovin MAX SDK Key (labeled) | Low | `(?i)applovin[A-Za-z0-9_]*sdk_key['\x22]?\s*[:=]\s*['\x22]?[A-Za-z0-9_-]{86}\b` |
+| AppLovin MAX SDK Key (labeled) | Low | `(?i)applovin[A-Za-z0-9_]*sdk_key['\x22]?\s*[:=]\s*['\x22]?(?P<secret>[A-Za-z0-9_-]{86})\b` |
 | LiveRamp RampID (maintained individual) | Medium | `\bXY[A-Z0-9]{47}\b` |
 | LiveRamp RampID (maintained household) | Medium | `\bHY[A-Z0-9]{47}\b` |
 | UID2 Operator API Key | Critical | `\bUID2-O-L-\d{1,}-[A-Za-z0-9+/=_-]{16,}` |
@@ -1140,25 +1140,25 @@ Bank routing / SWIFT / IBAN composite shapes and banking-API client secrets.
 | SWIFT Ordering Customer with IBAN (:50K:) | Critical | `(?m)^:50K:/[A-Z]{2}\d{2}[A-Z0-9]{10,30}$` |
 | SWIFT Beneficiary Customer with IBAN (:59:) | Critical | `(?m)^:59:/[A-Z]{2}\d{2}[A-Z0-9]{10,30}$` |
 | SWIFT Block-3 UETR Tag 121 | Medium | `\{121:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\}` |
-| SWIFT GPI UETR (labeled) | Medium | `(?i)\buetr\b[:=\s]+[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b` |
+| SWIFT GPI UETR (labeled) | Medium | `(?i)\buetr\b[:=\s]+(?P<secret>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\b` |
 | ISO 20022 Message Identifier | Medium | `\b(?:pacs\|pain\|camt)\.\d{3}\.\d{3}\.\d{2}\b` |
-| Legal Entity Identifier (labeled) | Medium | `(?i)\blei\b[:=\s]+[A-Z0-9]{18}\d{2}\b` |
-| Fedwire IMAD (labeled) | Medium | `(?i)\bimad\b[:=\s]+\d{8}[A-Z0-9]{4}\d{2}\d{6}\b` |
-| Fedwire OMAD (labeled) | Medium | `(?i)\bomad\b[:=\s]+\d{8}[A-Z0-9]{4}\d{2}\d{6}\b` |
-| CHIPS UID (labeled) | Medium | `(?i)\bchips\s*(?:uid\|participant)\b[:=\s]+\d{6}\b` |
+| Legal Entity Identifier (labeled) | Medium | `(?i)\blei\b[:=\s]+(?P<secret>[A-Z0-9]{18}\d{2})\b` |
+| Fedwire IMAD (labeled) | Medium | `(?i)\bimad\b[:=\s]+(?P<secret>\d{8}[A-Z0-9]{4}\d{2}\d{6})\b` |
+| Fedwire OMAD (labeled) | Medium | `(?i)\bomad\b[:=\s]+(?P<secret>\d{8}[A-Z0-9]{4}\d{2}\d{6})\b` |
+| CHIPS UID (labeled) | Medium | `(?i)\bchips\s*(?:uid\|participant)\b[:=\s]+(?P<secret>\d{6})\b` |
 | Russia Correspondent Account | Medium | `\b30101810\d{12}\b` |
 | India IFSC Code | Medium | `\b[A-Z]{4}0[A-Z0-9]{6}\b` |
 | India UPI VPA | Medium | `\b[A-Za-z0-9._-]{2,64}@(?:okhdfcbank\|oksbi\|okicici\|okaxis\|paytm\|ybl\|upi)\b` |
-| Brazil PIX Key (labeled) | Medium | `(?i)\bpix\b[:=\s]+\d{3}\.\d{3}\.\d{3}-\d{2}\b` |
+| Brazil PIX Key (labeled) | Medium | `(?i)\bpix\b[:=\s]+(?P<secret>\d{3}\.\d{3}\.\d{3}-\d{2})\b` |
 | Card Track 1 Magstripe | Critical | `%B\d{12,19}\^[^^]{2,26}\^\d{4}\d{3}\d*\?` |
 | Card Track 2 Magstripe | Critical | `;\d{12,19}=\d{4}\d{3}\d*\?` |
 | Card PAN with CVV (labeled) | Critical | `(?i)\b\d{13,19}\b[^\n]{0,40}\b(?:cvv2?\|cvc2?\|cid\|security[\s_-]?code)\b[:=\s]+\d{3,4}\b` |
 | FATCA GIIN | Medium | `\b[A-Z0-9]{6}\.[A-Z0-9]{5}\.(?:LE\|SL\|ME\|BR\|SP\|SF\|SD\|SS)\.\d{3}\b` |
-| Open Banking X-Request-ID (labeled) | Medium | `(?i)X-Request-ID[:=\s]+[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b` |
+| Open Banking X-Request-ID (labeled) | Medium | `(?i)X-Request-ID[:=\s]+(?P<secret>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b` |
 | New Zealand Bank Account Number | Medium | `\b\d{2}-\d{4}-\d{7}-\d{2,3}\b` |
-| Mexico CLABE (labeled) | Medium | `(?i)\bclabe\b[:#=\s]+\d{18}\b` |
-| Canada Bank Transit (labeled) | Medium | `(?i)\btransit(?:\s*(?:number\|no\.?))?[:#=\s]+\d{5}\b` |
-| Australia BSB (labeled) | Medium | `(?i)\bBSB\b[:#=\s]+\d{3}-?\d{3}\b` |
+| Mexico CLABE (labeled) | Medium | `(?i)\bclabe\b[:#=\s]+(?P<secret>\d{18})\b` |
+| Canada Bank Transit (labeled) | Medium | `(?i)\btransit(?:\s*(?:number\|no\.?))?[:#=\s]+(?P<secret>\d{5})\b` |
+| Australia BSB (labeled) | Medium | `(?i)\bBSB\b[:#=\s]+(?P<secret>\d{3}-?\d{3})\b` |
 
 ### `threat_intel`
 

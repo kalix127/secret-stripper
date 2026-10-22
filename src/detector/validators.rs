@@ -494,13 +494,14 @@ pub fn us_ssn(s: &str) -> bool {
 pub const US_DEA_RE: &str = r"\b[ABCDEFGHJKLMNPRSTUX][A-Z9]\d{7}\b";
 /// UK NHS number, label-gated + `nhs_mod11` (10 digits, keyword-free is
 /// too FP-prone per the locked discipline). Shared by both buckets.
-pub const UK_NHS_RE: &str = r"(?i)\bNHS[:#\s]+\d{3}[ -]?\d{3}[ -]?\d{4}\b";
+pub const UK_NHS_RE: &str = r"(?i)\bNHS[:#\s]+(?P<secret>\d{3}[ -]?\d{3}[ -]?\d{4})\b";
 /// US NPI, label-gated + `npi_80840` (Luhn over the 80840 prefix); and
 /// the 80840-card form, Luhn over the full 15 digits.
-pub const US_NPI_RE: &str = r"(?i)\bNPI[:#\s]+\d{10}\b";
+pub const US_NPI_RE: &str = r"(?i)\bNPI[:#\s]+(?P<secret>\d{10})\b";
 pub const US_NPI_CARD_RE: &str = r"\b80840\d{10}\b";
 pub const TR_TCKN_RE: &str = r"\b[1-9]\d{10}\b";
-pub const IL_TZ_RE: &str = r"(?i)\b(?:teudat[\s-]?zehut|israeli?[\s-]?id)\b[:#=\s]+\d{8,9}\b";
+pub const IL_TZ_RE: &str =
+    r"(?i)\b(?:teudat[\s-]?zehut|israeli?[\s-]?id)\b[:#=\s]+(?P<secret>\d{8,9})\b";
 pub const US_SSN_RE: &str = r"\b\d{3}-\d{2}-\d{4}\b";
 pub const IMEI_RE: &str = r"(?i)\bimei\s*[:=]?\s*\d{15}\b";
 pub const ICCID_RE: &str = r"(?i)\biccid\s*[:=]?\s*89\d{17,18}\b";
@@ -511,13 +512,14 @@ pub const CZ_RC_RE: &str = r"\b\d{6}/\d{4}\b";
 pub const RO_CNP_RE: &str = r"\b[1-9]\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{6}\b";
 
 /// Label+checksum gov-ID regexes (shared so the registry key is identical).
-pub const SPAIN_DNI_RE: &str = r"(?i)\b(?:DNI|NIE)\b[:#=\s]+[XYZ]?\d{7,8}[A-Za-z]\b";
+pub const SPAIN_DNI_RE: &str = r"(?i)\b(?:DNI|NIE)\b[:#=\s]+(?P<secret>[XYZ]?\d{7,8}[A-Za-z])\b";
 pub const BR_CPF_RE: &str = r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b";
 pub const BR_CNPJ_RE: &str = r"\b[0-9A-Z]{2}\.?[0-9A-Z]{3}\.?[0-9A-Z]{3}/?[0-9A-Z]{4}-?\d{2}\b";
-pub const PESEL_RE: &str = r"(?i)\bPESEL\b[:#=\s]+\d{11}\b";
-pub const BSN_RE: &str = r"(?i)\b(?:BSN|burgerservicenummer)\b[:#=\s]+\d{9}\b";
-pub const BE_RRN_RE: &str = r"(?i)\b(?:rijksregisternummer|RRN|NISS)\b[:#=\s]+[\d.\-]{11,17}";
-pub const FR_NIR_RE: &str = r"(?i)\b(?:NIR|INSEE|secu)\b[:#=\s]+[\d ]{15,25}";
+pub const PESEL_RE: &str = r"(?i)\bPESEL\b[:#=\s]+(?P<secret>\d{11})\b";
+pub const BSN_RE: &str = r"(?i)\b(?:BSN|burgerservicenummer)\b[:#=\s]+(?P<secret>\d{9})\b";
+pub const BE_RRN_RE: &str =
+    r"(?i)\b(?:rijksregisternummer|RRN|NISS)\b[:#=\s]+(?P<secret>[\d.\-]{11,17})";
+pub const FR_NIR_RE: &str = r"(?i)\b(?:NIR|INSEE|secu)\b[:#=\s]+(?P<secret>[\d ]{15,25})";
 
 /// Generic E.164: leading `+CC` then 9-16 more digits, tolerating single
 /// space/hyphen group separators (`+39 333 1234567`). The `e164`

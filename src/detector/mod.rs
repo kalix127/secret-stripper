@@ -684,6 +684,27 @@ mod tests {
     }
 
     #[test]
+    fn labeled_patterns_keep_the_label() {
+        let d = Detector::from_config(&test_config());
+        for (text, name, value) in [
+            ("EIN: 12-3456789", "US EIN (labeled)", "12-3456789"),
+            (
+                "NHS: 943 476 5919",
+                "UK NHS Number (labeled)",
+                "943 476 5919",
+            ),
+        ] {
+            let r = d.scan(text);
+            let (s, e, _) = *r
+                .matched_spans
+                .iter()
+                .find(|(_, _, n)| *n == name)
+                .unwrap_or_else(|| panic!("{name} not found in {text:?}"));
+            assert_eq!(&text[s..e], value);
+        }
+    }
+
+    #[test]
     fn scan_detects_softwrapped_aws_key() {
         let d = Detector::from_config(&test_config());
         let r = d.scan("server log line\ntoken AKIAIOSFOD\nNN7EXAMPLE trailing");

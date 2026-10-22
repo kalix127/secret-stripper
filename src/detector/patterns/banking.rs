@@ -39,7 +39,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             category: "Banking",
             severity: Severity::Medium,
             regex: re(
-                r"(?i)\buetr\b[:=\s]+[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b",
+                r"(?i)\buetr\b[:=\s]+(?P<secret>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\b",
             ),
         },
         SecretPattern {
@@ -52,25 +52,25 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "Legal Entity Identifier (labeled)",
             category: "Banking",
             severity: Severity::Medium,
-            regex: re(r"(?i)\blei\b[:=\s]+[A-Z0-9]{18}\d{2}\b"),
+            regex: re(r"(?i)\blei\b[:=\s]+(?P<secret>[A-Z0-9]{18}\d{2})\b"),
         },
         SecretPattern {
             name: "Fedwire IMAD (labeled)",
             category: "Banking",
             severity: Severity::Medium,
-            regex: re(r"(?i)\bimad\b[:=\s]+\d{8}[A-Z0-9]{4}\d{2}\d{6}\b"),
+            regex: re(r"(?i)\bimad\b[:=\s]+(?P<secret>\d{8}[A-Z0-9]{4}\d{2}\d{6})\b"),
         },
         SecretPattern {
             name: "Fedwire OMAD (labeled)",
             category: "Banking",
             severity: Severity::Medium,
-            regex: re(r"(?i)\bomad\b[:=\s]+\d{8}[A-Z0-9]{4}\d{2}\d{6}\b"),
+            regex: re(r"(?i)\bomad\b[:=\s]+(?P<secret>\d{8}[A-Z0-9]{4}\d{2}\d{6})\b"),
         },
         SecretPattern {
             name: "CHIPS UID (labeled)",
             category: "Banking",
             severity: Severity::Medium,
-            regex: re(r"(?i)\bchips\s*(?:uid|participant)\b[:=\s]+\d{6}\b"),
+            regex: re(r"(?i)\bchips\s*(?:uid|participant)\b[:=\s]+(?P<secret>\d{6})\b"),
         },
         SecretPattern {
             name: "Russia Correspondent Account",
@@ -96,7 +96,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "Brazil PIX Key (labeled)",
             category: "Banking",
             severity: Severity::Medium,
-            regex: re(r"(?i)\bpix\b[:=\s]+\d{3}\.\d{3}\.\d{3}-\d{2}\b"),
+            regex: re(r"(?i)\bpix\b[:=\s]+(?P<secret>\d{3}\.\d{3}\.\d{3}-\d{2})\b"),
         },
         SecretPattern {
             name: "Card Track 1 Magstripe",
@@ -129,7 +129,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             category: "Banking",
             severity: Severity::Medium,
             regex: re(
-                r"(?i)X-Request-ID[:=\s]+[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b",
+                r"(?i)X-Request-ID[:=\s]+(?P<secret>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b",
             ),
         },
         SecretPattern {
@@ -142,19 +142,19 @@ pub fn patterns() -> Vec<SecretPattern> {
             name: "Mexico CLABE (labeled)",
             category: "Banking",
             severity: Severity::Medium,
-            regex: re(r"(?i)\bclabe\b[:#=\s]+\d{18}\b"),
+            regex: re(r"(?i)\bclabe\b[:#=\s]+(?P<secret>\d{18})\b"),
         },
         SecretPattern {
             name: "Canada Bank Transit (labeled)",
             category: "Banking",
             severity: Severity::Medium,
-            regex: re(r"(?i)\btransit(?:\s*(?:number|no\.?))?[:#=\s]+\d{5}\b"),
+            regex: re(r"(?i)\btransit(?:\s*(?:number|no\.?))?[:#=\s]+(?P<secret>\d{5})\b"),
         },
         SecretPattern {
             name: "Australia BSB (labeled)",
             category: "Banking",
             severity: Severity::Medium,
-            regex: re(r"(?i)\bBSB\b[:#=\s]+\d{3}-?\d{3}\b"),
+            regex: re(r"(?i)\bBSB\b[:#=\s]+(?P<secret>\d{3}-?\d{3})\b"),
         },
     ]
 }
