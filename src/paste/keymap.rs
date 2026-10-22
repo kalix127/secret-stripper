@@ -6,7 +6,7 @@ use wayland_client::protocol::wl_keyboard::{self, KeymapFormat, WlKeyboard};
 use wayland_client::protocol::{wl_registry::WlRegistry, wl_seat::WlSeat};
 use wayland_client::{delegate_noop, Connection, Dispatch, Proxy, QueueHandle, WEnum};
 
-use super::keys::{x11_keysym, Key};
+use super::keys::{x11_keysym, x11_modifier_keysym, Key, Modifier};
 
 // evdev codes are XKB keycodes minus this offset.
 const XKB_OFFSET: u16 = 8;
@@ -84,10 +84,31 @@ impl Layout {
             Key::Letter(c) => c.to_string(),
             Key::Insert => "Insert".to_string(),
         };
-        let value = x11_keysym(key);
+        self.find(&name, x11_keysym(key), 2)
+    }
+
+    /// evdev code of the key that acts as `m`. Options such as
+    /// `ctrl:swapcaps` or `altwin:swap_alt_win` move modifiers to other
+    /// positions, so the fixed US codes would press the wrong key.
+    pub fn modifier_code(&self, m: Modifier) -> Option<u16> {
+        let left = x11_modifier_keysym(m);
+        let names: [&str; 2] = match m {
+            Modifier::Ctrl => ["Control_L", "Control_R"],
+            Modifier::Shift => ["Shift_L", "Shift_R"],
+            Modifier::Alt => ["Alt_L", "Alt_R"],
+            Modifier::Super => ["Super_L", "Super_R"],
+        };
+        // Each right-hand keysym is the left one plus one.
+        names
+            .iter()
+            .zip([left, left + 1])
+            .find_map(|(name, value)| self.find(name, value, 1))
+    }
+
+    fn find(&self, name: &str, value: u32, levels: usize) -> Option<u16> {
         // Keysyms appear as names ("v") or as hex values ("0x76").
         let matches = |sym: &String| {
-            *sym == name
+            sym == name
                 || sym
                     .strip_prefix("0x")
                     .and_then(|hex| u32::from_str_radix(hex, 16).ok())
@@ -101,7 +122,7 @@ impl Layout {
                     .iter()
                     .find(|(_, g)| {
                         g.get(group)
-                            .is_some_and(|levels| levels.iter().take(2).any(&matches))
+                            .is_some_and(|lv| lv.iter().take(levels).any(&matches))
                     })
                     .and_then(|(code, _)| code.checked_sub(XKB_OFFSET))
             })
@@ -327,6 +348,46 @@ xkb_symbols "pc_us(dvorak)_it_2" {
             vec!["xkb us+dvorak", "xkb it"]
         );
         assert!(parse_sources("@a(ss) []").is_empty());
+    }
+
+    // ctrl:swapcaps and altwin:swap_alt_win, as xkbcomp writes them.
+    const SWAPPED: &str = r#"xkb_keymap {
+xkb_keycodes "evdev" {
+	<LCTL> = 37;
+	<LALT> = 64;
+	<CAPS> = 66;
+	<RCTL> = 105;
+	<LWIN> = 133;
+};
+xkb_symbols "pc+us+ctrl(swapcaps)+altwin(swap_alt_win)" {
+	key <LCTL> { [ Caps_Lock ] };
+	key <LALT> { [ Super_L ] };
+	key <CAPS> { [ Control_L ] };
+	key <RCTL> { [ Control_R ] };
+	key <LWIN> { type= "TWO_LEVEL", [ Alt_L, Meta_L ] };
+};
+};"#;
+
+    #[test]
+    fn modifiers_follow_swap_options() {
+        let layout = Layout::parse(SWAPPED).unwrap();
+        assert_eq!(layout.modifier_code(Modifier::Ctrl), Some(58));
+        assert_eq!(layout.modifier_code(Modifier::Alt), Some(125));
+        assert_eq!(layout.modifier_code(Modifier::Super), Some(56));
+        assert_eq!(layout.modifier_code(Modifier::Shift), None);
+    }
+
+    #[test]
+    fn modifiers_match_hex_and_right_hand_keysyms() {
+        let hex = "xkb_keycodes { <LCTL> = 37; };\n\
+                   xkb_symbols { key <LCTL> { [ 0xffe3 ] }; };";
+        let layout = Layout::parse(hex).unwrap();
+        assert_eq!(layout.modifier_code(Modifier::Ctrl), Some(29));
+
+        let right = "xkb_keycodes { <RCTL> = 105; };\n\
+                     xkb_symbols { key <RCTL> { [ Control_R ] }; };";
+        let layout = Layout::parse(right).unwrap();
+        assert_eq!(layout.modifier_code(Modifier::Ctrl), Some(97));
     }
 
     #[test]

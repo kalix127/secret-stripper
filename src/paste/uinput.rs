@@ -5,7 +5,7 @@ use std::os::unix::fs::OpenOptionsExt;
 use std::time::Duration;
 
 use super::keymap::Layout;
-use super::keys::{evdev_code, evdev_modifier, Key, PasteKeys};
+use super::keys::{evdev_code, evdev_modifier, Key, Modifier, PasteKeys};
 
 pub const DEVICE_PATH: &str = "/dev/uinput";
 
@@ -41,9 +41,10 @@ const BUS_VIRTUAL: u16 = 0x06;
 /// real hardware, so every Wayland compositor accepts its key events.
 pub struct UinputKeyboard {
     file: File,
-    /// Paste keys resolved to the positions that type them in the session
-    /// layout.
+    /// Paste keys and modifiers resolved to the positions that type them in
+    /// the session layout.
     codes: Vec<(Key, u16)>,
+    modifiers: Vec<(Modifier, u16)>,
 }
 
 impl UinputKeyboard {
@@ -58,6 +59,16 @@ impl UinputKeyboard {
                 (k.key, code)
             })
             .collect();
+        let mut modifiers: Vec<(Modifier, u16)> = Vec::new();
+        for &m in keys.iter().flat_map(|k| &k.modifiers) {
+            if modifiers.iter().all(|&(seen, _)| seen != m) {
+                let code = layout
+                    .and_then(|l| l.modifier_code(m))
+                    .unwrap_or_else(|| evdev_modifier(m));
+                log::debug!("paste modifier {m:?} -> evdev {code}");
+                modifiers.push((m, code));
+            }
+        }
         let file = OpenOptions::new()
             .write(true)
             .custom_flags(libc::O_NONBLOCK)
@@ -65,9 +76,9 @@ impl UinputKeyboard {
             .with_context(|| format!("open {DEVICE_PATH}"))?;
         let fd = file.as_raw_fd();
 
-        let mut bits: Vec<u16> = keys
+        let mut bits: Vec<u16> = modifiers
             .iter()
-            .flat_map(|k| k.modifiers.iter().map(|&m| evdev_modifier(m)))
+            .map(|&(_, code)| code)
             .chain(codes.iter().map(|&(_, code)| code))
             .collect();
         bits.sort_unstable();
@@ -94,12 +105,16 @@ impl UinputKeyboard {
             ))?;
             check(libc::ioctl(fd, UI_DEV_CREATE))?;
         }
-        Ok(Self { file, codes })
+        Ok(Self {
+            file,
+            codes,
+            modifiers,
+        })
     }
 
     pub fn send(&self, keys: &PasteKeys) -> Result<()> {
         for &m in &keys.modifiers {
-            self.key(evdev_modifier(m), 1)?;
+            self.key(self.modifier(m), 1)?;
         }
         let code = self
             .codes
@@ -109,11 +124,18 @@ impl UinputKeyboard {
         self.key(code, 1)?;
         self.key(code, 0)?;
         for &m in keys.modifiers.iter().rev() {
-            self.key(evdev_modifier(m), 0)?;
+            self.key(self.modifier(m), 0)?;
         }
         // Destroying the device right away can drop the trailing releases.
         std::thread::sleep(Duration::from_millis(30));
         Ok(())
+    }
+
+    fn modifier(&self, m: Modifier) -> u16 {
+        self.modifiers
+            .iter()
+            .find(|&&(seen, _)| seen == m)
+            .map_or_else(|| evdev_modifier(m), |&(_, code)| code)
     }
 
     fn key(&self, code: u16, value: i32) -> Result<()> {
