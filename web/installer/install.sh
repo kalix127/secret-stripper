@@ -132,8 +132,7 @@ main() {
         printf "  ${YELLOW}[!]${NC} Init had warnings. Run '${bin_path} menu' to fix.\n"
     fi
 
-    printf "\n  ${BOLD}Secret Stripper is ready.${NC}\n"
-    printf "  Copy text as usual, then press your hotkey to paste a redacted copy.\n"
+    printf "\n  ${BOLD}Secret Stripper is installed.${NC}\n"
     printf "  ${CYAN}secret-stripper menu${NC}    - settings, hotkey, notifications\n"
     printf "  ${CYAN}secret-stripper status${NC}  - show current state\n\n"
 }

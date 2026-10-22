@@ -674,6 +674,12 @@ lang_strings! {
         IT => "Secret Stripper è configurato.",
         ES => "Secret Stripper está configurado.",
     }
+    cli_init_header_unbound {
+        EN => "Secret Stripper is installed, but the hotkey is not bound yet.",
+        FR => "Secret Stripper est installé, mais le raccourci n'est pas encore lié.",
+        IT => "Secret Stripper è installato, ma la scorciatoia non è ancora assegnata.",
+        ES => "Secret Stripper está instalado, pero el atajo aún no está asignado.",
+    }
     cli_terminal_hint(chord: &str, keys: &str,) {
         EN => format!("In a terminal, press {} instead (it sends {}).", chord, keys),
         FR => format!("Dans un terminal, appuyez plutôt sur {} (il envoie {}).", chord, keys),
