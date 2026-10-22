@@ -69,6 +69,18 @@ fn builtin_allowlist_compiled() -> &'static [regex::Regex] {
     })
 }
 
+/// What a pattern redacts: its `secret` group when it names one, so the
+/// key in `API_TOKEN=...` stays readable; otherwise the whole match.
+fn secret_matches<'t>(re: &regex::Regex, text: &'t str) -> Vec<regex::Match<'t>> {
+    if re.capture_names().flatten().any(|n| n == "secret") {
+        re.captures_iter(text)
+            .filter_map(|c| c.name("secret"))
+            .collect()
+    } else {
+        re.find_iter(text).collect()
+    }
+}
+
 /// A regex is safe to run in the soft-wrap pass only if it does not depend on
 /// real newlines: no literal `\n`, no `(?m)`/`(?s)` (alone or combined).
 fn is_single_line_regex(src: &str) -> bool {
@@ -325,7 +337,7 @@ impl Detector {
         };
         for pi in candidates {
             let pattern = &self.patterns[pi];
-            for m in pattern.regex.find_iter(text) {
+            for m in secret_matches(&pattern.regex, text) {
                 if span_allowlisted(&self.allowlist, text, m.start(), m.end()) {
                     continue;
                 }
@@ -374,7 +386,7 @@ impl Detector {
         if dw.len() != text.len() {
             for &pi in &self.single_line_patterns {
                 let pattern = &self.patterns[pi];
-                for m in pattern.regex.find_iter(&dw) {
+                for m in secret_matches(&pattern.regex, &dw) {
                     let (ms, me) = (m.start(), m.end());
                     if me == 0 {
                         continue;
@@ -655,6 +667,20 @@ mod tests {
             let (dw, _) = build_dewrapped(t);
             assert_eq!(dw, *t, "must be unchanged: {t:?}");
         }
+    }
+
+    #[test]
+    fn dotenv_line_keeps_the_variable_name() {
+        let d = Detector::from_config(&test_config());
+        let text = "APP_NAME=billing\nAPI_TOKEN=abcdefgh12345678\n";
+        let r = d.scan(text);
+        let (s, e, _) = *r
+            .matched_spans
+            .iter()
+            .find(|(_, _, n)| *n == "Dotenv Secret Line")
+            .unwrap();
+        assert_eq!(&text[s..e], "abcdefgh12345678");
+        assert!(d.scan("API_TOKEN=[REDACTED]").matched_spans.is_empty());
     }
 
     #[test]

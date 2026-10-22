@@ -839,9 +839,9 @@ Secrets embedded in JSON values, dotenv lines, k=v shapes, YAML scalars.
 
 | Name | Severity | Regex |
 |---|---|---|
-| Dotenv Secret Line | Critical | `(?im)^\s*[A-Z0-9_]*(?:SECRET\|TOKEN\|PASSWORD\|PASSWD\|APIKEY\|API_KEY\|PRIVATE_KEY\|ACCESS_KEY)[A-Z0-9_]*\s*=\s*\S{6,}` |
+| Dotenv Secret Line | Critical | `(?im)^\s*[A-Z0-9_]*(?:SECRET\|TOKEN\|PASSWORD\|PASSWD\|APIKEY\|API_KEY\|PRIVATE_KEY\|ACCESS_KEY)[A-Z0-9_]*\s*=\s*(?P<secret>[^\s\[]\S{5,})` |
 | npmrc Auth Token | Critical | `//[^/\s]+/:_authToken=\S+` |
-| pypirc Password | Critical | `(?im)^\s*password\s*=\s*\S{6,}` |
+| pypirc Password | Critical | `(?im)^\s*password\s*=\s*(?P<secret>[^\s\[]\S{5,})` |
 | Git Credentials URL | Critical | `https://[^:/\s]+:[^@/\s]+@[^/\s]+` |
 | Netrc Credentials | Critical | `(?i)machine\s+\S+\s+login\s+\S+\s+password\s+\S+` |
 | Docker Config Auth | Critical | `"auth"\s*:\s*"[A-Za-z0-9+/=]{16,}"` |
@@ -854,7 +854,7 @@ Secrets embedded in JSON values, dotenv lines, k=v shapes, YAML scalars.
 | Password Manager Export Header | Critical | `(?im)^(?:name,url,username,password\|folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp\|url,username,password,totp,extra,name,grouping,fav\|"Account","Login Name","Password","Web Site")` |
 | 1Password 1PIF Concealed Field | Critical | `"k"\s*:\s*"concealed"` |
 | PostgreSQL .pgpass Line | Critical | `(?m)^(?:\*\|[A-Za-z0-9_.-]+):(?:\*\|\d{1,5}):(?:\*\|[A-Za-z0-9_.-]*):[^:\n]+:\S{4,}$` |
-| AWS Secret Access Key (labeled) | Critical | `(?i)aws_secret_access_key\s*=\s*[A-Za-z0-9/+]{40}` |
+| AWS Secret Access Key (labeled) | Critical | `(?i)aws_secret_access_key\s*=\s*(?P<secret>[A-Za-z0-9/+]{40})` |
 | kubeconfig client-key-data | Critical | `client-key-data:\s*[A-Za-z0-9+/=]{100,}` |
 
 ### `wallets`
