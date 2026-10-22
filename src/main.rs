@@ -249,8 +249,13 @@ fn run_init() -> anyhow::Result<()> {
             let _ = updater::install_update_check_timer();
         }
         let lang = config.lang;
-        println!("{}", lang.cli_already_configured());
-        print_setup(&config, config.hotkey.clone());
+        let bound = shortcut::register(&config.hotkey);
+        if bound.is_ok() {
+            println!("{}", lang.cli_already_configured());
+        } else {
+            println!("{}", lang.cli_init_header_unbound());
+        }
+        print_setup(&config, config.hotkey.clone(), &bound);
         println!("{}", lang.cli_init_done_hint());
         return Ok(());
     }
@@ -275,32 +280,40 @@ fn run_init() -> anyhow::Result<()> {
     }
 
     let lang = config.lang;
-    println!("{}", lang.cli_init_header());
-    print_setup(&config, hotkey_status);
-    if outcome.active.is_some() {
-        println!("{}", lang.cli_init_usage(&config.hotkey));
+    let bound = shortcut::register(&config.hotkey);
+    if bound.is_ok() {
+        println!("{}", lang.cli_init_header());
     } else {
+        println!("{}", lang.cli_init_header_unbound());
+    }
+    print_setup(&config, hotkey_status, &bound);
+    if outcome.active.is_none() {
         eprintln!("{}", lang.cli_warn_no_hotkey());
         if let Some(err) = outcome.last_error {
             eprintln!("{}", lang.cli_last_error(&err.to_string()));
         }
+    } else if bound.is_ok() {
+        println!("{}", lang.cli_init_usage(&config.hotkey));
     }
     println!("{}", lang.cli_tweak_later());
     Ok(())
 }
 
-/// Bind both shortcuts, then print them with the config path and set up
-/// uinput access. Shared by a first run and a rerun of `init`.
-fn print_setup(config: &Config, hotkey_status: String) {
+/// Print both shortcuts and the config path, then set up uinput access.
+/// Shared by a first run and a rerun of `init`.
+fn print_setup(
+    config: &Config,
+    hotkey_status: String,
+    register_result: &anyhow::Result<lang::ShortcutBackend>,
+) {
     let lang = config.lang;
-    let register_result = shortcut::register(&config.hotkey);
     let mut rows = vec![(lang.lbl_hotkey(), hotkey_status)];
     if let Some(terminal) = hotkey::terminal_chord(&config.hotkey) {
         rows.push((lang.lbl_terminal_chord(), terminal));
     }
     rows.push((
         lang.lbl_de_binding(),
-        match &register_result {
+        match register_result {
             Ok(backend) => lang.shortcut_bound(backend, &config.hotkey),
             Err(e) => lang.de_status_failed(&e.to_string()),
         },
