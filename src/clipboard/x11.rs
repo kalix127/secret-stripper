@@ -86,14 +86,7 @@ fn paste_client(conn: &RustConnection, root: Window) -> Option<Window> {
     if std::env::var_os("WAYLAND_DISPLAY").is_some() {
         return None;
     }
-    let active = intern(conn, "_NET_ACTIVE_WINDOW").ok()?;
-    conn.get_property(false, root, active, AtomEnum::WINDOW, 0, 1)
-        .ok()?
-        .reply()
-        .ok()?
-        .value32()?
-        .next()
-        .filter(|&w| w != 0)
+    crate::x11::active_window(conn, root)
 }
 
 fn respond(

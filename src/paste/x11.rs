@@ -82,21 +82,7 @@ impl X11Input {
 
     // WM_CLASS is "instance\0class\0"; the class half is the stable app id.
     fn focused_class(&self) -> Option<String> {
-        let active = self
-            .conn
-            .intern_atom(false, b"_NET_ACTIVE_WINDOW")
-            .ok()?
-            .reply()
-            .ok()?
-            .atom;
-        let window = self
-            .conn
-            .get_property(false, self.root, active, AtomEnum::WINDOW, 0, 1)
-            .ok()?
-            .reply()
-            .ok()?
-            .value32()?
-            .next()?;
+        let window = crate::x11::active_window(&self.conn, self.root)?;
         let class = self
             .conn
             .get_property(false, window, AtomEnum::WM_CLASS, AtomEnum::STRING, 0, 256)

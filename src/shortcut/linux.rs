@@ -4,6 +4,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
 
+use crate::hotkey::chord_parts;
 use crate::lang::ShortcutBackend;
 
 /// One shortcut we register. Terminals paste with Ctrl+Shift+V and no
@@ -579,32 +580,6 @@ fn replace_file(path: &std::path::Path, contents: &str) -> Result<()> {
     Ok(())
 }
 
-/// Split a validated chord into lowercase modifier names and the key.
-fn chord_parts(chord: &str) -> Result<(Vec<&'static str>, String)> {
-    let mut mods = Vec::new();
-    let mut key: Option<String> = None;
-    for part in chord.split('+').map(str::trim).filter(|p| !p.is_empty()) {
-        let m = match part.to_ascii_lowercase().as_str() {
-            "ctrl" | "control" => "ctrl",
-            "alt" => "alt",
-            "shift" => "shift",
-            "super" | "meta" | "win" => "super",
-            other => {
-                if key.is_some() {
-                    return Err(anyhow!("chord '{}' has multiple non-modifier keys", chord));
-                }
-                key = Some(other.to_string());
-                continue;
-            }
-        };
-        if !mods.contains(&m) {
-            mods.push(m);
-        }
-    }
-    let key = key.ok_or_else(|| anyhow!("chord '{}' has no key", chord))?;
-    Ok((mods, key))
-}
-
 // xkb keysym names shared by Hyprland and sway/i3; letters and digits are
 // used as is.
 fn xkb_key_name(key: &str) -> String {
@@ -701,30 +676,17 @@ fn strip_path_from_list(list: &str, path: &str) -> String {
 // Convert "Ctrl+Alt+C" to GTK accelerator format like "<Control><Alt>c".
 // `ctrl_modifier` lets MATE override "<Control>" to "<Ctrl>".
 fn chord_to_keysym_format(chord: &str, ctrl_modifier: &str) -> Result<String> {
-    let mut out = String::new();
-    let mut key: Option<String> = None;
-
-    for raw in chord.split('+') {
-        let part = raw.trim();
-        if part.is_empty() {
-            continue;
-        }
-        match part.to_ascii_lowercase().as_str() {
-            "ctrl" | "control" => out.push_str(ctrl_modifier),
-            "alt" => out.push_str("<Alt>"),
-            "shift" => out.push_str("<Shift>"),
-            "super" | "meta" | "win" => out.push_str("<Super>"),
-            other => {
-                if key.is_some() {
-                    return Err(anyhow!("chord '{}' has multiple non-modifier keys", chord));
-                }
-                key = Some(other.to_string());
-            }
-        }
-    }
-
-    let k = key.ok_or_else(|| anyhow!("chord '{}' has no key", chord))?;
-    out.push_str(&k);
+    let (mods, key) = chord_parts(chord)?;
+    let mut out: String = mods
+        .iter()
+        .map(|m| match *m {
+            "ctrl" => ctrl_modifier,
+            "alt" => "<Alt>",
+            "shift" => "<Shift>",
+            _ => "<Super>",
+        })
+        .collect();
+    out.push_str(&key);
     Ok(out)
 }
 
