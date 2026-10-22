@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 mod ad_tech;
 mod ai;
@@ -50,7 +50,7 @@ pub struct SecretPattern {
     pub name: &'static str,
     pub category: &'static str,
     pub severity: Severity,
-    pub regex: Regex,
+    pub regex: LazyRegex,
 }
 
 /// Severity classification policy, applied uniformly across every bucket.
@@ -87,8 +87,48 @@ impl Severity {
     }
 }
 
-pub(crate) fn re(p: &str) -> Regex {
-    Regex::new(p).unwrap_or_else(|e| panic!("invalid regex pattern {p:?}: {e}"))
+pub(crate) fn re(p: &str) -> LazyRegex {
+    LazyRegex::new(p)
+}
+
+/// A pattern regex compiled on first use. Compiling the whole catalog took
+/// most of a paste's startup, and the prefilter rules out nearly every
+/// pattern for a given text. Clones share the compiled regex.
+#[derive(Clone)]
+pub struct LazyRegex(Arc<(String, OnceLock<Regex>)>);
+
+impl LazyRegex {
+    pub fn new(src: &str) -> Self {
+        Self(Arc::new((src.to_string(), OnceLock::new())))
+    }
+
+    pub fn compiled(regex: Regex) -> Self {
+        let src = regex.as_str().to_string();
+        Self(Arc::new((src, OnceLock::from(regex))))
+    }
+
+    /// The source, without compiling it.
+    pub fn as_str(&self) -> &str {
+        let (src, _) = &*self.0;
+        src
+    }
+}
+
+impl std::ops::Deref for LazyRegex {
+    type Target = Regex;
+
+    fn deref(&self) -> &Regex {
+        let (src, cell) = &*self.0;
+        cell.get_or_init(|| {
+            Regex::new(src).unwrap_or_else(|e| panic!("invalid regex pattern {src:?}: {e}"))
+        })
+    }
+}
+
+impl std::fmt::Debug for LazyRegex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("LazyRegex").field(&self.as_str()).finish()
+    }
 }
 
 type BucketFn = fn() -> Vec<SecretPattern>;
@@ -365,6 +405,13 @@ mod tests {
     fn test_severity_trait() {
         assert_ne!(Severity::Critical, Severity::Low);
         assert_eq!(Severity::High, Severity::High);
+    }
+
+    #[test]
+    fn every_builtin_pattern_compiles() {
+        for p in all_patterns() {
+            assert!(regex::Regex::new(p.regex.as_str()).is_ok(), "{}", p.name);
+        }
     }
 
     fn ipv4_pat() -> SecretPattern {

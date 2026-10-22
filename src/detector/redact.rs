@@ -184,7 +184,7 @@ mod tests {
             name,
             category: "test",
             severity: Severity::High,
-            regex: regex::Regex::new(regex).unwrap(),
+            regex: patterns::re(regex),
         }
     }
 

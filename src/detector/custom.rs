@@ -1,4 +1,4 @@
-use super::patterns::{SecretPattern, Severity};
+use super::patterns::{LazyRegex, SecretPattern, Severity};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -119,7 +119,7 @@ pub fn load() -> (Vec<SecretPattern>, Vec<String>) {
                 name: Box::leak(spec.name.into_boxed_str()),
                 category: Box::leak(spec.category.into_boxed_str()),
                 severity: parse_severity(&spec.severity),
-                regex: rx,
+                regex: LazyRegex::compiled(rx),
             }),
             Err(e) => errs.push(format!(
                 "skipped custom pattern {:?}: invalid regex: {e}",

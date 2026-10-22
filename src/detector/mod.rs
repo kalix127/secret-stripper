@@ -260,7 +260,9 @@ impl Detector {
         let min_len = cfg.entropy_min_len.unwrap_or(sens_min_len);
 
         let disabled: HashSet<&str> = cfg.disabled_categories.iter().map(|s| s.as_str()).collect();
+        let started = std::time::Instant::now();
         let mut all = patterns::builtin_patterns_filtered(&disabled);
+        log::debug!("pattern catalog ready in {:?}", started.elapsed());
         let (custom, errs) = custom::load();
         for e in errs {
             log::warn!("{e}");
@@ -304,7 +306,13 @@ impl Detector {
             .map(|(i, _)| i)
             .collect();
 
+        let started = std::time::Instant::now();
         let prefilter = regex::RegexSet::new(all.iter().map(|p| p.regex.as_str())).ok();
+        log::debug!(
+            "prefilter for {} patterns built in {:?}",
+            all.len(),
+            started.elapsed()
+        );
 
         Self {
             patterns: all,
@@ -384,7 +392,13 @@ impl Detector {
         let mut extra_spans: Vec<(usize, usize, &'static str)> = Vec::new();
         let (dw, map) = build_dewrapped(text);
         if dw.len() != text.len() {
+            // Prefiltered like the main pass, so the joined text does not
+            // compile every single-line pattern.
+            let joined_hits = self.prefilter.as_ref().map(|set| set.matches(&dw));
             for &pi in &self.single_line_patterns {
+                if joined_hits.as_ref().is_some_and(|h| !h.matched(pi)) {
+                    continue;
+                }
                 let pattern = &self.patterns[pi];
                 for m in secret_matches(&pattern.regex, &dw) {
                     let (ms, me) = (m.start(), m.end());
