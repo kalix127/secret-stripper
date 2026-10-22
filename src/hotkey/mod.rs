@@ -5,35 +5,41 @@ use anyhow::{anyhow, Result};
 /// the Hyprland config) does the registration; this only catches garbage
 /// before it gets there.
 pub fn parse_chord(s: &str) -> Result<()> {
-    let mut found_modifier = false;
-    let mut key: Option<String> = None;
-
-    for raw in s.split('+') {
-        let part = raw.trim();
-        if part.is_empty() {
-            continue;
-        }
-        match part.to_ascii_lowercase().as_str() {
-            "ctrl" | "control" | "alt" | "shift" | "super" | "meta" | "win" => {
-                found_modifier = true;
-            }
-            other => {
-                if key.is_some() {
-                    return Err(anyhow!("chord '{}' has more than one non-modifier key", s));
-                }
-                validate_key(other)?;
-                key = Some(other.to_string());
-            }
-        }
-    }
-
-    if key.is_none() {
-        return Err(anyhow!("chord '{}' has no key", s));
-    }
-    if !found_modifier {
+    let (mods, key) = chord_parts(s)?;
+    validate_key(&key)?;
+    if mods.is_empty() {
         return Err(anyhow!("chord '{}' must include at least one modifier", s));
     }
     Ok(())
+}
+
+/// Split a chord into lowercase modifier names ("ctrl", "alt", "shift",
+/// "super") in the order given, and the lowercase key.
+pub fn chord_parts(chord: &str) -> Result<(Vec<&'static str>, String)> {
+    let mut mods = Vec::new();
+    let mut key: Option<String> = None;
+    for part in chord.split('+').map(str::trim).filter(|p| !p.is_empty()) {
+        let m = match part.to_ascii_lowercase().as_str() {
+            "ctrl" | "control" => "ctrl",
+            "alt" => "alt",
+            "shift" => "shift",
+            "super" | "meta" | "win" => "super",
+            other => {
+                if key.is_some() {
+                    return Err(anyhow!(
+                        "chord '{chord}' has more than one non-modifier key"
+                    ));
+                }
+                key = Some(other.to_string());
+                continue;
+            }
+        };
+        if !mods.contains(&m) {
+            mods.push(m);
+        }
+    }
+    let key = key.ok_or_else(|| anyhow!("chord '{}' has no key", chord))?;
+    Ok((mods, key))
 }
 
 fn validate_key(s: &str) -> Result<()> {
@@ -193,6 +199,13 @@ mod tests {
     fn probe_rejects_invalid_then_falls_back() {
         let out = probe("not a chord");
         assert!(out.active.is_some()); // falls back to a default candidate
+    }
+
+    #[test]
+    fn chord_parts_keeps_order_and_drops_repeats() {
+        let (mods, key) = chord_parts("Super+ctrl+Control+ V").unwrap();
+        assert_eq!(mods, ["super", "ctrl"]);
+        assert_eq!(key, "v");
     }
 
     #[test]

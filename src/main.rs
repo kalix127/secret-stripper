@@ -9,6 +9,7 @@ mod proc;
 mod shortcut;
 mod tui;
 mod updater;
+mod x11;
 
 pub use secret_stripper::{ai_tui, config, detector, lang, redact_cli, shell_rc, stats};
 
