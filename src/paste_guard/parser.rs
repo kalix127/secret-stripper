@@ -1,5 +1,8 @@
 use super::{END_SEQ, MAX_PASTE_BYTES, START_SEQ};
 
+/// Shared prefix of the child's `\e[?2004h` / `\e[?2004l` requests.
+const MODE_PREFIX: &[u8] = b"\x1b[?2004";
+
 /// Streaming parser that extracts bracketed-paste payloads from a byte
 /// stream, runs each through a user-supplied redactor, and reframes the
 /// result. Everything outside a paste passes through byte-for-byte.
@@ -18,6 +21,10 @@ pub struct PasteParser {
     // prior `feed` call. Cleared by `take_overflow()`. Lets the caller emit
     // the localized stderr notice exactly once per overflow event.
     overflowed: bool,
+    // Whether the child asked for bracketed paste. The parent terminal is
+    // always in that mode, so the markers are only re-added for a child that
+    // understands them; others (cat, sh) would print them literally.
+    framed: bool,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -45,7 +52,12 @@ impl PasteParser {
             paste_buffer: Vec::new(),
             end_match: 0,
             overflowed: false,
+            framed: true,
         }
+    }
+
+    pub fn set_framed(&mut self, framed: bool) {
+        self.framed = framed;
     }
 
     /// True if a paste hit the buffer cap since the last call. Resets the
@@ -109,9 +121,9 @@ impl PasteParser {
                 let cut = self.paste_buffer.len() - END_SEQ.len();
                 let payload = self.paste_buffer[..cut].to_vec();
                 let redacted = redact(&payload);
-                out.extend_from_slice(START_SEQ);
+                self.frame(out, START_SEQ);
                 out.extend_from_slice(&redacted);
-                out.extend_from_slice(END_SEQ);
+                self.frame(out, END_SEQ);
                 self.paste_buffer.clear();
                 self.end_match = 0;
                 self.state = State::Passthrough;
@@ -126,7 +138,7 @@ impl PasteParser {
             // buffered so far and switch to bypass so subsequent bytes (and
             // the eventual end marker) just stream through unchanged. The
             // caller observes the event via `take_overflow()`.
-            out.extend_from_slice(START_SEQ);
+            self.frame(out, START_SEQ);
             out.extend_from_slice(&self.paste_buffer);
             self.paste_buffer.clear();
             self.end_match = 0;
@@ -135,17 +147,79 @@ impl PasteParser {
         }
     }
 
+    // Holds back a partial end marker so it can be dropped when unframed.
     fn feed_bypass(&mut self, b: u8, out: &mut Vec<u8>) {
-        out.push(b);
         if b == END_SEQ[self.end_match] {
             self.end_match += 1;
             if self.end_match == END_SEQ.len() {
+                self.frame(out, END_SEQ);
                 self.end_match = 0;
                 self.state = State::Passthrough;
             }
-        } else {
-            self.end_match = if b == END_SEQ[0] { 1 } else { 0 };
+            return;
         }
+        out.extend_from_slice(&END_SEQ[..self.end_match]);
+        if b == END_SEQ[0] {
+            self.end_match = 1;
+        } else {
+            self.end_match = 0;
+            out.push(b);
+        }
+    }
+
+    fn frame(&self, out: &mut Vec<u8>, marker: &[u8]) {
+        if self.framed {
+            out.extend_from_slice(marker);
+        }
+    }
+}
+
+/// Watches the child's output for bracketed-paste requests. Enables pass
+/// through; disables are dropped so the parent terminal keeps framing
+/// pastes and the wrapper can still see them.
+#[derive(Debug, Default)]
+pub struct ModeFilter {
+    matched: usize,
+    enabled: bool,
+}
+
+impl ModeFilter {
+    pub fn enabled(&self) -> bool {
+        self.enabled
+    }
+
+    pub fn feed(&mut self, input: &[u8]) -> Vec<u8> {
+        let mut out = Vec::with_capacity(input.len());
+        for &b in input {
+            if self.matched == MODE_PREFIX.len() {
+                self.matched = 0;
+                match b {
+                    b'h' => {
+                        self.enabled = true;
+                        out.extend_from_slice(MODE_PREFIX);
+                        out.push(b);
+                        continue;
+                    }
+                    b'l' => {
+                        self.enabled = false;
+                        continue;
+                    }
+                    _ => out.extend_from_slice(MODE_PREFIX),
+                }
+            } else if b == MODE_PREFIX[self.matched] {
+                self.matched += 1;
+                continue;
+            } else {
+                out.extend_from_slice(&MODE_PREFIX[..self.matched]);
+                self.matched = 0;
+            }
+            if b == MODE_PREFIX[0] {
+                self.matched = 1;
+            } else {
+                out.push(b);
+            }
+        }
+        out
     }
 }
 
@@ -257,6 +331,53 @@ mod tests {
             !p.take_overflow(),
             "second take_overflow should be false (one-shot)"
         );
+    }
+
+    #[test]
+    fn unframed_child_gets_the_bare_payload() {
+        let mut p = PasteParser::new();
+        p.set_framed(false);
+        let mut input = Vec::new();
+        input.extend_from_slice(START_SEQ);
+        input.extend_from_slice(b"hello");
+        input.extend_from_slice(END_SEQ);
+        input.extend_from_slice(b"\r");
+        assert_eq!(p.feed(&input, &mut upper_redact), b"HELLO\r");
+    }
+
+    #[test]
+    fn unframed_overflow_drops_both_markers() {
+        let mut p = PasteParser::new();
+        p.set_framed(false);
+        let mut input = Vec::new();
+        input.extend_from_slice(START_SEQ);
+        input.resize(input.len() + MAX_PASTE_BYTES + 16, b'A');
+        input.extend_from_slice(b"\x1b[2");
+        input.extend_from_slice(END_SEQ);
+        let out = p.feed(&input, &mut identity_redact);
+        assert!(p.take_overflow());
+        assert!(out.ends_with(b"AA\x1b[2"));
+        assert!(!out.windows(START_SEQ.len()).any(|w| w == START_SEQ));
+        assert!(!out.windows(END_SEQ.len()).any(|w| w == END_SEQ));
+    }
+
+    #[test]
+    fn mode_filter_tracks_and_drops_disable() {
+        let mut f = ModeFilter::default();
+        assert!(!f.enabled());
+        assert_eq!(f.feed(b"a\x1b[?2004hb"), b"a\x1b[?2004hb");
+        assert!(f.enabled());
+        assert_eq!(f.feed(b"c\x1b[?20"), b"c");
+        assert_eq!(f.feed(b"04ld"), b"d");
+        assert!(!f.enabled());
+    }
+
+    #[test]
+    fn mode_filter_passes_other_sequences() {
+        let mut f = ModeFilter::default();
+        let input = b"\x1b[?25l\x1b[?2004x\x1b\x1b[?2004h";
+        assert_eq!(f.feed(input), input);
+        assert!(f.enabled());
     }
 
     #[test]

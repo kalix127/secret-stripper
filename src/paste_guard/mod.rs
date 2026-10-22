@@ -1,4 +1,5 @@
 use std::io::{Read, Write};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 
@@ -10,7 +11,7 @@ use crate::detector::Detector;
 use crate::redact_cli::redact_with;
 
 mod parser;
-pub use parser::PasteParser;
+pub use parser::{ModeFilter, PasteParser};
 
 /// Limit on a single paste payload before we give up on in-flight redaction.
 /// Above this the parser falls back to passthrough so we never OOM on a
@@ -89,9 +90,9 @@ pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
     // RAII: raw mode + force bracketed-paste on the parent terminal for the
     // duration of the wrapped session. Forcing the mode on means the wrapper
     // works for ANY child, not just AI TUIs that enable bracketed paste
-    // themselves (vim, claude, codex). Children that re-enable it
-    // independently are unaffected - the request is idempotent. Restored
-    // on Drop so the user's shell prompt comes back the way they left it.
+    // themselves (vim, claude, codex). The child's own requests are tracked
+    // by `ModeFilter` instead of reaching the parent. Restored on Drop so
+    // the user's shell prompt comes back the way they left it.
     let _guard = TerminalGuard::enter();
 
     let mut pty_reader = pair.master.try_clone_reader().context("clone reader")?;
@@ -102,16 +103,22 @@ pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
     // seeing EOF on its stdin.
     drop(pair.master);
 
+    let child_brackets = Arc::new(AtomicBool::new(false));
+
     // Child -> stdout pump.
+    let child_brackets_out = Arc::clone(&child_brackets);
     let stdout_pump = thread::spawn(move || {
         let mut buf = [0u8; 8192];
+        let mut modes = ModeFilter::default();
         let stdout = std::io::stdout();
         loop {
             match pty_reader.read(&mut buf) {
                 Ok(0) => break,
                 Ok(n) => {
+                    let bytes = modes.feed(&buf[..n]);
+                    child_brackets_out.store(modes.enabled(), Ordering::Relaxed);
                     let mut out = stdout.lock();
-                    if out.write_all(&buf[..n]).is_err() {
+                    if out.write_all(&bytes).is_err() {
                         break;
                     }
                     let _ = out.flush();
@@ -152,6 +159,7 @@ pub fn run(argv: &[String], cfg: &Config) -> anyhow::Result<i32> {
                 }
                 Err(_) => payload.to_vec(),
             };
+            parser.set_framed(child_brackets.load(Ordering::Relaxed));
             let out_bytes = parser.feed(&buf[..n], &mut redactor);
             // Overflow is rare and unactionable mid-session; drop it on the
             // floor rather than corrupt the TUI frame. The fact that the
