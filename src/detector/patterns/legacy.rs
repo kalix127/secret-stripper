@@ -143,15 +143,12 @@ pub fn patterns() -> Vec<SecretPattern> {
             regex: re(r"(?i)\bpassports?\s*(?:no\.?|number|#|:)?\s*[:#]?\s*(\d{9})\b"),
         },
         SecretPattern {
-            // The optional :port suffix uses {1,5} digits. A 5-digit value above
-            // 65535 (e.g. :99999) still matches; we accept the over-redaction
-            // because the bug being fixed is "port survived in the clipboard".
+            // The port is not part of the match: it is not sensitive, and
+            // `[REDACTED]:5432` keeps a pasted URL readable.
             name: "IPv4 Address",
             category: "PII - Network",
             severity: Severity::Low,
-            regex: re(
-                r"\b(?:(?:25[0-5]|2[0-4]\d|1?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|1?\d\d?)(?::\d{1,5})?\b",
-            ),
+            regex: re(r"\b(?:(?:25[0-5]|2[0-4]\d|1?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|1?\d\d?)\b"),
         },
         SecretPattern {
             // Colon or dash separated: aa:bb:cc:dd:ee:ff, aa-bb-cc-dd-ee-ff
@@ -177,7 +174,7 @@ pub fn patterns() -> Vec<SecretPattern> {
             category: "Database Secret",
             severity: Severity::Critical,
             regex: re(
-                r"(?i)(postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|rediss)://[A-Za-z0-9_%]+:[^@\s]+@",
+                r"(?i)(postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|rediss)://[A-Za-z0-9_%]+:(?P<secret>[^@\s\[][^@\s]*)@",
             ),
         },
         SecretPattern {

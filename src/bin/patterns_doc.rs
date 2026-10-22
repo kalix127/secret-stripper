@@ -101,7 +101,7 @@ const BUCKET_DESCRIPTIONS: &[(&str, &str)] = &[
     ),
     (
         "pii_network",
-        "IPv4 (including with port), IPv6, MAC addresses, CIDR blocks, hostnames.",
+        "IPv4, IPv6, MAC addresses, CIDR blocks, hostnames.",
     ),
     (
         "hashes",

@@ -51,7 +51,7 @@ Every built-in pattern and every custom rule carries a severity tier. The tier d
 | `pii_govid_intl` | 28 | International passports, MRZ formats, ABN / CPF / Aadhaar / MyKad and similar. |
 | `pii_geo` | 11 | Postal addresses, postal / ZIP codes, geographic coordinates. |
 | `pii_biometric` | 4 | Biometric identifiers, fingerprint hashes, biometric template tokens. |
-| `pii_network` | 19 | IPv4 (including with port), IPv6, MAC addresses, CIDR blocks, hostnames. |
+| `pii_network` | 19 | IPv4, IPv6, MAC addresses, CIDR blocks, hostnames. |
 | `hashes` | 29 | bcrypt, scrypt, argon2, MD5, SHA, NTLM password hashes. |
 | `structured` | 17 | Secrets embedded in JSON values, dotenv lines, k=v shapes, YAML scalars. |
 | `wallets` | 29 | BTC / ETH / SOL and other wallet addresses, BIP39 seed phrases, keystore JSON. |
@@ -97,10 +97,10 @@ Legacy patterns preserved for backward compatibility.
 | Docker Registry Auth | High | `(?i)"auth"\s*:\s*"[A-Za-z0-9+/=]{40,200}"` |
 | Social Security Number | Critical | `\b\d{3}-\d{2}-\d{4}\b` |
 | US Passport Number | High | `(?i)\bpassports?\s*(?:no\.?\|number\|#\|:)?\s*[:#]?\s*(\d{9})\b` |
-| IPv4 Address | Low | `\b(?:(?:25[0-5]\|2[0-4]\d\|1?\d\d?)\.){3}(?:25[0-5]\|2[0-4]\d\|1?\d\d?)(?::\d{1,5})?\b` |
+| IPv4 Address | Low | `\b(?:(?:25[0-5]\|2[0-4]\d\|1?\d\d?)\.){3}(?:25[0-5]\|2[0-4]\d\|1?\d\d?)\b` |
 | MAC Address | Low | `\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b` |
 | MAC Address | Low | `\b(?:[0-9A-Fa-f]{4}\.){2}[0-9A-Fa-f]{4}\b` |
-| Database Connection String | Critical | `(?i)(postgres(?:ql)?\|mysql\|mongodb(?:\+srv)?\|redis\|rediss)://[A-Za-z0-9_%]+:[^@\s]+@` |
+| Database Connection String | Critical | `(?i)(postgres(?:ql)?\|mysql\|mongodb(?:\+srv)?\|redis\|rediss)://[A-Za-z0-9_%]+:(?P<secret>[^@\s\[][^@\s]*)@` |
 | Slack Token (xapp) | Critical | `xapp-[0-9A-Za-z\-]{10,80}` |
 | NPM Token | Critical | `(?i)npm_[A-Za-z0-9]{36}` |
 | SSH Private Key inline | Critical | `-----BEGIN OPENSSH PRIVATE KEY-----` |
@@ -773,7 +773,7 @@ Biometric identifiers, fingerprint hashes, biometric template tokens.
 
 ### `pii_network`
 
-IPv4 (including with port), IPv6, MAC addresses, CIDR blocks, hostnames.
+IPv4, IPv6, MAC addresses, CIDR blocks, hostnames.
 
 | Name | Severity | Regex |
 |---|---|---|

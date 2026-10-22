@@ -316,6 +316,12 @@ mod tests {
             .regex
             .is_match("postgresql://user:password@localhost:5432/db"));
         assert!(db.regex.is_match("mysql://user:pass@host/db"));
+        let caps = db
+            .regex
+            .captures("postgres://admin:hunter22@10.0.0.1/db")
+            .unwrap();
+        assert_eq!(&caps["secret"], "hunter22");
+        assert!(!db.regex.is_match("postgres://admin:[REDACTED]@db"));
     }
 
     #[test]
@@ -387,28 +393,16 @@ mod tests {
     }
 
     #[test]
-    fn ipv4_with_port_match() {
+    fn ipv4_leaves_the_port() {
         let p = ipv4_pat();
         let m = p.regex.find("192.168.1.1:8080").unwrap();
-        assert_eq!(m.start(), 0);
-        assert_eq!(m.end(), 16);
+        assert_eq!(m.as_str(), "192.168.1.1");
     }
 
     #[test]
     fn ipv4_without_port_still_matches() {
         let p = ipv4_pat();
         assert!(p.regex.is_match("192.168.1.1"));
-    }
-
-    #[test]
-    fn ipv4_port_5_digit_loose() {
-        // Documented loose case: 5-digit ports above 65535 still match. We
-        // accept the over-redaction.
-        let p = ipv4_pat();
-        let m = p.regex.find("10.0.0.1:65535").unwrap();
-        assert_eq!(&"10.0.0.1:65535"[m.start()..m.end()], "10.0.0.1:65535");
-        let m2 = p.regex.find("10.0.0.1:99999").unwrap();
-        assert_eq!(&"10.0.0.1:99999"[m2.start()..m2.end()], "10.0.0.1:99999");
     }
 
     #[test]
