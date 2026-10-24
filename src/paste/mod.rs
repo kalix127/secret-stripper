@@ -144,6 +144,7 @@ pub fn chord_is_paste_keys(chord: &str, config: &Config) -> bool {
 }
 
 pub fn run(terminal: bool) -> anyhow::Result<()> {
+    let launched = Instant::now();
     // Taken first so a re-entrant launch reports itself as fast as possible.
     let lock = match lock_file().map(|f| (f.try_lock(), f)) {
         Ok((Ok(()), f)) => Ok(f),
@@ -186,6 +187,13 @@ pub fn run(terminal: bool) -> anyhow::Result<()> {
         }
     };
 
+    // Built in the background so compiling the prefilter overlaps opening
+    // the input device and reading the clipboard.
+    let detector = std::thread::spawn({
+        let config = config.clone();
+        move || Detector::from_config(&config)
+    });
+
     // Opened before scanning so the uinput settle time overlaps redaction.
     let input = match Input::open(&[&keys, &terminal_keys], reentrant) {
         Ok(i) => i,
@@ -204,10 +212,17 @@ pub fn run(terminal: bool) -> anyhow::Result<()> {
         terminal_keys: &terminal_keys,
         // X11 waits for the real modifier release, so only uinput can re-enter.
         reentrant: reentrant && matches!(input, Input::Uinput { .. }),
+        launched,
     };
 
     let plan = match ClipboardReader::new() {
-        Ok(mut reader) => plan(&mut reader, &config),
+        Ok(mut reader) => {
+            let detector = match detector.join() {
+                Ok(d) => d,
+                Err(panic) => std::panic::resume_unwind(panic),
+            };
+            plan(&mut reader, &config, &detector)
+        }
         Err(e) => {
             not_pasted(&config, &lang.cli_clipboard_access_failed(&e.to_string()));
             return Ok(());
@@ -284,6 +299,7 @@ struct Sender<'a> {
     keys: &'a PasteKeys,
     terminal_keys: &'a PasteKeys,
     reentrant: bool,
+    launched: Instant,
 }
 
 impl Sender<'_> {
@@ -305,6 +321,7 @@ impl Sender<'_> {
                 l.drain();
             }
             self.input.send(self.keys, self.terminal_keys)?;
+            log::debug!("paste keys sent {:?} after launch", self.launched.elapsed());
             if self.reentrant {
                 reentry::mark_sent();
             }
@@ -357,9 +374,7 @@ fn restore(original: &Payload) {
     }
 }
 
-fn plan(reader: &mut impl ClipboardSource, config: &Config) -> Plan {
-    let detector = Detector::from_config(config);
-
+fn plan(reader: &mut impl ClipboardSource, config: &Config, detector: &Detector) -> Plan {
     // Text first: apps such as spreadsheets offer a cell as both text and an
     // image, and the text is what a text field pastes.
     let text_plan = match reader.read_text().filter(|t| !t.is_empty()) {
@@ -369,7 +384,7 @@ fn plan(reader: &mut impl ClipboardSource, config: &Config) -> Plan {
         // Best-effort zeroization for buffers we own. arboard hands us a
         // String we cannot zero from outside, so anything before this point
         // may linger.
-        Some(text) => Some(plan_text(&detector, config, Zeroizing::new(text))),
+        Some(text) => Some(plan_text(detector, config, Zeroizing::new(text))),
         None => None,
     };
     let text_is_clean = matches!(text_plan, None | Some(Plan::AsIs { .. }));
@@ -381,7 +396,7 @@ fn plan(reader: &mut impl ClipboardSource, config: &Config) -> Plan {
     // Clean text does not cover an image offered next to it: an app that
     // prefers the image would paste it unscanned.
     match reader.read_image() {
-        Some((width, height, bytes)) => plan_image(&detector, width, height, bytes),
+        Some((width, height, bytes)) => plan_image(detector, width, height, bytes),
         None => text_plan.unwrap_or(Plan::AsIs {
             scanned_clean: false,
         }),
@@ -494,9 +509,10 @@ fn lock_file() -> std::io::Result<File> {
 
 #[cfg(test)]
 mod tests {
-    use super::{chord_is_paste_keys, chord_reenters, plan, Blocked, Plan, MAX_INPUT_BYTES};
+    use super::{chord_is_paste_keys, chord_reenters, Blocked, Plan, MAX_INPUT_BYTES};
     use crate::clipboard::ClipboardSource;
     use crate::config::Config;
+    use crate::detector::Detector;
 
     #[test]
     fn paste_keys_are_not_a_valid_hotkey() {
@@ -546,6 +562,10 @@ mod tests {
             self.image_reads += 1;
             self.image.clone()
         }
+    }
+
+    fn plan(clip: &mut FakeClipboard, config: &Config) -> Plan {
+        super::plan(clip, config, &Detector::from_config(config))
     }
 
     fn config(image_scan: bool) -> Config {
